@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenSchoolCloud Calendar</string>
+    
+    <!-- Login / Onboarding -->
+    <string name="login_title">Connect to your school</string>
+    <string name="login_subtitle">Enter your Nextcloud details</string>
+    <string name="login_server_url">Server address</string>
+    <string name="login_server_url_hint">https://cloud.school.nl</string>
+    <string name="login_username">Username</string>
+    <string name="login_username_hint">Your username or email</string>
+    <string name="login_password">App password</string>
+    <string name="login_password_hint">Your app password</string>
+    <string name="login_password_help">Create app password</string>
+    <string name="login_button">Connect</string>
+    <string name="login_connecting">Connecting…</string>
+    
+    <string name="login_error_invalid_url">Please enter a valid server address</string>
+    <string name="login_error_empty_username">Please enter your username</string>
+    <string name="login_error_empty_password">Please enter your password</string>
+    <string name="login_error_auth_failed">Login failed. Please check your credentials.</string>
+    <string name="login_error_network">Could not connect to server. Please check your connection.</string>
+    <string name="login_error_server">Server error. Please try again later.</string>
+    <string name="login_error_no_calendars">No calendars found on this server.</string>
+    
+    <!-- Calendar discovery -->
+    <string name="discovery_title">Calendars found</string>
+    <string name="discovery_subtitle">Select which calendars to sync</string>
+    <string name="discovery_done">Done</string>
+    <string name="discovery_read_only">(read-only)</string>
+    
+    <!-- Calendar views -->
+    <string name="calendar_today">Today</string>
+    <string name="calendar_view_day">Day</string>
+    <string name="calendar_view_week">Week</string>
+    <string name="calendar_view_month">Month</string>
+    <string name="calendar_no_events">No events</string>
+    <string name="calendar_all_day">All day</string>
+    
+    <!-- Event -->
+    <string name="event_new">New event</string>
+    <string name="event_edit">Edit event</string>
+    <string name="event_title">Title</string>
+    <string name="event_title_hint">Add title</string>
+    <string name="event_location">Location</string>
+    <string name="event_location_hint">Add location</string>
+    <string name="event_description">Description</string>
+    <string name="event_description_hint">Add notes</string>
+    <string name="event_calendar">Calendar</string>
+    <string name="event_all_day">All day</string>
+    <string name="event_starts">Starts</string>
+    <string name="event_ends">Ends</string>
+    <string name="event_timezone">Time zone</string>
+    <string name="event_reminder">Reminder</string>
+    <string name="event_add_reminder">Add reminder</string>
+    <string name="event_attendees">Attendees</string>
+    <string name="event_add_attendee">Add attendee</string>
+    <string name="event_organizer">Organizer</string>
+    <string name="event_save">Save</string>
+    <string name="event_delete">Delete</string>
+    <string name="event_cancel">Cancel</string>
+    
+    <!-- Event status -->
+    <string name="event_status_confirmed">Confirmed</string>
+    <string name="event_status_tentative">Tentative</string>
+    <string name="event_status_cancelled">Cancelled</string>
+    
+    <!-- Attendee status -->
+    <string name="attendee_status_accepted">Accepted</string>
+    <string name="attendee_status_declined">Declined</string>
+    <string name="attendee_status_tentative">Maybe</string>
+    <string name="attendee_status_needs_action">Pending</string>
+    
+    <!-- Reminders -->
+    <string name="reminder_at_time">At time of event</string>
+    <string name="reminder_5_min">5 minutes before</string>
+    <string name="reminder_10_min">10 minutes before</string>
+    <string name="reminder_15_min">15 minutes before</string>
+    <string name="reminder_30_min">30 minutes before</string>
+    <string name="reminder_1_hour">1 hour before</string>
+    <string name="reminder_2_hours">2 hours before</string>
+    <string name="reminder_1_day">1 day before</string>
+    <string name="reminder_2_days">2 days before</string>
+    <string name="reminder_1_week">1 week before</string>
+    
+    <!-- Dialogs -->
+    <string name="dialog_delete_event_title">Delete event?</string>
+    <string name="dialog_delete_event_message">This will delete the event. This action cannot be undone.</string>
+    <string name="dialog_notify_attendees_title">Notify attendees?</string>
+    <string name="dialog_notify_attendees_message">Would you like to send an update to the attendees?</string>
+    <string name="dialog_discard_changes_title">Discard changes?</string>
+    <string name="dialog_discard_changes_message">You have unsaved changes. Are you sure you want to discard them?</string>
+    <string name="dialog_yes">Yes</string>
+    <string name="dialog_no">No</string>
+    <string name="dialog_send">Send</string>
+    <string name="dialog_dont_send">Don\'t send</string>
+    <string name="dialog_discard">Discard</string>
+    <string name="dialog_keep_editing">Keep editing</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_account">Account</string>
+    <string name="settings_accounts">Accounts</string>
+    <string name="settings_add_account">Add account</string>
+    <string name="settings_sync">Synchronization</string>
+    <string name="settings_sync_now">Sync now</string>
+    <string name="settings_sync_interval">Sync interval</string>
+    <string name="settings_last_sync">Last synced: %s</string>
+    <string name="settings_never_synced">Never synced</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_default_reminder">Default reminder</string>
+    <string name="settings_display">Display</string>
+    <string name="settings_first_day_of_week">First day of week</string>
+    <string name="settings_time_format">Time format</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %s</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+    <string name="settings_open_source_licenses">Open source licenses</string>
+    <string name="settings_logout">Log out</string>
+    <string name="settings_logout_confirm">Are you sure you want to log out? All local data will be removed.</string>
+    
+    <!-- Sync intervals -->
+    <string name="sync_interval_15_min">Every 15 minutes</string>
+    <string name="sync_interval_30_min">Every 30 minutes</string>
+    <string name="sync_interval_1_hour">Every hour</string>
+    <string name="sync_interval_4_hours">Every 4 hours</string>
+    <string name="sync_interval_manual">Manual only</string>
+    
+    <!-- Days of week -->
+    <string name="day_monday">Monday</string>
+    <string name="day_tuesday">Tuesday</string>
+    <string name="day_wednesday">Wednesday</string>
+    <string name="day_thursday">Thursday</string>
+    <string name="day_friday">Friday</string>
+    <string name="day_saturday">Saturday</string>
+    <string name="day_sunday">Sunday</string>
+    
+    <!-- Errors -->
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_sync_failed">Sync failed</string>
+    <string name="error_save_failed">Could not save event</string>
+    <string name="error_delete_failed">Could not delete event</string>
+    <string name="error_conflict">This event was modified on the server. Please sync and try again.</string>
+    
+    <!-- Accessibility -->
+    <string name="a11y_create_event">Create new event</string>
+    <string name="a11y_settings">Open settings</string>
+    <string name="a11y_previous">Previous</string>
+    <string name="a11y_next">Next</string>
+    <string name="a11y_close">Close</string>
+    <string name="a11y_delete">Delete</string>
+    <string name="a11y_edit">Edit</string>
+    
+    <!-- Notifications -->
+    <string name="notification_channel_reminders">Event reminders</string>
+    <string name="notification_channel_reminders_desc">Notifications for upcoming events</string>
+    <string name="notification_event_starting">Starting now</string>
+    <string name="notification_event_in_minutes">In %d minutes</string>
+    <string name="notification_event_in_hours">In %d hours</string>
+    <string name="notification_event_tomorrow">Tomorrow</string>
+</resources>

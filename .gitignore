@@ -1,0 +1,105 @@
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/*.iml
+android/.idea/
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+
+# iOS
+ios/build/
+ios/DerivedData/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/
+ios/Pods/
+ios/.build/
+ios/Package.resolved
+
+# Xcode
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# CocoaPods
+Pods/
+!Podfile
+!Podfile.lock
+
+# Carthage
+Carthage/Build/
+Carthage/Checkouts/
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/
+
+# Signing
+*.jks
+*.keystore
+*.mobileprovision
+*.p12
+*.cer
+
+# Secrets
+secrets.properties
+google-services.json
+GoogleService-Info.plist
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test
+coverage/
+*.gcov
+*.gcda
+*.gcno
+
+# Misc
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
