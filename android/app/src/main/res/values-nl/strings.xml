@@ -147,6 +147,11 @@
     <string name="error_delete_failed">Kon afspraak niet verwijderen</string>
     <string name="error_conflict">Deze afspraak is gewijzigd op de server. Synchroniseer en probeer opnieuw.</string>
     
+    <!-- Quick Capture -->
+    <string name="quick_capture_hint">\"Morgen 14:00 meeting met team\"</string>
+    <string name="quick_capture_confirm">Aanmaken</string>
+    <string name="event_created">\"%s\" aangemaakt</string>
+
     <!-- Accessibility -->
     <string name="a11y_create_event">Nieuwe afspraak maken</string>
     <string name="a11y_settings">Instellingen openen</string>

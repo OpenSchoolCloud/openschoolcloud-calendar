@@ -12,13 +12,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.domain.model.Calendar
 import nl.openschoolcloud.calendar.domain.model.Event
+import nl.openschoolcloud.calendar.domain.model.SyncStatus
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
+import nl.openschoolcloud.calendar.domain.usecase.ParsedEvent
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
+import java.util.UUID
 import javax.inject.Inject
 
 /**
@@ -260,6 +265,69 @@ class CalendarViewModel @Inject constructor(
     }
 
     /**
+     * Clear snackbar message
+     */
+    fun clearSnackbarMessage() {
+        _uiState.update { it.copy(snackbarMessage = null) }
+    }
+
+    /**
+     * Create an event from Quick Capture parsed result
+     */
+    fun createEventFromParsed(parsed: ParsedEvent) {
+        viewModelScope.launch {
+            val startDateTime = LocalDateTime.of(
+                parsed.startDate ?: LocalDate.now(),
+                parsed.startTime ?: LocalTime.of(9, 0)
+            )
+
+            val endDateTime = if (parsed.endTime != null) {
+                LocalDateTime.of(parsed.startDate ?: LocalDate.now(), parsed.endTime)
+            } else {
+                startDateTime.plus(parsed.duration)
+            }
+
+            val defaultCalendarId = getDefaultCalendarId()
+
+            val event = Event(
+                uid = UUID.randomUUID().toString(),
+                calendarId = defaultCalendarId,
+                summary = parsed.title,
+                location = parsed.location,
+                dtStart = startDateTime.atZone(zoneId).toInstant(),
+                dtEnd = endDateTime.atZone(zoneId).toInstant(),
+                allDay = false,
+                syncStatus = SyncStatus.PENDING_CREATE
+            )
+
+            val result = eventRepository.createEvent(event)
+            result.fold(
+                onSuccess = {
+                    _uiState.update {
+                        it.copy(snackbarMessage = "\"${parsed.title}\" aangemaakt")
+                    }
+                    loadEventsForCurrentWeek()
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(error = "Kon afspraak niet aanmaken: ${error.message}")
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Get the default calendar ID (first visible writable calendar)
+     */
+    private suspend fun getDefaultCalendarId(): String {
+        val calendars = _uiState.value.calendars
+        return calendars.firstOrNull { !it.readOnly }?.id
+            ?: calendars.firstOrNull()?.id
+            ?: "default"
+    }
+
+    /**
      * Refresh the current view
      */
     fun refresh() {
@@ -279,6 +347,7 @@ data class CalendarUiState(
     val isSyncing: Boolean = false,
     val lastSyncTime: Instant? = null,
     val syncMessage: String? = null,
+    val snackbarMessage: String? = null,
     val error: String? = null
 ) {
     /**

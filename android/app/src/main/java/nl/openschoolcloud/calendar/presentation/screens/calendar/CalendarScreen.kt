@@ -1,5 +1,10 @@
 package nl.openschoolcloud.calendar.presentation.screens.calendar
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
@@ -46,7 +52,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,6 +86,7 @@ fun CalendarScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showQuickCapture by remember { mutableStateOf(false) }
 
     // Show error in snackbar
     LaunchedEffect(uiState.error) {
@@ -95,6 +104,14 @@ fun CalendarScreen(
         }
     }
 
+    // Show snackbar message (e.g., after quick capture event creation)
+    LaunchedEffect(uiState.snackbarMessage) {
+        uiState.snackbarMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearSnackbarMessage()
+        }
+    }
+
     Scaffold(
         topBar = {
             CalendarTopBar(
@@ -109,10 +126,10 @@ fun CalendarScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { onCreateEvent(null) }
+                onClick = { showQuickCapture = !showQuickCapture }
             ) {
                 Icon(
-                    imageVector = Icons.Default.Add,
+                    imageVector = if (showQuickCapture) Icons.Default.Close else Icons.Default.Add,
                     contentDescription = stringResource(R.string.a11y_create_event)
                 )
             }
@@ -127,6 +144,23 @@ fun CalendarScreen(
                 .padding(padding)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
+                // Quick Capture bar (expandable)
+                AnimatedVisibility(
+                    visible = showQuickCapture,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    QuickCaptureBar(
+                        onEventParsed = { parsed ->
+                            viewModel.createEventFromParsed(parsed)
+                            showQuickCapture = false
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    )
+                }
+
                 // Week header with day names
                 WeekHeader(
                     weekDays = uiState.getWeekDays(),

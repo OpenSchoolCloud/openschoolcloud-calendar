@@ -213,6 +213,11 @@
     <string name="error_ssl">Beveiligde verbinding mislukt. Neem contact op met je ICT-beheerder.</string>
     <string name="error_unknown">Er ging iets mis. Probeer het opnieuw of neem contact op met support.</string>
 
+    <!-- Quick Capture -->
+    <string name="quick_capture_hint">\"Morgen 14:00 meeting met team\"</string>
+    <string name="quick_capture_confirm">Aanmaken</string>
+    <string name="event_created">\"%s\" aangemaakt</string>
+
     <!-- Accessibility -->
     <string name="a11y_create_event">Nieuwe afspraak toevoegen</string>
     <string name="a11y_settings">Instellingen openen</string>
