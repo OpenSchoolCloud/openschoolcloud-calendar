@@ -4,9 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import nl.openschoolcloud.calendar.data.sync.CalendarSyncWorker
+import nl.openschoolcloud.calendar.notification.ReminderWorker
 
 /**
- * Broadcast receiver that starts background sync after device boot
+ * Broadcast receiver that starts background sync and reminder scheduling after device boot
  */
 class BootReceiver : BroadcastReceiver() {
 
@@ -18,6 +19,8 @@ class BootReceiver : BroadcastReceiver() {
                 context = context,
                 intervalMinutes = 60
             )
+            // Reschedule reminders for upcoming events
+            ReminderWorker.schedule(context)
         }
     }
 }

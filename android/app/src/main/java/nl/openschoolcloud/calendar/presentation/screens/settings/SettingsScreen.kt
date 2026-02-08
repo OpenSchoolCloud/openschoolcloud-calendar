@@ -22,6 +22,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Cookie
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Refresh
@@ -81,6 +83,7 @@ fun SettingsScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showSyncIntervalDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showReminderDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let { error ->
@@ -129,6 +132,17 @@ fun SettingsScreen(
                 showThemeDialog = false
             },
             onDismiss = { showThemeDialog = false }
+        )
+    }
+
+    if (showReminderDialog) {
+        DefaultReminderDialog(
+            currentMinutes = uiState.defaultReminderMinutes,
+            onMinutesSelected = { minutes ->
+                viewModel.setDefaultReminderMinutes(minutes)
+                showReminderDialog = false
+            },
+            onDismiss = { showReminderDialog = false }
         )
     }
 
@@ -243,6 +257,34 @@ fun SettingsScreen(
                 }
             }
 
+            // Notifications section
+            SettingsSection(title = stringResource(R.string.settings_notifications)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.setNotificationsEnabled(!uiState.notificationsEnabled) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_reminders_toggle),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Switch(
+                        checked = uiState.notificationsEnabled,
+                        onCheckedChange = { viewModel.setNotificationsEnabled(it) }
+                    )
+                }
+                if (uiState.notificationsEnabled) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_default_reminder),
+                        value = formatReminderMinutes(uiState.defaultReminderMinutes),
+                        onClick = { showReminderDialog = true }
+                    )
+                }
+            }
+
             // Display section
             SettingsSection(title = stringResource(R.string.settings_display)) {
                 SettingsRow(
@@ -287,7 +329,21 @@ fun SettingsScreen(
                 onPrivacyClick = {
                     val intent = Intent(
                         Intent.ACTION_VIEW,
-                        Uri.parse("https://openschoolcloud.nl/privacy")
+                        Uri.parse("https://openschoolcloud.nl/juridisch/privacy")
+                    )
+                    context.startActivity(intent)
+                },
+                onTermsClick = {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://openschoolcloud.nl/juridisch/voorwaarden")
+                    )
+                    context.startActivity(intent)
+                },
+                onCookiesClick = {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://openschoolcloud.nl/juridisch/cookies")
                     )
                     context.startActivity(intent)
                 }
@@ -458,7 +514,9 @@ private fun ThemeModeDialog(
 @Composable
 private fun AboutSection(
     onWebsiteClick: () -> Unit,
-    onPrivacyClick: () -> Unit
+    onPrivacyClick: () -> Unit,
+    onTermsClick: () -> Unit,
+    onCookiesClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -527,6 +585,24 @@ private fun AboutSection(
             Text(text = stringResource(R.string.settings_privacy_policy))
         }
 
+        TextButton(onClick = onTermsClick) {
+            Icon(
+                Icons.Default.Gavel,
+                contentDescription = null,
+                modifier = Modifier.padding(end = 4.dp)
+            )
+            Text(text = stringResource(R.string.about_terms))
+        }
+
+        TextButton(onClick = onCookiesClick) {
+            Icon(
+                Icons.Default.Cookie,
+                contentDescription = null,
+                modifier = Modifier.padding(end = 4.dp)
+            )
+            Text(text = stringResource(R.string.about_cookies))
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
@@ -536,6 +612,68 @@ private fun AboutSection(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun DefaultReminderDialog(
+    currentMinutes: Int,
+    onMinutesSelected: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val options = listOf(
+        0 to stringResource(R.string.reminder_none),
+        5 to stringResource(R.string.reminder_5_min),
+        10 to stringResource(R.string.reminder_10_min),
+        15 to stringResource(R.string.reminder_15_min),
+        30 to stringResource(R.string.reminder_30_min),
+        60 to stringResource(R.string.reminder_1_hour)
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_default_reminder)) },
+        text = {
+            Column {
+                options.forEach { (minutes, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onMinutesSelected(minutes) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = minutes == currentMinutes,
+                            onClick = { onMinutesSelected(minutes) }
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun formatReminderMinutes(minutes: Int): String {
+    return when (minutes) {
+        0 -> stringResource(R.string.reminder_none)
+        5 -> stringResource(R.string.reminder_5_min)
+        10 -> stringResource(R.string.reminder_10_min)
+        15 -> stringResource(R.string.reminder_15_min)
+        30 -> stringResource(R.string.reminder_30_min)
+        60 -> stringResource(R.string.reminder_1_hour)
+        else -> stringResource(R.string.reminder_15_min)
     }
 }
 

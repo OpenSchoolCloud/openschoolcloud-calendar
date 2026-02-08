@@ -17,6 +17,7 @@ import nl.openschoolcloud.calendar.domain.model.Account
 import nl.openschoolcloud.calendar.domain.model.Calendar
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
+import nl.openschoolcloud.calendar.notification.ReminderWorker
 import java.time.Instant
 import javax.inject.Inject
 
@@ -64,7 +65,9 @@ class SettingsViewModel @Inject constructor(
             it.copy(
                 syncIntervalMinutes = appPreferences.syncIntervalMinutes,
                 themeMode = appPreferences.themeMode,
-                lastSyncTime = if (lastSync > 0) Instant.ofEpochMilli(lastSync) else null
+                lastSyncTime = if (lastSync > 0) Instant.ofEpochMilli(lastSync) else null,
+                notificationsEnabled = appPreferences.notificationsEnabled,
+                defaultReminderMinutes = appPreferences.defaultReminderMinutes
             )
         }
     }
@@ -108,6 +111,22 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setNotificationsEnabled(enabled: Boolean) {
+        appPreferences.notificationsEnabled = enabled
+        _uiState.update { it.copy(notificationsEnabled = enabled) }
+
+        if (enabled) {
+            ReminderWorker.schedule(appContext)
+        } else {
+            ReminderWorker.cancel(appContext)
+        }
+    }
+
+    fun setDefaultReminderMinutes(minutes: Int) {
+        appPreferences.defaultReminderMinutes = minutes
+        _uiState.update { it.copy(defaultReminderMinutes = minutes) }
+    }
+
     fun toggleCalendarVisibility(calendarId: String) {
         viewModelScope.launch {
             val calendar = calendarRepository.getCalendar(calendarId) ?: return@launch
@@ -127,5 +146,7 @@ data class SettingsUiState(
     val themeMode: String = AppPreferences.THEME_SYSTEM,
     val isSyncing: Boolean = false,
     val lastSyncTime: Instant? = null,
+    val notificationsEnabled: Boolean = true,
+    val defaultReminderMinutes: Int = AppPreferences.DEFAULT_REMINDER_MINUTES,
     val error: String? = null
 )

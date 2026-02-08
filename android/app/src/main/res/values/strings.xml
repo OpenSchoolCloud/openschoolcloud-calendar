@@ -132,6 +132,7 @@
     <string name="settings_never_synced">Nog niet bijgewerkt</string>
     <string name="settings_notifications">Meldingen</string>
     <string name="settings_default_reminder">Standaard herinnering</string>
+    <string name="settings_reminders_toggle">Herinneringen</string>
     <string name="settings_display">Weergave</string>
     <string name="settings_first_day_of_week">Eerste dag van de week</string>
     <string name="settings_time_format">Tijdnotatie</string>
@@ -160,7 +161,8 @@
     <string name="about_website">Website</string>
     <string name="about_support">Hulp nodig?</string>
     <string name="about_privacy">Privacybeleid</string>
-    <string name="about_terms">Gebruiksvoorwaarden</string>
+    <string name="about_terms">Algemene voorwaarden</string>
+    <string name="about_cookies">Cookiebeleid</string>
     <string name="about_opensource">Open source licenties</string>
     <string name="about_made_with">Gemaakt met ❤️ in Nederland</string>
 
@@ -251,6 +253,8 @@
     <string name="notification_event_in_minutes">Over %d minuten</string>
     <string name="notification_event_in_hours">Over %d uur</string>
     <string name="notification_event_tomorrow">Morgen</string>
+    <string name="notification_action_view">Bekijken</string>
+    <string name="notification_action_snooze">Uitstellen 5 min</string>
 
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>

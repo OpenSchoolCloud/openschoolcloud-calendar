@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application
         android:name=".App"
@@ -57,7 +59,17 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-        
+
+        <!-- Reminder receiver for alarm-based notifications -->
+        <receiver
+            android:name=".notification.ReminderReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="nl.openschoolcloud.calendar.ACTION_SHOW_REMINDER" />
+                <action android:name="nl.openschoolcloud.calendar.ACTION_SNOOZE" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
