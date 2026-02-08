@@ -30,9 +30,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         // Determine start destination based on whether there are existing accounts
-        val startDestination = if (credentialStorage.hasAnyAccount()) {
-            Route.Calendar.route
-        } else {
+        val startDestination = try {
+            if (credentialStorage.hasAnyAccount()) {
+                Route.Calendar.route
+            } else {
+                Route.Login.route
+            }
+        } catch (e: Exception) {
             Route.Login.route
         }
 

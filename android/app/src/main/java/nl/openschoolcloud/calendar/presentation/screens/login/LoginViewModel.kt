@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
+import android.util.Log
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import javax.inject.Inject
@@ -70,27 +71,34 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
-            val result = accountRepository.addAccount(
-                serverUrl = state.serverUrl,
-                username = state.username,
-                password = state.password
-            )
+            try {
+                Log.d("LoginViewModel", "Connecting to ${state.serverUrl} as ${state.username}")
+                val result = accountRepository.addAccount(
+                    serverUrl = state.serverUrl,
+                    username = state.username,
+                    password = state.password
+                )
 
-            result.fold(
-                onSuccess = { account ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isSuccess = true,
-                            accountId = account.id
-                        )
+                result.fold(
+                    onSuccess = { account ->
+                        Log.d("LoginViewModel", "Login success, accountId=${account.id}")
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isSuccess = true,
+                                accountId = account.id
+                            )
+                        }
+                    },
+                    onFailure = { error ->
+                        val loginError = mapErrorToLoginError(error)
+                        _uiState.update { it.copy(isLoading = false, error = loginError) }
                     }
-                },
-                onFailure = { error ->
-                    val loginError = mapErrorToLoginError(error)
-                    _uiState.update { it.copy(isLoading = false, error = loginError) }
-                }
-            )
+                )
+            } catch (e: Exception) {
+                Log.e("LoginViewModel", "Unexpected error during connect", e)
+                _uiState.update { it.copy(isLoading = false, error = LoginError.SERVER) }
+            }
         }
     }
 
@@ -98,6 +106,7 @@ class LoginViewModel @Inject constructor(
      * Map exceptions to user-friendly error types
      */
     private fun mapErrorToLoginError(error: Throwable): LoginError {
+        Log.e("LoginViewModel", "Login error: ${error.message}", error)
         return when {
             error.message?.contains("401") == true -> LoginError.AUTH_FAILED
             error.message?.contains("No calendars") == true -> LoginError.NO_CALENDARS

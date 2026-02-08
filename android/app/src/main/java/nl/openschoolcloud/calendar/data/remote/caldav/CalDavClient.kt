@@ -121,8 +121,9 @@ class CalDavClient @Inject constructor(
             body = CALENDAR_HOME_SET_REQUEST,
             depth = 0
         ).mapCatching { response ->
-            parseCalendarHomeSet(response)
+            val href = parseCalendarHomeSet(response)
                 ?: throw CalDavException("Could not find calendar home set")
+            resolveUrl(principalUrl, href)
         }
     }
     
@@ -488,11 +489,24 @@ class CalDavClient @Inject constructor(
     }
     
     private fun resolveUrl(baseUrl: String, relativeUrl: String): String {
-        return if (relativeUrl.startsWith("http")) {
-            relativeUrl
-        } else {
-            baseUrl.trimEnd('/') + "/" + relativeUrl.trimStart('/')
+        if (relativeUrl.startsWith("http")) {
+            return relativeUrl
         }
+        // Root-relative path (e.g., /remote.php/dav/...) → use origin only
+        if (relativeUrl.startsWith("/")) {
+            val origin = extractOrigin(baseUrl)
+            return origin + relativeUrl
+        }
+        // Relative path → append to base
+        return baseUrl.trimEnd('/') + "/" + relativeUrl.trimStart('/')
+    }
+
+    private fun extractOrigin(url: String): String {
+        // Extract scheme + host + port from a full URL
+        val schemeEnd = url.indexOf("://")
+        if (schemeEnd == -1) return url
+        val pathStart = url.indexOf('/', schemeEnd + 3)
+        return if (pathStart == -1) url else url.substring(0, pathStart)
     }
     
     // ==================== XML Parsing ====================
@@ -673,7 +687,7 @@ class CalDavClient @Inject constructor(
                             "response" -> {
                                 // End of response - add calendar if it's valid
                                 if (isCalendar && currentHref != null) {
-                                    val resolvedUrl = resolveUrl(baseUrl.substringBefore("/remote.php"), currentHref)
+                                    val resolvedUrl = resolveUrl(baseUrl, currentHref)
                                     calendars.add(
                                         CalendarInfo(
                                             url = resolvedUrl,
@@ -803,6 +817,7 @@ class CalDavClient @Inject constructor(
                                             // For simplicity, treat all as modified (caller can check existence)
                                             modified.add(href)
                                         }
+                                        else -> { /* Unknown status, skip */ }
                                     }
                                 }
                                 inResponse = false

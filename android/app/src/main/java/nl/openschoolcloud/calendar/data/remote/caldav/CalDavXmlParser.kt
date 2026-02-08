@@ -320,6 +320,7 @@ class CalDavXmlParser @Inject constructor() {
                                             // For simplicity, treat all as modified (caller can check existence)
                                             modified.add(href)
                                         }
+                                        else -> { /* Unknown status, skip */ }
                                     }
                                 }
                                 inResponse = false

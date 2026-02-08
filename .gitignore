@@ -103,3 +103,4 @@ coverage/
 *.zip
 *.tar.gz
 *.rar
+*.hprof
