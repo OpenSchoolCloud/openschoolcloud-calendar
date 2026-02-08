@@ -2,7 +2,9 @@
 <resources>
     <!-- App -->
     <string name="app_name">OpenSchoolCloud Agenda</string>
-    <string name="app_tagline">Jullie school, jullie data. In Nederland.</string>
+    <string name="app_tagline">Jouw agenda, jouw privacy</string>
+    <string name="powered_by">Powered by OpenSchoolCloud.nl</string>
+    <string name="about_privacy_tagline">Privacy voor jouw klas en leerlingen</string>
 
     <!-- Login scherm -->
     <string name="login_title">Inloggen</string>
@@ -11,8 +13,8 @@
     <string name="login_server_url_hint">bijv. cloud.jouwschool.nl</string>
     <string name="login_username">Gebruikersnaam</string>
     <string name="login_username_hint">Jouw gebruikersnaam</string>
-    <string name="login_password">Wachtwoord</string>
-    <string name="login_password_hint">Jouw wachtwoord</string>
+    <string name="login_password">App-wachtwoord</string>
+    <string name="login_password_hint">Je app-wachtwoord</string>
     <string name="login_password_help">App-wachtwoord aanmaken</string>
     <string name="login_button">Verbinden</string>
     <string name="login_connecting">Verbinden met server…</string>
@@ -64,8 +66,8 @@
     <string name="event_timezone">Tijdzone</string>
     <string name="event_reminder">Herinnering</string>
     <string name="event_add_reminder">Herinnering toevoegen</string>
-    <string name="event_attendees">Deelnemers</string>
-    <string name="event_add_attendee">Deelnemer toevoegen</string>
+    <string name="event_attendees">Genodigden</string>
+    <string name="event_add_attendee">Genodigde toevoegen</string>
     <string name="event_organizer">Organisator</string>
     <string name="event_save">Opslaan</string>
     <string name="event_delete">Verwijderen</string>
@@ -85,7 +87,7 @@
 
     <!-- Herinneringen - Menselijke taal -->
     <string name="reminder_none">Geen herinnering</string>
-    <string name="reminder_at_time">Op het moment zelf</string>
+    <string name="reminder_at_time">Op tijdstip van afspraak</string>
     <string name="reminder_5_min">5 minuten van tevoren</string>
     <string name="reminder_10_min">10 minuten van tevoren</string>
     <string name="reminder_15_min">15 minuten van tevoren</string>
@@ -99,8 +101,8 @@
     <!-- Dialogen -->
     <string name="dialog_delete_event_title">Afspraak verwijderen?</string>
     <string name="dialog_delete_event_message">Deze afspraak wordt verwijderd. Dit kan niet ongedaan worden gemaakt.</string>
-    <string name="dialog_notify_attendees_title">Deelnemers informeren?</string>
-    <string name="dialog_notify_attendees_message">Wil je de deelnemers een update sturen?</string>
+    <string name="dialog_notify_attendees_title">Genodigden informeren?</string>
+    <string name="dialog_notify_attendees_message">Wil je een update sturen naar de genodigden?</string>
     <string name="dialog_discard_changes_title">Wijzigingen negeren?</string>
     <string name="dialog_discard_changes_message">Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je deze wilt negeren?</string>
     <string name="dialog_yes">Ja</string>

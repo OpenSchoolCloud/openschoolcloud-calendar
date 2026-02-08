@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,15 +28,21 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -55,6 +62,17 @@ fun QuickCaptureBar(
     viewModel: QuickCaptureViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Auto-focus when the bar appears
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    val canConfirm = uiState.parsedEvent != null &&
+        uiState.parsedEvent!!.title.length >= 2 &&
+        uiState.input.length >= 3
 
     Column(modifier = modifier) {
         OutlinedTextField(
@@ -91,10 +109,18 @@ fun QuickCaptureBar(
             ),
             keyboardActions = KeyboardActions(
                 onDone = {
-                    uiState.parsedEvent?.let { onEventParsed(it) }
+                    if (canConfirm) {
+                        keyboardController?.hide()
+                        uiState.parsedEvent?.let {
+                            onEventParsed(it)
+                            viewModel.clear()
+                        }
+                    }
                 }
             ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
@@ -110,7 +136,12 @@ fun QuickCaptureBar(
             uiState.parsedEvent?.let { parsed ->
                 QuickCapturePreview(
                     parsedEvent = parsed,
-                    onConfirm = { onEventParsed(parsed) },
+                    canConfirm = canConfirm,
+                    onConfirm = {
+                        keyboardController?.hide()
+                        onEventParsed(parsed)
+                        viewModel.clear()
+                    },
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
@@ -121,6 +152,7 @@ fun QuickCaptureBar(
 @Composable
 private fun QuickCapturePreview(
     parsedEvent: ParsedEvent,
+    canConfirm: Boolean,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -130,70 +162,92 @@ private fun QuickCapturePreview(
             containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
         )
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = parsedEvent.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 4.dp)
-                ) {
-                    Icon(
-                        Icons.Default.CalendarToday,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.width(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = formatDateTimePreview(parsedEvent),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = parsedEvent.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
-                }
 
-                parsedEvent.location?.let { location ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 2.dp)
+                        modifier = Modifier.padding(top = 4.dp)
                     ) {
                         Icon(
-                            Icons.Default.LocationOn,
+                            Icons.Default.CalendarToday,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = location,
+                            text = formatDateTimePreview(parsedEvent),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+
+                    parsedEvent.location?.let { location ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 2.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.LocationOn,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = location,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                FilledIconButton(
+                    onClick = onConfirm,
+                    enabled = canConfirm,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        disabledContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = stringResource(R.string.quick_capture_confirm),
+                        tint = if (canConfirm) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
-            FilledIconButton(
-                onClick = onConfirm,
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Icon(
-                    Icons.Default.Check,
-                    contentDescription = stringResource(R.string.event_save),
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            // Confidence indicator
+            Spacer(modifier = Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { parsedEvent.confidence },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp),
+                color = when {
+                    parsedEvent.confidence >= 0.7f -> MaterialTheme.colorScheme.primary
+                    parsedEvent.confidence >= 0.4f -> MaterialTheme.colorScheme.tertiary
+                    else -> MaterialTheme.colorScheme.outline
+                },
+                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            )
         }
     }
 }

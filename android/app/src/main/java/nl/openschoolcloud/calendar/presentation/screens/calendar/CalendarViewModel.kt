@@ -276,13 +276,16 @@ class CalendarViewModel @Inject constructor(
      */
     fun createEventFromParsed(parsed: ParsedEvent) {
         viewModelScope.launch {
+            // Use selected date as fallback when no date was detected
+            val effectiveDate = parsed.startDate ?: _uiState.value.selectedDate
+
             val startDateTime = LocalDateTime.of(
-                parsed.startDate ?: LocalDate.now(),
+                effectiveDate,
                 parsed.startTime ?: LocalTime.of(9, 0)
             )
 
             val endDateTime = if (parsed.endTime != null) {
-                LocalDateTime.of(parsed.startDate ?: LocalDate.now(), parsed.endTime)
+                LocalDateTime.of(effectiveDate, parsed.endTime)
             } else {
                 startDateTime.plus(parsed.duration)
             }

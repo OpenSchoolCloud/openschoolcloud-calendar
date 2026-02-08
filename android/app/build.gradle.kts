@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "nl.openschoolcloud.calendar"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "nl.openschoolcloud.calendar"

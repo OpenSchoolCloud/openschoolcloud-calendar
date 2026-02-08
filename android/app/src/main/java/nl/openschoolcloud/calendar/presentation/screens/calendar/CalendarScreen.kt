@@ -36,11 +36,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -60,16 +60,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import nl.openschoolcloud.calendar.R
 import nl.openschoolcloud.calendar.domain.model.Event
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
+import java.time.temporal.WeekFields
 import java.util.Locale
 
 /**
@@ -79,7 +80,7 @@ import java.util.Locale
 @Composable
 fun CalendarScreen(
     onEventClick: (String) -> Unit,
-    onCreateEvent: (String?) -> Unit,
+    @Suppress("UNUSED_PARAMETER") onCreateEvent: (String?) -> Unit,
     onSettingsClick: () -> Unit,
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
@@ -135,54 +136,66 @@ fun CalendarScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Quick Capture bar (expandable)
-                AnimatedVisibility(
-                    visible = showQuickCapture,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    QuickCaptureBar(
-                        onEventParsed = { parsed ->
-                            viewModel.createEventFromParsed(parsed)
-                            showQuickCapture = false
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    )
-                }
+            // Quick Capture bar (expandable)
+            AnimatedVisibility(
+                visible = showQuickCapture,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                QuickCaptureBar(
+                    onEventParsed = { parsed ->
+                        viewModel.createEventFromParsed(parsed)
+                        showQuickCapture = false
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                )
+            }
 
-                // Week header with day names
-                WeekHeader(
+            // Week header with day names and event dots
+            WeekHeader(
+                weekDays = uiState.getWeekDays(),
+                selectedDate = uiState.selectedDate,
+                eventsByDay = uiState.eventsByDay,
+                onDayClick = viewModel::selectDate
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            // Week content - day columns + selected day detail
+            if (uiState.isLoading && uiState.eventsByDay.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            } else {
+                // Week grid (compact overview)
+                WeekContent(
                     weekDays = uiState.getWeekDays(),
+                    eventsByDay = uiState.eventsByDay,
                     selectedDate = uiState.selectedDate,
-                    onDayClick = viewModel::selectDate
+                    onDayClick = viewModel::selectDate,
+                    onEventClick = onEventClick,
+                    modifier = Modifier.weight(0.4f)
                 )
 
-                // Week content - day columns
-                if (uiState.isLoading && uiState.eventsByDay.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    WeekContent(
-                        weekDays = uiState.getWeekDays(),
-                        eventsByDay = uiState.eventsByDay,
-                        selectedDate = uiState.selectedDate,
-                        onDayClick = viewModel::selectDate,
-                        onEventClick = onEventClick,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                // Selected day detail panel
+                SelectedDayPanel(
+                    date = uiState.selectedDate,
+                    events = uiState.getEventsForDay(uiState.selectedDate),
+                    onEventClick = onEventClick,
+                    modifier = Modifier.weight(0.6f)
+                )
             }
         }
     }
@@ -202,12 +215,15 @@ private fun CalendarTopBar(
     val weekEnd = weekStart.plusDays(6)
     val monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
 
-    // Show month/year for the week (use the month that has most days in this week)
+    // Show month/year for the week
     val displayMonth = if (weekStart.monthValue == weekEnd.monthValue) {
         weekStart.format(monthYearFormatter)
     } else {
         "${weekStart.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())} - ${weekEnd.format(monthYearFormatter)}"
     }
+
+    // Week number (ISO standard, used in NL schools)
+    val weekNumber = weekStart.get(WeekFields.ISO.weekOfWeekBasedYear())
 
     TopAppBar(
         title = {
@@ -220,10 +236,17 @@ private fun CalendarTopBar(
                         contentDescription = stringResource(R.string.a11y_previous)
                     )
                 }
-                Text(
-                    text = displayMonth,
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = displayMonth,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = stringResource(R.string.calendar_week, weekNumber),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                    )
+                }
                 IconButton(onClick = onNextWeek) {
                     Icon(
                         Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -234,13 +257,17 @@ private fun CalendarTopBar(
         },
         actions = {
             TextButton(onClick = onToday) {
-                Text(stringResource(R.string.calendar_today))
+                Text(
+                    text = stringResource(R.string.calendar_today),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             }
             IconButton(onClick = onSync, enabled = !isSyncing) {
                 if (isSyncing) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
                     Icon(
@@ -257,7 +284,9 @@ private fun CalendarTopBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
         )
     )
 }
@@ -266,6 +295,7 @@ private fun CalendarTopBar(
 private fun WeekHeader(
     weekDays: List<LocalDate>,
     selectedDate: LocalDate,
+    eventsByDay: Map<LocalDate, List<Event>>,
     onDayClick: (LocalDate) -> Unit
 ) {
     val today = LocalDate.now()
@@ -280,6 +310,8 @@ private fun WeekHeader(
         weekDays.forEach { date ->
             val isToday = date == today
             val isSelected = date == selectedDate
+            val isWeekend = date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY
+            val hasEvents = (eventsByDay[date]?.size ?: 0) > 0
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -288,12 +320,15 @@ private fun WeekHeader(
                     .clickable { onDayClick(date) }
                     .padding(vertical = 4.dp)
             ) {
-                // Day name (Mon, Tue, etc.)
+                // Day name (Ma, Di, etc.)
                 Text(
                     text = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isToday) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = when {
+                        isToday -> MaterialTheme.colorScheme.primary
+                        isWeekend -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -328,9 +363,37 @@ private fun WeekHeader(
                         color = when {
                             isToday -> MaterialTheme.colorScheme.onPrimary
                             isSelected -> MaterialTheme.colorScheme.primary
+                            isWeekend -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             else -> MaterialTheme.colorScheme.onSurface
                         }
                     )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Event dots
+                if (hasEvents) {
+                    val eventCount = eventsByDay[date]?.size ?: 0
+                    val dotCount = eventCount.coerceAtMost(3)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        modifier = Modifier.height(6.dp)
+                    ) {
+                        repeat(dotCount) {
+                            Box(
+                                modifier = Modifier
+                                    .size(4.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isToday) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    )
+                            )
+                        }
+                    }
+                } else {
+                    // Placeholder for consistent height
+                    Spacer(modifier = Modifier.height(6.dp))
                 }
             }
         }
@@ -374,36 +437,27 @@ private fun DayColumn(
     onEventClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val today = LocalDate.now()
-    val isToday = date == today
+    val isWeekend = date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY
 
     Column(
         modifier = modifier
             .fillMaxHeight()
             .background(
-                if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-                else Color.Transparent
+                when {
+                    isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                    isWeekend -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                    else -> Color.Transparent
+                }
             )
             .border(
                 width = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
             .clickable(onClick = onDayClick)
     ) {
         if (events.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(4.dp),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                Text(
-                    text = stringResource(R.string.calendar_no_events),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-            }
+            // Empty state - just subtle empty space
+            Box(modifier = Modifier.fillMaxSize())
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -440,35 +494,210 @@ private fun EventChip(
             containerColor = eventColor.copy(alpha = 0.15f)
         )
     ) {
-        Column(
-            modifier = Modifier.padding(4.dp)
-        ) {
-            // Time for non-all-day events
-            if (!event.allDay) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Left color indicator
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height(if (event.allDay) 24.dp else 36.dp)
+                    .background(eventColor)
+            )
+
+            Column(
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+            ) {
+                // Time for non-all-day events
+                if (!event.allDay) {
+                    Text(
+                        text = startTime.format(timeFormatter),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = eventColor,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Event title
                 Text(
-                    text = startTime.format(timeFormatter),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = eventColor,
-                    fontWeight = FontWeight.Medium
+                    text = event.summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
+        }
+    }
+}
 
-            // Event title
+/**
+ * Selected day detail panel - shows expanded event list for the selected day
+ */
+@Composable
+private fun SelectedDayPanel(
+    date: LocalDate,
+    events: List<Event>,
+    onEventClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val nlLocale = Locale("nl", "NL")
+    val dateFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM", nlLocale)
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    val zoneId = ZoneId.systemDefault()
+    val isToday = date == LocalDate.now()
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+    ) {
+        // Day header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                text = event.summary,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface
+                text = if (isToday) {
+                    stringResource(R.string.calendar_today) + " - " + date.format(dateFormatter)
+                } else {
+                    date.format(dateFormatter)
+                },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isToday) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
             )
+
+            if (events.isNotEmpty()) {
+                Text(
+                    text = "${events.size}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
 
-        // Left color indicator
-        Box(
-            modifier = Modifier
-                .width(3.dp)
-                .fillMaxHeight()
-                .background(eventColor)
-        )
+        if (events.isEmpty()) {
+            // Empty state
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = stringResource(R.string.empty_events_today),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = stringResource(R.string.empty_events_today_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        } else {
+            // Event list
+            val sortedEvents = remember(events) {
+                events.sortedWith(compareBy({ !it.allDay }, { it.dtStart }))
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(sortedEvents, key = { it.uid }) { event ->
+                    SelectedDayEventCard(
+                        event = event,
+                        timeFormatter = timeFormatter,
+                        zoneId = zoneId,
+                        onClick = { onEventClick(event.uid) }
+                    )
+                }
+                // Bottom spacing for FAB
+                item { Spacer(modifier = Modifier.height(72.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelectedDayEventCard(
+    event: Event,
+    timeFormatter: DateTimeFormatter,
+    zoneId: ZoneId,
+    onClick: () -> Unit
+) {
+    val eventColor = event.color?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = eventColor.copy(alpha = 0.08f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Color bar
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(64.dp)
+                    .background(eventColor, RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp))
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            ) {
+                // Title
+                Text(
+                    text = event.summary,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                // Time
+                val timeText = if (event.allDay) {
+                    stringResource(R.string.calendar_all_day)
+                } else {
+                    val start = event.dtStart.atZone(zoneId).toLocalTime().format(timeFormatter)
+                    val end = event.dtEnd?.atZone(zoneId)?.toLocalTime()?.format(timeFormatter)
+                    if (end != null) "$start - $end" else start
+                }
+                Text(
+                    text = timeText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = eventColor
+                )
+
+                // Location
+                event.location?.let { location ->
+                    Text(
+                        text = location,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
     }
 }

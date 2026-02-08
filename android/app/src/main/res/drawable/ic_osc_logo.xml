@@ -1,17 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="120dp"
-    android:height="40dp"
+    android:height="100dp"
     android:viewportWidth="120"
-    android:viewportHeight="40">
+    android:viewportHeight="100">
 
-    <!-- OSC Cloud shape - placeholder, replace with actual logo paths from designer -->
+    <!-- OSC Cloud shape -->
     <path
         android:fillColor="#3B9FD9"
-        android:pathData="M30,10 C20,10 15,18 15,25 C15,32 22,38 30,38
-                          L90,38 C98,38 105,32 105,25 C105,18 100,10 90,10
-                          C85,5 75,5 70,10 C65,5 55,5 50,10
-                          C45,5 35,5 30,10 Z"/>
+        android:pathData="M30,20 C20,20 12,28 12,38 C12,48 20,56 30,56
+                          L90,56 C100,56 108,48 108,38 C108,28 100,20 90,20
+                          C86,12 78,8 70,8 C66,8 62,9 59,12
+                          C56,9 52,8 48,8 C40,8 34,12 30,20 Z"/>
 
-    <!-- Note: Text "OSC" will be rendered separately using Typography -->
+    <!-- Calendar grid inside cloud -->
+    <!-- Top bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,28 L80,28 L80,34 L40,34 Z"/>
+
+    <!-- Calendar pins -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,25 L48,31 M72,25 L72,31"
+        android:strokeColor="#2B7FB9"
+        android:strokeWidth="2"/>
+
+    <!-- Grid lines -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,34 L80,34 L80,50 L40,50 Z"/>
+
+    <!-- Grid cells -->
+    <path
+        android:strokeColor="#3B9FD9"
+        android:strokeWidth="0.8"
+        android:pathData="M50,34 L50,50 M60,34 L60,50 M70,34 L70,50 M40,42 L80,42"/>
+
+    <!-- Checkmark in one cell -->
+    <path
+        android:strokeColor="#2B7FB9"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M52,44 L56,48 L66,38"/>
+
+    <!-- Tagline: veilig in de cloud -->
+    <path
+        android:fillColor="#2B7FB9"
+        android:pathData="M25,68 C25,64 30,60 38,60 L82,60 C90,60 95,64 95,68 C95,72 90,76 82,76 L38,76 C30,76 25,72 25,68 Z"
+        android:fillAlpha="0.15"/>
 </vector>
