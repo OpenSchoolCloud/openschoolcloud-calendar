@@ -37,11 +37,13 @@ import nl.openschoolcloud.calendar.data.repository.BookingRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.CalendarRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.EventRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.HolidayRepositoryImpl
+import nl.openschoolcloud.calendar.data.repository.ReflectionRepositoryImpl
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import nl.openschoolcloud.calendar.domain.repository.BookingRepository
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
 import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
+import nl.openschoolcloud.calendar.domain.repository.ReflectionRepository
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
@@ -126,4 +128,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindHolidayRepository(impl: HolidayRepositoryImpl): HolidayRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindReflectionRepository(impl: ReflectionRepositoryImpl): ReflectionRepository
 }
