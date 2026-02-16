@@ -1,0 +1,1 @@
+Privacy-first agenda-app voor het onderwijs. Synchroniseert met Nextcloud.

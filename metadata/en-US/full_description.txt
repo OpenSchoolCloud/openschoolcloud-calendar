@@ -1,0 +1,28 @@
+OSC Calendar is a secure calendar app designed for Dutch education. Sync with your Nextcloud server via CalDAV and keep all your appointments, schedules, and reminders in one place.
+
+Why OSC Calendar?
+
+Privacy First
+No Google, no tracking, no ads. Your data stays in the Netherlands, under your control. Fully open source (AGPL v3).
+
+Nextcloud Sync
+Connect to your school cloud via CalDAV. Multiple calendars, automatic sync, and offline access.
+
+Quick Event Creation
+Just type "tomorrow 2pm meeting" and the event is created automatically. Works in Dutch and English.
+
+Home Screen Widgets
+View today's appointments or your next event directly on your home screen.
+
+Reminders
+Set reminders so you never miss an appointment.
+
+Booking Links & QR Codes
+Share booking links for parent-teacher conferences, including QR codes.
+
+Dark Mode
+Easy on your eyes, day and night.
+
+OSC Calendar is developed by OpenSchoolCloud, a Dutch initiative for privacy-friendly school solutions. The app is fully open source and can be audited by anyone.
+
+More information: openschoolcloud.nl

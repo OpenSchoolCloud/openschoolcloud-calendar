@@ -1,0 +1,1 @@
+Privacy-first calendar app for education. Syncs with Nextcloud.
