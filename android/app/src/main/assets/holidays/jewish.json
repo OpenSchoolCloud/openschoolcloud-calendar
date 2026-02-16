@@ -1,0 +1,116 @@
+{
+  "calendarId": "jewish",
+  "category": "JEWISH",
+  "displayName": "Joodse feestdagen",
+  "description": "Belangrijke joodse feestdagen",
+  "events": [
+    {
+      "titleKey": "pesach",
+      "title": "Pesach",
+      "description": "Pesach duurt acht dagen en herinnert aan de bevrijding van het Joodse volk uit de slavernij in Egypte. Tijdens de sedermaaltijd wordt het verhaal naverteld met speciale gerechten. Er wordt matze gegeten — plat brood zonder gist — omdat er geen tijd was om het brood te laten rijzen.",
+      "classroomTip": "Bespreek het thema vrijheid. Waarom is het belangrijk om verhalen over vrijheid te blijven vertellen?",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-04-12",
+        "2026": "2026-04-01",
+        "2027": "2027-04-21",
+        "2028": "2028-04-10",
+        "2029": "2029-03-30",
+        "2030": "2030-04-17"
+      }
+    },
+    {
+      "titleKey": "rosh_hashana",
+      "title": "Rosh Hashana",
+      "description": "Rosh Hashana is het Joodse Nieuwjaar. Het valt meestal in september of oktober. Er wordt op de sjofar geblazen — een ramshoorn — als een soort wekker voor de ziel. Mensen eten appel met honing voor een zoet nieuw jaar en wensen elkaar 'Shana Tova' (goed nieuwjaar).",
+      "classroomTip": "Welke tradities hebben jullie bij nieuwjaar? Vergelijk de verschillende manieren om het nieuwe jaar te vieren.",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-09-22",
+        "2026": "2026-09-11",
+        "2027": "2027-10-01",
+        "2028": "2028-09-20",
+        "2029": "2029-09-09",
+        "2030": "2030-09-27"
+      }
+    },
+    {
+      "titleKey": "jom_kippur",
+      "title": "Jom Kippur",
+      "description": "Jom Kippur is de heiligste dag in het jodendom, tien dagen na Rosh Hashana. Het is de Grote Verzoendag: een dag van vasten, gebed en nadenken. Mensen vragen vergiffenis aan anderen en aan God. Het is een stille, ingetogen dag.",
+      "classroomTip": "Bespreek het thema vergeving. Waarom is het soms moeilijk om sorry te zeggen?",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-10-01",
+        "2026": "2026-09-20",
+        "2027": "2027-10-10",
+        "2028": "2028-09-29",
+        "2029": "2029-09-18",
+        "2030": "2030-10-06"
+      }
+    },
+    {
+      "titleKey": "chanoeka",
+      "title": "Chanoeka",
+      "description": "Chanoeka is het Joodse Lichtfeest en duurt acht dagen. Elke avond wordt een extra kaarsje aangestoken op de chanoekia (kandelaar). Het feest herinnert aan een wonder in de tempel in Jeruzalem, waar een kleine kruik olie acht dagen bleef branden. Kinderen spelen met een dreidel en eten oliebollen (soefganiot).",
+      "classroomTip": "Maak samen een dreidel en leer het spelletje. Wat betekent licht voor jullie?",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-12-14",
+        "2026": "2026-12-04",
+        "2027": "2027-12-24",
+        "2028": "2028-12-12",
+        "2029": "2029-12-01",
+        "2030": "2030-12-20"
+      }
+    },
+    {
+      "titleKey": "soekkot",
+      "title": "Soekkot",
+      "description": "Soekkot is het Loofhuttenfeest en duurt zeven dagen. Joodse families bouwen een soeka — een tijdelijke hut met een dak van takken en bladeren. Ze eten en soms slapen ze erin. Het feest herinnert aan de veertig jaar dat het Joodse volk door de woestijn trok.",
+      "classroomTip": "Bouw samen een mini-loofhut in de klas van takken en bladeren. Hoe zou het zijn om buiten te wonen?",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-10-06",
+        "2026": "2026-09-25",
+        "2027": "2027-10-15",
+        "2028": "2028-10-04",
+        "2029": "2029-09-23",
+        "2030": "2030-10-11"
+      }
+    },
+    {
+      "titleKey": "sjawoeot",
+      "title": "Sjawoeot",
+      "description": "Sjawoeot valt zeven weken na Pesach en viert dat het Joodse volk de Tora (de vijf boeken van Mozes) ontving. Het is ook een oogstfeest. Mensen eten zuivelproducten zoals cheesecake en versieren het huis met bloemen en planten.",
+      "classroomTip": "Welke boeken zijn belangrijk in jullie leven? Bespreek waarom bepaalde boeken bijzonder zijn.",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-06-01",
+        "2026": "2026-05-21",
+        "2027": "2027-06-10",
+        "2028": "2028-05-30",
+        "2029": "2029-05-19",
+        "2030": "2030-06-06"
+      }
+    }
+  ]
+}

@@ -24,14 +24,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.domain.model.Calendar
 import nl.openschoolcloud.calendar.domain.model.Event
+import nl.openschoolcloud.calendar.domain.model.HolidayEvent
 import nl.openschoolcloud.calendar.domain.model.SyncStatus
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
+import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
 import nl.openschoolcloud.calendar.domain.usecase.ParsedEvent
 import java.time.DayOfWeek
 import java.time.Instant
@@ -51,7 +52,8 @@ import javax.inject.Inject
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val eventRepository: EventRepository,
-    private val calendarRepository: CalendarRepository
+    private val calendarRepository: CalendarRepository,
+    private val holidayRepository: HolidayRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CalendarUiState())
@@ -109,6 +111,16 @@ class CalendarViewModel @Inject constructor(
                             error = null
                         )
                     }
+                }
+        }
+
+        // Load holiday events in parallel
+        viewModelScope.launch {
+            holidayRepository.getHolidayEvents(weekStart, weekEnd.minusDays(1))
+                .catch { /* Holiday loading is non-critical */ }
+                .collect { holidays ->
+                    val holidaysByDay = holidays.groupBy { it.date }
+                    _uiState.update { it.copy(holidayEventsByDay = holidaysByDay) }
                 }
         }
     }
@@ -289,6 +301,23 @@ class CalendarViewModel @Inject constructor(
     }
 
     /**
+     * Show holiday event detail
+     */
+    fun onHolidayEventClick(eventId: String) {
+        viewModelScope.launch {
+            val event = holidayRepository.getHolidayEvent(eventId)
+            _uiState.update { it.copy(selectedHolidayEvent = event) }
+        }
+    }
+
+    /**
+     * Dismiss holiday detail
+     */
+    fun dismissHolidayDetail() {
+        _uiState.update { it.copy(selectedHolidayEvent = null) }
+    }
+
+    /**
      * Create an event from Quick Capture parsed result
      */
     fun createEventFromParsed(parsed: ParsedEvent) {
@@ -362,6 +391,8 @@ data class CalendarUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val weekStart: LocalDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
     val eventsByDay: Map<LocalDate, List<Event>> = emptyMap(),
+    val holidayEventsByDay: Map<LocalDate, List<HolidayEvent>> = emptyMap(),
+    val selectedHolidayEvent: HolidayEvent? = null,
     val calendars: List<Calendar> = emptyList(),
     val isLoading: Boolean = false,
     val isSyncing: Boolean = false,
@@ -375,6 +406,13 @@ data class CalendarUiState(
      */
     fun getEventsForDay(date: LocalDate): List<Event> {
         return eventsByDay[date] ?: emptyList()
+    }
+
+    /**
+     * Get holiday events for a specific day
+     */
+    fun getHolidayEventsForDay(date: LocalDate): List<HolidayEvent> {
+        return holidayEventsByDay[date] ?: emptyList()
     }
 
     /**

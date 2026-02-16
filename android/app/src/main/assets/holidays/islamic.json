@@ -1,0 +1,98 @@
+{
+  "calendarId": "islamic",
+  "category": "ISLAMIC",
+  "displayName": "Islamitische feestdagen",
+  "description": "Belangrijke islamitische feestdagen",
+  "events": [
+    {
+      "titleKey": "ramadan_start",
+      "title": "Begin Ramadan",
+      "description": "De Ramadan is de negende maand van de islamitische kalender. Moslims vasten overdag: ze eten en drinken niet van zonsopgang tot zonsondergang. Het is een tijd van bezinning, gebed en samen zijn. Aan het eind van elke dag wordt het vasten gebroken met de iftar-maaltijd.",
+      "classroomTip": "Heb je weleens gevast? Bespreek waarom mensen vasten en hoe dat voelt.",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-02-28",
+        "2026": "2026-02-17",
+        "2027": "2027-02-07",
+        "2028": "2028-01-27",
+        "2029": "2029-01-15",
+        "2030": "2030-01-05"
+      }
+    },
+    {
+      "titleKey": "eid_al_fitr",
+      "title": "Eid al-Fitr (Suikerfeest)",
+      "description": "Het Suikerfeest markeert het einde van de vastenmaand Ramadan. Het is een groot feest! Moslims doen mooie kleren aan, gaan naar de moskee voor het gebed en bezoeken familie en vrienden. Er worden veel lekkere zoete gerechten en snoep gedeeld — vandaar de naam Suikerfeest.",
+      "classroomTip": "Welke feesten vieren jullie thuis? Vergelijk de tradities van het Suikerfeest met andere feesten.",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-03-30",
+        "2026": "2026-03-20",
+        "2027": "2027-03-09",
+        "2028": "2028-02-27",
+        "2029": "2029-02-14",
+        "2030": "2030-02-04"
+      }
+    },
+    {
+      "titleKey": "eid_al_adha",
+      "title": "Eid al-Adha (Offerfeest)",
+      "description": "Het Offerfeest is een van de belangrijkste islamitische feestdagen. Het herinnert aan het verhaal van profeet Ibrahim die bereid was zijn zoon te offeren uit gehoorzaamheid aan God. Families delen vlees met armen en buren. Het feest duurt drie dagen.",
+      "classroomTip": "Dit verhaal komt ook voor in de Bijbel (Abraham). Vergelijk de twee versies samen.",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-06-06",
+        "2026": "2026-05-27",
+        "2027": "2027-05-16",
+        "2028": "2028-05-04",
+        "2029": "2029-04-24",
+        "2030": "2030-04-13"
+      }
+    },
+    {
+      "titleKey": "mawlid",
+      "title": "Mawlid an-Nabi",
+      "description": "Op deze dag vieren moslims de geboorte van profeet Mohammed. In moskeeën worden verhalen over zijn leven verteld en wordt er samen gebeden. Sommige families maken speciale gerechten en delen snoep uit aan de buren.",
+      "classroomTip": "Welke verhalen vertellen jullie thuis? Bespreek hoe verhalen van generatie op generatie worden doorgegeven.",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-09-04",
+        "2026": "2026-08-25",
+        "2027": "2027-08-14",
+        "2028": "2028-08-02",
+        "2029": "2029-07-23",
+        "2030": "2030-07-12"
+      }
+    },
+    {
+      "titleKey": "lailat_al_qadr",
+      "title": "Laylat al-Qadr (Nacht van de Bestemming)",
+      "description": "Laylat al-Qadr valt in de laatste tien dagen van de Ramadan. Volgens moslims is dit de nacht waarop de Koran voor het eerst werd geopenbaard. Het is de heiligste nacht van het jaar, en veel moslims brengen deze nacht door in gebed.",
+      "classroomTip": null,
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-03-27",
+        "2026": "2026-03-17",
+        "2027": "2027-03-06",
+        "2028": "2028-02-24",
+        "2029": "2029-02-11",
+        "2030": "2030-02-01"
+      }
+    }
+  ]
+}

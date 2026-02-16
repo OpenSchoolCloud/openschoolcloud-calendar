@@ -1,0 +1,62 @@
+{
+  "calendarId": "chinese_asian",
+  "category": "CHINESE_ASIAN",
+  "displayName": "Chinese en Aziatische feestdagen",
+  "description": "Belangrijke Chinese en Aziatische feestdagen",
+  "events": [
+    {
+      "titleKey": "chinees_nieuwjaar",
+      "title": "Chinees Nieuwjaar",
+      "description": "Chinees Nieuwjaar is het belangrijkste Chinese feest en markeert het begin van het nieuwe maanjaar. De viering duurt vijftien dagen met drakendansen, vuurwerk en rode envelopjes met geld. Elk jaar hoort bij een dier uit de Chinese dierenriem, zoals de draak, het konijn of de slang.",
+      "classroomTip": "Zoek uit welk dier bij jullie geboortejaar hoort. Maak samen een poster van de Chinese dierenriem!",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-01-29",
+        "2026": "2026-02-17",
+        "2027": "2027-02-06",
+        "2028": "2028-01-26",
+        "2029": "2029-02-13",
+        "2030": "2030-02-03"
+      }
+    },
+    {
+      "titleKey": "maanfestival",
+      "title": "Maanfestival (Midherfstfestival)",
+      "description": "Het Maanfestival wordt gevierd als de maan het helderst en volst is, in september of oktober. Families komen samen om maancakes te eten en naar de maan te kijken. Er worden lantaarns opgehangen en kinderen lopen met lampionnen. Het verhaal gaat over Chang'e, de maangodin.",
+      "classroomTip": "Ga samen naar buiten en kijk naar de maan. Wat zie je? Ken je verhalen over de maan?",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-10-06",
+        "2026": "2026-09-25",
+        "2027": "2027-10-15",
+        "2028": "2028-10-03",
+        "2029": "2029-09-22",
+        "2030": "2030-10-12"
+      }
+    },
+    {
+      "titleKey": "drakenbootfestival",
+      "title": "Drakenbootfestival",
+      "description": "Het Drakenbootfestival wordt gevierd met spectaculaire bootracen in lange, versierde boten met drakenkoppen. Mensen eten zongzi — kleefrijst gewikkeld in bamboebladeren. Het feest herinnert aan de dichter Qu Yuan en vindt plaats op de vijfde dag van de vijfde maand van de maankalender.",
+      "classroomTip": "Zoek filmpjes van drakenbootraces op. Wat is er nodig om als team goed samen te roeien?",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-05-31",
+        "2026": "2026-06-19",
+        "2027": "2027-06-09",
+        "2028": "2028-05-28",
+        "2029": "2029-06-16",
+        "2030": "2030-06-05"
+      }
+    }
+  ]
+}

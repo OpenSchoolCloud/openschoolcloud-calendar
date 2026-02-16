@@ -30,14 +30,17 @@ import nl.openschoolcloud.calendar.data.local.AppDatabase
 import nl.openschoolcloud.calendar.data.local.dao.AccountDao
 import nl.openschoolcloud.calendar.data.local.dao.CalendarDao
 import nl.openschoolcloud.calendar.data.local.dao.EventDao
+import nl.openschoolcloud.calendar.data.local.dao.HolidayDao
 import nl.openschoolcloud.calendar.data.repository.AccountRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.BookingRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.CalendarRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.EventRepositoryImpl
+import nl.openschoolcloud.calendar.data.repository.HolidayRepositoryImpl
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import nl.openschoolcloud.calendar.domain.repository.BookingRepository
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
+import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
@@ -75,7 +78,9 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "openschoolcloud_calendar.db"
-        ).build()
+        )
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides
@@ -86,6 +91,9 @@ object AppModule {
 
     @Provides
     fun provideEventDao(db: AppDatabase): EventDao = db.eventDao()
+
+    @Provides
+    fun provideHolidayDao(db: AppDatabase): HolidayDao = db.holidayDao()
 }
 
 /**
@@ -110,4 +118,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindBookingRepository(impl: BookingRepositoryImpl): BookingRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindHolidayRepository(impl: HolidayRepositoryImpl): HolidayRepository
 }

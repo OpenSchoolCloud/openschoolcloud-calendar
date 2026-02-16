@@ -302,6 +302,20 @@
     <string name="crash_dialog_text">Er is een onverwachte fout opgetreden. Wil je een foutrapport versturen via e-mail? Er worden geen persoonlijke gegevens meegestuurd.</string>
     <string name="crash_dialog_comment">Wat was je aan het doen? (optioneel)</string>
 
+    <!-- Feestdagenkalenders -->
+    <string name="holiday_settings_section">Feestdagen</string>
+    <string name="holiday_discover_title">Feestdagenkalenders</string>
+    <string name="holiday_section_title">Feestdagen</string>
+    <string name="holiday_classroom_tip">Gespreksstarter voor in de klas</string>
+    <string name="holiday_privacy_notice">Je keuzes worden alleen lokaal opgeslagen en nooit gedeeld.</string>
+    <string name="holiday_cat_dutch">Nederlandse feestdagen</string>
+    <string name="holiday_cat_islamic">Islamitische feestdagen</string>
+    <string name="holiday_cat_christian">Christelijke feestdagen</string>
+    <string name="holiday_cat_jewish">Joodse feestdagen</string>
+    <string name="holiday_cat_hindu">Hindoestaanse feestdagen</string>
+    <string name="holiday_cat_chinese">Chinese en Aziatische feestdagen</string>
+    <string name="holiday_cat_international">Internationale dagen</string>
+
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>
     <string name="action_cancel">Annuleren</string>

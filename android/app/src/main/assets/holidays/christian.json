@@ -1,0 +1,118 @@
+{
+  "calendarId": "christian",
+  "category": "CHRISTIAN",
+  "displayName": "Christelijke feestdagen",
+  "description": "Belangrijke christelijke feestdagen en vrije dagen in Nederland",
+  "events": [
+    {
+      "titleKey": "kerst_eerste",
+      "title": "Eerste Kerstdag",
+      "description": "Op 25 december vieren christenen de geboorte van Jezus Christus. Families komen samen, versieren een kerstboom en geven elkaar cadeaus. Veel mensen gaan naar de kerk voor een kerstdienst met kerstliedjes en kaarslicht.",
+      "classroomTip": "Wat betekent kerst voor jullie? Bespreek de verschillende manieren waarop mensen kerst vieren.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 12,
+      "fixedDay": 25,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "kerst_tweede",
+      "title": "Tweede Kerstdag",
+      "description": "Op 26 december is het Tweede Kerstdag, ook wel de feestdag van Sint-Stefanus. Veel Nederlandse families bezoeken op deze dag de andere kant van de familie, of gaan samen wandelen of naar de film.",
+      "classroomTip": null,
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 12,
+      "fixedDay": 26,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "goede_vrijdag",
+      "title": "Goede Vrijdag",
+      "description": "Op Goede Vrijdag herdenken christenen de kruisiging van Jezus. Het is een dag van bezinning, twee dagen voor Pasen. In veel kerken worden speciale diensten gehouden en worden passieverhalen voorgelezen.",
+      "classroomTip": "Waarom heet deze dag 'Goede' Vrijdag, terwijl het een verdrietige dag is? Bespreek dit samen.",
+      "dateCalculationType": "EASTER_BASED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": -2,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "pasen_eerste",
+      "title": "Eerste Paasdag",
+      "description": "Pasen is het belangrijkste christelijke feest. Christenen vieren dat Jezus is opgestaan uit de dood. Kinderen zoeken paaseieren in de tuin die de paashaas heeft verstopt. We eten paasstol, paaseitjes en hebben een feestelijke brunch.",
+      "classroomTip": "Organiseer een eierwedstrijd: versier paaseieren en kies de mooiste!",
+      "dateCalculationType": "EASTER_BASED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": 0,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "pasen_tweede",
+      "title": "Tweede Paasdag",
+      "description": "De dag na Pasen is in Nederland een officiële vrije dag. Veel mensen maken een uitstapje, gaan wandelen in de natuur of bezoeken een paasvuur. In sommige dorpen worden paaseieren geraapt op het land.",
+      "classroomTip": null,
+      "dateCalculationType": "EASTER_BASED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": 1,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "hemelvaart",
+      "title": "Hemelvaartsdag",
+      "description": "Veertig dagen na Pasen vieren christenen dat Jezus naar de hemel ging. In Nederland is dit een officiële vrije dag. Veel mensen nemen de vrijdag erna ook vrij, zodat ze een lang weekend hebben. Het is een populaire dag voor uitjes.",
+      "classroomTip": null,
+      "dateCalculationType": "EASTER_BASED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": 39,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "pinksteren_eerste",
+      "title": "Eerste Pinksterdag",
+      "description": "Vijftig dagen na Pasen vieren christenen Pinksteren. Volgens het verhaal kregen de leerlingen van Jezus de Heilige Geest en konden ze plotseling in alle talen spreken. Pinksteren wordt gezien als het begin van de christelijke kerk.",
+      "classroomTip": "Hoeveel talen spreken jullie in de klas samen? Maak een talenkaart!",
+      "dateCalculationType": "EASTER_BASED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": 49,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "pinksteren_tweede",
+      "title": "Tweede Pinksterdag",
+      "description": "De tweede dag van Pinksteren is in Nederland een officiële vrije dag. Het is meestal eind mei of begin juni, als het lekker weer begint te worden. Veel mensen zijn buiten en genieten van de natuur.",
+      "classroomTip": null,
+      "dateCalculationType": "EASTER_BASED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": 50,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "driekoningen",
+      "title": "Driekoningen",
+      "description": "Op 6 januari vieren we Driekoningen, het feest van de drie wijzen die de pasgeboren Jezus bezochten en geschenken brachten: goud, wierook en mirre. In sommige delen van Nederland gaan kinderen als koningen verkleed langs de deuren om te zingen.",
+      "classroomTip": "Weet je wat goud, wierook en mirre zijn? Zoek het samen uit!",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 1,
+      "fixedDay": 6,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "aswoensdag",
+      "title": "Aswoensdag",
+      "description": "Aswoensdag is het begin van de vastentijd, de veertig dagen voor Pasen. In katholieke kerken krijgen mensen een kruisje van as op hun voorhoofd. Het is de dag na carnaval en markeert een periode van bezinning en soberheid.",
+      "classroomTip": "Bespreek wat vasten betekent. Kun je ook vasten van iets anders dan eten, zoals je telefoon?",
+      "dateCalculationType": "EASTER_BASED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": -46,
+      "precomputedDates": null
+    }
+  ]
+}

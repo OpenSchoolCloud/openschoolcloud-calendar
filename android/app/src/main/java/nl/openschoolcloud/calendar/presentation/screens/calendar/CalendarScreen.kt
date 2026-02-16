@@ -83,6 +83,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import nl.openschoolcloud.calendar.R
 import nl.openschoolcloud.calendar.domain.model.Event
+import nl.openschoolcloud.calendar.domain.model.HolidayCategory
+import nl.openschoolcloud.calendar.domain.model.HolidayEvent
+import nl.openschoolcloud.calendar.presentation.screens.holidays.HolidayDetailSheet
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
@@ -129,6 +132,14 @@ fun CalendarScreen(
             snackbarHostState.showSnackbar(message)
             viewModel.clearSnackbarMessage()
         }
+    }
+
+    // Holiday detail bottom sheet
+    uiState.selectedHolidayEvent?.let { holidayEvent ->
+        HolidayDetailSheet(
+            event = holidayEvent,
+            onDismiss = viewModel::dismissHolidayDetail
+        )
     }
 
     Scaffold(
@@ -183,6 +194,7 @@ fun CalendarScreen(
                 weekDays = uiState.getWeekDays(),
                 selectedDate = uiState.selectedDate,
                 eventsByDay = uiState.eventsByDay,
+                holidayEventsByDay = uiState.holidayEventsByDay,
                 onDayClick = viewModel::selectDate
             )
 
@@ -213,7 +225,9 @@ fun CalendarScreen(
                 SelectedDayPanel(
                     date = uiState.selectedDate,
                     events = uiState.getEventsForDay(uiState.selectedDate),
+                    holidayEvents = uiState.getHolidayEventsForDay(uiState.selectedDate),
                     onEventClick = onEventClick,
+                    onHolidayClick = viewModel::onHolidayEventClick,
                     modifier = Modifier.weight(0.6f)
                 )
             }
@@ -323,6 +337,7 @@ private fun WeekHeader(
     weekDays: List<LocalDate>,
     selectedDate: LocalDate,
     eventsByDay: Map<LocalDate, List<Event>>,
+    holidayEventsByDay: Map<LocalDate, List<HolidayEvent>>,
     onDayClick: (LocalDate) -> Unit
 ) {
     val today = LocalDate.now()
@@ -339,6 +354,11 @@ private fun WeekHeader(
             val isSelected = date == selectedDate
             val isWeekend = date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY
             val hasEvents = (eventsByDay[date]?.size ?: 0) > 0
+            val holidayCategories = holidayEventsByDay[date]
+                ?.map { it.category }
+                ?.distinct()
+                ?.take(3)
+                ?: emptyList()
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -420,6 +440,25 @@ private fun WeekHeader(
                     }
                 } else {
                     // Placeholder for consistent height
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+
+                // Holiday category dots (colored)
+                if (holidayCategories.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        modifier = Modifier.height(6.dp)
+                    ) {
+                        holidayCategories.forEach { category ->
+                            Box(
+                                modifier = Modifier
+                                    .size(4.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(category.colorArgb))
+                            )
+                        }
+                    }
+                } else {
                     Spacer(modifier = Modifier.height(6.dp))
                 }
             }
@@ -563,7 +602,9 @@ private fun EventChip(
 private fun SelectedDayPanel(
     date: LocalDate,
     events: List<Event>,
+    holidayEvents: List<HolidayEvent>,
     onEventClick: (String) -> Unit,
+    onHolidayClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val nlLocale = Locale("nl", "NL")
@@ -597,16 +638,17 @@ private fun SelectedDayPanel(
                 modifier = Modifier.weight(1f)
             )
 
-            if (events.isNotEmpty()) {
+            val totalCount = events.size + holidayEvents.size
+            if (totalCount > 0) {
                 Text(
-                    text = "${events.size}",
+                    text = "$totalCount",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        if (events.isEmpty()) {
+        if (events.isEmpty() && holidayEvents.isEmpty()) {
             // Empty state
             Box(
                 modifier = Modifier
@@ -628,11 +670,6 @@ private fun SelectedDayPanel(
                 }
             }
         } else {
-            // Event list
-            val sortedEvents = remember(events) {
-                events.sortedWith(compareBy({ !it.allDay }, { it.dtStart }))
-            }
-
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -640,16 +677,93 @@ private fun SelectedDayPanel(
                     .padding(horizontal = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                items(sortedEvents, key = { it.uid }) { event ->
-                    SelectedDayEventCard(
-                        event = event,
-                        timeFormatter = timeFormatter,
-                        zoneId = zoneId,
-                        onClick = { onEventClick(event.uid) }
-                    )
+                // Holiday events section
+                if (holidayEvents.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.holiday_section_title),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    }
+                    items(holidayEvents, key = { it.id }) { holiday ->
+                        HolidayEventChip(
+                            event = holiday,
+                            onClick = { onHolidayClick(holiday.id) }
+                        )
+                    }
+                    if (events.isNotEmpty()) {
+                        item { Spacer(modifier = Modifier.height(4.dp)) }
+                    }
                 }
+
+                // Regular events
+                if (events.isNotEmpty()) {
+                    val sortedEvents = events.sortedWith(compareBy({ !it.allDay }, { it.dtStart }))
+                    items(sortedEvents, key = { it.uid }) { event ->
+                        SelectedDayEventCard(
+                            event = event,
+                            timeFormatter = timeFormatter,
+                            zoneId = zoneId,
+                            onClick = { onEventClick(event.uid) }
+                        )
+                    }
+                }
+
                 // Bottom spacing for FAB
                 item { Spacer(modifier = Modifier.height(72.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HolidayEventChip(
+    event: HolidayEvent,
+    onClick: () -> Unit
+) {
+    val categoryColor = Color(event.category.colorArgb)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = categoryColor.copy(alpha = 0.08f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Category color bar
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(52.dp)
+                    .background(categoryColor, RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp))
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = event.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = event.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

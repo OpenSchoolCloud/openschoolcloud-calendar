@@ -1,0 +1,132 @@
+{
+  "calendarId": "dutch_national",
+  "category": "DUTCH_NATIONAL",
+  "displayName": "Nederlandse feestdagen",
+  "description": "Nationale feestdagen en belangrijke dagen in Nederland",
+  "events": [
+    {
+      "titleKey": "nieuwjaarsdag",
+      "title": "Nieuwjaarsdag",
+      "description": "Op 1 januari vieren we het begin van een nieuw jaar. Veel mensen zijn de avond ervoor laat opgebleven om om middernacht vuurwerk af te steken. Op Nieuwjaarsdag eten we oliebollen en appelbeignets en wensen we elkaar een gelukkig nieuwjaar.",
+      "classroomTip": "Vraag leerlingen wat hun goede voornemens zijn voor het nieuwe jaar.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 1,
+      "fixedDay": 1,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "koningsdag",
+      "title": "Koningsdag",
+      "description": "Op 27 april vieren we de verjaardag van Koning Willem-Alexander. Heel Nederland kleurt oranje! Er zijn vrijmarkten waar kinderen hun speelgoed en zelfgemaakte spullen verkopen. Overal is muziek en feest op straat.",
+      "classroomTip": "Organiseer een mini-vrijmarkt in de klas. Wat zouden jullie willen verkopen?",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 4,
+      "fixedDay": 27,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "bevrijdingsdag",
+      "title": "Bevrijdingsdag",
+      "description": "Op 5 mei vieren we dat Nederland in 1945 werd bevrijd van de Duitse bezetting in de Tweede Wereldoorlog. We vieren dat we in vrijheid mogen leven, zeggen wat we willen en zijn wie we zijn. Er zijn bevrijdingsfestivals door het hele land.",
+      "classroomTip": "Bespreek wat vrijheid voor jullie betekent. Welke vrijheden vinden jullie het belangrijkst?",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 5,
+      "fixedDay": 5,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "dodenherdenking",
+      "title": "Dodenherdenking",
+      "description": "Op 4 mei herdenken we alle slachtoffers van de Tweede Wereldoorlog en andere oorlogen. Om 20:00 uur is er twee minuten stilte in heel Nederland. Bij de Dam in Amsterdam legt de koning een krans. We staan stil bij mensen die hun leven hebben gegeven voor onze vrijheid.",
+      "classroomTip": "Houd twee minuten stilte in de klas. Bespreek daarna waarom herdenken belangrijk is.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 5,
+      "fixedDay": 4,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "prinsjesdag",
+      "title": "Prinsjesdag",
+      "description": "Op de derde dinsdag van september rijdt de Koning in de Gouden Koets naar de Ridderzaal in Den Haag. Daar leest hij de Troonrede voor, waarin de regering vertelt wat de plannen zijn voor het komende jaar. De minister van Financiën laat het koffertje met de Miljoenennota zien.",
+      "classroomTip": "Wat zouden jullie in de Troonrede zetten als jullie het mochten schrijven?",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-09-16",
+        "2026": "2026-09-15",
+        "2027": "2027-09-21",
+        "2028": "2028-09-19",
+        "2029": "2029-09-18",
+        "2030": "2030-09-17"
+      }
+    },
+    {
+      "titleKey": "sinterklaas",
+      "title": "Sinterklaas (pakjesavond)",
+      "description": "Op 5 december is het pakjesavond! Sinterklaas komt elk jaar met de stoomboot uit Spanje. Kinderen zetten hun schoen bij de kachel en zingen sinterklaasliedjes. Op pakjesavond geven we elkaar cadeautjes, vaak met een gedicht of surprise.",
+      "classroomTip": "Schrijf samen gedichten voor elkaar of maak surprises van gerecycled materiaal.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 12,
+      "fixedDay": 5,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "oudejaarsavond",
+      "title": "Oudejaarsavond",
+      "description": "Op 31 december nemen we afscheid van het oude jaar. Families komen samen, eten oliebollen en kijken naar de oudejaarsconference op televisie. Om middernacht tellen we af en steken we vuurwerk af om het nieuwe jaar te verwelkomen.",
+      "classroomTip": "Laat leerlingen hun mooiste herinnering van het afgelopen jaar opschrijven.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 12,
+      "fixedDay": 31,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "dag_van_de_arbeid",
+      "title": "Dag van de Arbeid",
+      "description": "Op 1 mei staan we stil bij de rechten van werkende mensen. Deze dag herinnert ons aan de strijd voor eerlijke werktijden, goede lonen en veilige werkomstandigheden. In veel landen is dit een officiële vrije dag.",
+      "classroomTip": "Welke beroepen kennen jullie? Wat maakt een baan eerlijk?",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 5,
+      "fixedDay": 1,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "sint_maarten",
+      "title": "Sint-Maarten",
+      "description": "Op 11 november lopen kinderen met zelfgemaakte lampionnen langs de deuren en zingen sintermaartenliedjes. In ruil krijgen ze snoep of fruit. Het feest herinnert aan Sint-Maarten, die zijn mantel deelde met een bedelaar in de kou.",
+      "classroomTip": "Maak samen lampionnen en bespreek waarom delen belangrijk is.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 11,
+      "fixedDay": 11,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "veteranendag",
+      "title": "Nederlandse Veteranendag",
+      "description": "Op de laatste zaterdag van juni eren we de mannen en vrouwen die in dienst van Nederland op vredesmissies en in oorlogsgebieden hebben gewerkt. Er is een defilé in Den Haag waar veteranen worden toegejuicht door het publiek.",
+      "classroomTip": "Ken je iemand die veteraan is? Bespreek wat het betekent om je in te zetten voor vrede.",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-06-28",
+        "2026": "2026-06-27",
+        "2027": "2027-06-26",
+        "2028": "2028-06-24",
+        "2029": "2029-06-30",
+        "2030": "2030-06-29"
+      }
+    }
+  ]
+}

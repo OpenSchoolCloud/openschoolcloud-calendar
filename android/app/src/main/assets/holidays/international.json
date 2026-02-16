@@ -1,0 +1,118 @@
+{
+  "calendarId": "international",
+  "category": "INTERNATIONAL",
+  "displayName": "Internationale dagen",
+  "description": "Belangrijke internationale dagen voor in het onderwijs",
+  "events": [
+    {
+      "titleKey": "kinderrechtendag",
+      "title": "Internationale Dag van de Rechten van het Kind",
+      "description": "Op 20 november is het Kinderrechtendag. In 1989 werd op deze dag het Kinderrechtenverdrag van de Verenigde Naties aangenomen. Daarin staat dat elk kind recht heeft op onderwijs, gezondheidszorg, een veilig thuis en bescherming. Er zijn 54 rechten in totaal!",
+      "classroomTip": "Welke kinderrechten kennen jullie? Maak een poster met de vijf rechten die jullie het belangrijkst vinden.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 11,
+      "fixedDay": 20,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "werelddocentendag",
+      "title": "Werelddocentendag",
+      "description": "Op 5 oktober zetten we leraren en docenten in het zonnetje. Overal ter wereld staan leerkrachten voor de klas om kinderen te helpen leren en groeien. Deze dag herinnert ons eraan hoe belangrijk goed onderwijs is voor iedereen.",
+      "classroomTip": "Schrijf een bedankkaartje voor een leraar die je heeft geholpen.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 10,
+      "fixedDay": 5,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "vrouwendag",
+      "title": "Internationale Vrouwendag",
+      "description": "Op 8 maart staan we stil bij de rechten van vrouwen en meisjes overal ter wereld. We vieren de successen die zijn behaald, maar ook dat er nog veel te doen is voor gelijkheid. Overal ter wereld zijn er bijeenkomsten en evenementen.",
+      "classroomTip": "Welke vrouwen bewonderen jullie en waarom? Maak een muurkrant met inspirerende vrouwen.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 3,
+      "fixedDay": 8,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "dag_van_de_aarde",
+      "title": "Dag van de Aarde",
+      "description": "Op 22 april denken we extra na over onze planeet. Hoe kunnen we beter voor de aarde zorgen? Het gaat over schone lucht, schoon water, bescherming van dieren en minder afval. Wereldwijd doen miljoenen mensen mee aan opruimacties en plantdagen.",
+      "classroomTip": "Doe een opruimactie op het schoolplein of plant samen iets in de schooltuin.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 4,
+      "fixedDay": 22,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "wereldvluchtelingendag",
+      "title": "Wereldvluchtelingendag",
+      "description": "Op 20 juni staan we stil bij de miljoenen mensen die hun huis moesten ontvluchten door oorlog, geweld of vervolging. Het is een dag om begrip te tonen en na te denken over hoe we vluchtelingen kunnen helpen en verwelkomen.",
+      "classroomTip": "Wat zou jij meenemen als je in vijf minuten je huis moest verlaten? Bespreek dit samen.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 6,
+      "fixedDay": 20,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "werelddierendag",
+      "title": "Werelddierendag",
+      "description": "Op 4 oktober staan we stil bij het welzijn van dieren overal ter wereld. We denken na over hoe we beter voor dieren kunnen zorgen — van huisdieren tot wilde dieren en dieren in de veehouderij.",
+      "classroomTip": "Welk dier zou je willen beschermen? Maak een poster over een bedreigd dier.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 10,
+      "fixedDay": 4,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "internationale_dag_van_de_vrede",
+      "title": "Internationale Dag van de Vrede",
+      "description": "Op 21 september roepen de Verenigde Naties op tot vrede overal ter wereld. Het is een dag om na te denken over hoe we vreedzaam met elkaar kunnen omgaan. Om 12:00 uur wordt wereldwijd een minuut stilte gehouden.",
+      "classroomTip": "Houd samen een minuut stilte en bespreek: wat is vrede voor jullie?",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 9,
+      "fixedDay": 21,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "wereld_water_dag",
+      "title": "Wereld Water Dag",
+      "description": "Op 22 maart staan we stil bij het belang van schoon drinkwater. Niet iedereen heeft toegang tot schoon water — bijna 2 miljard mensen op de wereld niet! We denken na over hoe we water kunnen besparen en beschermen.",
+      "classroomTip": "Hoeveel water gebruik jij per dag? Meet het samen en bedenk bespaartips.",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 3,
+      "fixedDay": 22,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "dag_van_de_moedertaal",
+      "title": "Internationale Dag van de Moedertaal",
+      "description": "Op 21 februari vieren we alle talen van de wereld. Er worden meer dan 7.000 talen gesproken! Taal is een belangrijk deel van wie je bent. Deze dag moedigt ons aan om elkaars talen te respecteren en meertaligheid te waarderen.",
+      "classroomTip": "Hoeveel talen worden er in jullie klas gesproken? Leer een woord in elkaars taal!",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 2,
+      "fixedDay": 21,
+      "easterOffset": null,
+      "precomputedDates": null
+    },
+    {
+      "titleKey": "dag_van_het_boek",
+      "title": "Wereld Boekendag",
+      "description": "Op 23 april vieren we het plezier van lezen en de kracht van boeken. Over de hele wereld worden er activiteiten georganiseerd om kinderen en volwassenen aan het lezen te krijgen. In Nederland is de Boekenweek ook een groot evenement.",
+      "classroomTip": "Wissel boekentips uit in de klas. Wat is het beste boek dat je ooit hebt gelezen?",
+      "dateCalculationType": "FIXED",
+      "fixedMonth": 4,
+      "fixedDay": 23,
+      "easterOffset": null,
+      "precomputedDates": null
+    }
+  ]
+}

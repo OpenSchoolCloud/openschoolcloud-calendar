@@ -1,0 +1,80 @@
+{
+  "calendarId": "hindu",
+  "category": "HINDU",
+  "displayName": "Hindoestaanse feestdagen",
+  "description": "Belangrijke hindoestaanse feestdagen",
+  "events": [
+    {
+      "titleKey": "diwali",
+      "title": "Diwali",
+      "description": "Diwali is het hindoeïstische Lichtfeest en duurt vijf dagen. Overal worden olielampjes (diyas) en kaarsjes aangestoken. Het viert de overwinning van licht op duisternis en goed op kwaad. Huizen worden schoongemaakt en versierd, en er worden snoep en cadeaus uitgewisseld.",
+      "classroomTip": "Maak samen kleine waxinelichthouders en bespreek: waar staat 'licht' voor in jullie leven?",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-10-20",
+        "2026": "2026-11-08",
+        "2027": "2027-10-29",
+        "2028": "2028-10-17",
+        "2029": "2029-11-05",
+        "2030": "2030-10-26"
+      }
+    },
+    {
+      "titleKey": "holi",
+      "title": "Holi (Phagwa)",
+      "description": "Holi is het kleurenfestival! Mensen gooien gekleurde poeders en water naar elkaar. Het viert de komst van de lente en de overwinning van goed op kwaad. In Nederland wordt Holi ook wel Phagwa genoemd en gevierd door de Hindoestaanse gemeenschap, vooral in Den Haag en omgeving.",
+      "classroomTip": "Organiseer een (kleine) kleurenactiviteit op het schoolplein met gekleurde krijtjes of waterverf.",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-03-14",
+        "2026": "2026-03-03",
+        "2027": "2027-03-22",
+        "2028": "2028-03-11",
+        "2029": "2029-03-01",
+        "2030": "2030-03-20"
+      }
+    },
+    {
+      "titleKey": "navratri",
+      "title": "Navratri",
+      "description": "Navratri betekent 'negen nachten' en is een feest ter ere van de godin Durga. Elke avond wordt er gedanst (garba en dandiya) en zijn er speciale gebeden. Het feest eindigt met Dussehra, de tiende dag, waarop de overwinning van goed op kwaad wordt gevierd.",
+      "classroomTip": "Luister samen naar Indiase dansmuziek. Wat valt jullie op aan het ritme?",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-10-02",
+        "2026": "2026-09-21",
+        "2027": "2027-10-11",
+        "2028": "2028-09-29",
+        "2029": "2029-09-18",
+        "2030": "2030-10-08"
+      }
+    },
+    {
+      "titleKey": "raksha_bandhan",
+      "title": "Raksha Bandhan",
+      "description": "Raksha Bandhan is het feest van de band tussen broers en zussen. Zussen binden een kleurrijke draad (rakhi) om de pols van hun broer als symbool van bescherming en liefde. Broers geven een cadeautje terug en beloven voor hun zus te zorgen.",
+      "classroomTip": "Maak samen vriendschapsbandjes. Bespreek: wie beschermt jou en wie bescherm jij?",
+      "dateCalculationType": "PRECOMPUTED",
+      "fixedMonth": null,
+      "fixedDay": null,
+      "easterOffset": null,
+      "precomputedDates": {
+        "2025": "2025-08-09",
+        "2026": "2026-08-28",
+        "2027": "2027-08-17",
+        "2028": "2028-08-06",
+        "2029": "2029-08-25",
+        "2030": "2030-08-14"
+      }
+    }
+  ]
+}

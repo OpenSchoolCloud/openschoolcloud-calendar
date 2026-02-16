@@ -22,6 +22,10 @@ import android.content.Context
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
 import nl.openschoolcloud.calendar.notification.NotificationHelper
 import nl.openschoolcloud.calendar.notification.ReminderWorker
 import org.acra.config.dialog
@@ -38,6 +42,9 @@ class App : Application(), Configuration.Provider {
 
     @Inject
     lateinit var notificationHelper: NotificationHelper
+
+    @Inject
+    lateinit var holidayRepository: HolidayRepository
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -75,5 +82,14 @@ class App : Application(), Configuration.Provider {
         super.onCreate()
         notificationHelper.createNotificationChannel()
         ReminderWorker.schedule(this)
+
+        // Seed holiday calendars on background thread
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                holidayRepository.seedIfNeeded()
+            } catch (e: Exception) {
+                // Seeding is non-critical; don't crash the app
+            }
+        }
     }
 }

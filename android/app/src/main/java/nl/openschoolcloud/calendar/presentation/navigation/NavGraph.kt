@@ -30,6 +30,7 @@ import nl.openschoolcloud.calendar.presentation.screens.booking.BookingScreen
 import nl.openschoolcloud.calendar.presentation.screens.calendar.CalendarScreen
 import nl.openschoolcloud.calendar.presentation.screens.event.EventDetailScreen
 import nl.openschoolcloud.calendar.presentation.screens.event.EventEditScreen
+import nl.openschoolcloud.calendar.presentation.screens.holidays.HolidayDiscoverScreen
 import nl.openschoolcloud.calendar.presentation.screens.login.LoginScreen
 import nl.openschoolcloud.calendar.presentation.screens.onboarding.OnboardingScreen
 import nl.openschoolcloud.calendar.presentation.screens.settings.SettingsScreen
@@ -53,6 +54,7 @@ sealed class Route(val route: String) {
         fun createRoute(eventId: String) = "event/$eventId/edit"
     }
     object Settings : Route("settings")
+    object HolidayDiscover : Route("holidays")
     object Booking : Route("booking")
     object QrCode : Route("qrcode?url={url}&name={name}") {
         fun createRoute(url: String, name: String) =
@@ -194,7 +196,17 @@ fun AppNavigation(
                     navController.navigate(Route.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                onHolidayDiscoverClick = {
+                    navController.navigate(Route.HolidayDiscover.route)
                 }
+            )
+        }
+
+        // Holiday discover
+        composable(Route.HolidayDiscover.route) {
+            HolidayDiscoverScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

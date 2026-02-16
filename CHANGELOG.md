@@ -7,6 +7,36 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ---
 
+## [1.1.0] - 2026-02-16
+
+### Sprint 5: Multiculturele Feestdagenkalender
+
+#### Toegevoegd
+- **Feestdagenkalenders**: 7 subscribable kalenders met culturele feestdagen
+  - Nederlandse feestdagen (Koningsdag, Bevrijdingsdag, Sinterklaas, etc.)
+  - Islamitische feestdagen (Suikerfeest, Offerfeest, Ramadan, Mawlid)
+  - Christelijke feestdagen (Pasen, Kerst, Hemelvaart, Pinksteren)
+  - Joodse feestdagen (Pesach, Jom Kippur, Chanoeka, Rosh Hashana)
+  - Hindoestaanse feestdagen (Diwali, Holi/Phagwa, Navratri)
+  - Chinese/Aziatische feestdagen (Chinees Nieuwjaar, Maanfestival)
+  - Internationale dagen (Kinderrechtendag, Werelddocentendag, etc.)
+- **Gekleurde stippen** op de weekweergave per feestdagencategorie
+- **Feestdagen-chips** in het dagdetailpaneel boven reguliere afspraken
+- **Detail bottom sheet**: Kindvriendelijke uitleg per feestdag met gespreksstarter voor de klas
+- **Ontdekscherm**: Per-categorie aan/uit schakelaar in Instellingen > Feestdagen
+- **Privacy**: Alle feestdagenkeuzes zijn lokaal opgeslagen, nooit gesynchroniseerd
+
+#### Technisch
+- Room database migratie v1 naar v2: `holiday_calendars` + `holiday_events` tabellen
+- JSON seed data in assets voor 48+ feestdagen met datums 2025-2030
+- Anonymous Gregorian Easter algorithm voor christelijke feestdagen
+- Precomputed dates voor islamitische, joodse, hindoestaanse en Chinese kalenders
+- `HolidayRepository` met automatische seeding bij eerste start
+- Moshi JSON parsing voor seed data
+- Versie: 1.1.0 (versionCode 3)
+
+---
+
 ## [1.0.0] - 2026-02-16
 
 ### Sprint 4: Play Store Ready
@@ -116,10 +146,10 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## Nog Te Doen
 
-### Sprint 5: Multiculturele Feestdagenkalender
-- [ ] Nederlandse en internationale feestdagen
-- [ ] Subscribable calendar feeds
-- [ ] Kindvriendelijke uitleg per feestdag
+### Sprint 6: Leerling-Agenda & Reflectie
+- [ ] Leeragenda-modus bij afspraken aanmaken
+- [ ] Reflectie-prompt na afloop van afspraken
+- [ ] Weekoverzicht met stemmingen
 
 ---
 

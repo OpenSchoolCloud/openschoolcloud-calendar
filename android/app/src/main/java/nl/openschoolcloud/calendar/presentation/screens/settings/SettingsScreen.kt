@@ -98,6 +98,7 @@ import java.util.Locale
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onLogout: () -> Unit,
+    onHolidayDiscoverClick: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -306,6 +307,15 @@ fun SettingsScreen(
                         onClick = { showReminderDialog = true }
                     )
                 }
+            }
+
+            // Holiday calendars section
+            SettingsSection(title = stringResource(R.string.holiday_settings_section)) {
+                SettingsRow(
+                    title = stringResource(R.string.holiday_discover_title),
+                    value = "",
+                    onClick = onHolidayDiscoverClick
+                )
             }
 
             // Display section
