@@ -7,6 +7,27 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ---
 
+## [1.0.0] - 2026-02-16
+
+### Sprint 4: Play Store Ready
+
+#### Toegevoegd
+- **Branded splash screen**: Fade-animatie met OSC-logo en tagline
+- **Onboarding**: 3 slides voor nieuwe gebruikers (privacy, CalDAV, features)
+- **ACRA crashrapportage**: Privacy-first crashrapportage via e-mail (geen Firebase/Google)
+- **Promo card**: Subtiele kaart in Instellingen voor OpenSchoolCloud.nl hosting (wegklikbaar)
+- **Play Store metadata**: Beschrijvingen in Nederlands en Engels (Fastlane/Triple-T conventie)
+
+#### Technisch
+- ACRA `acra-mail` + `acra-dialog` (v5.11.4): gebruiker kiest zelf of crashrapport wordt verstuurd
+- ProGuard-regels uitgebreid: ACRA, Moshi, ZXing, WorkManager, SourceFile/LineNumberTable
+- `AppPreferences`: `onboardingCompleted` en `promoDismissed` vlaggen
+- `compose-foundation` expliciet opgenomen voor HorizontalPager
+- Navigatie: Splash -> Onboarding -> Login -> Calendar flow
+- Versie: 1.0.0 (versionCode 2)
+
+---
+
 ## [0.1.0-alpha] - 2025-01-18
 
 ### Sprint 2.5: Huisstijl & Build Fix
@@ -93,18 +114,12 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ---
 
-## Nog Te Doen (MVP)
+## Nog Te Doen
 
-### Sprint 3: Event Management
-- [ ] Event detail screen (volledige implementatie)
-- [ ] Event create/edit screen (volledige implementatie)
-- [ ] Month view verbeteren
-
-### Sprint 4: Polish
-- [ ] Reminders/notificaties
-- [ ] Attendee display
-- [ ] Invite sending (iTIP)
-- [ ] Play Store voorbereiding
+### Sprint 5: Multiculturele Feestdagenkalender
+- [ ] Nederlandse en internationale feestdagen
+- [ ] Subscribable calendar feeds
+- [ ] Kindvriendelijke uitleg per feestdag
 
 ---
 
