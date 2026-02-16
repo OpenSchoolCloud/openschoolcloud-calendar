@@ -28,15 +28,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.domain.model.Calendar
 import nl.openschoolcloud.calendar.domain.model.Event
+import nl.openschoolcloud.calendar.domain.model.ReflectionEntry
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
+import nl.openschoolcloud.calendar.domain.repository.ReflectionRepository
+import java.time.Instant
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class EventDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val eventRepository: EventRepository,
-    private val calendarRepository: CalendarRepository
+    private val calendarRepository: CalendarRepository,
+    private val reflectionRepository: ReflectionRepository
 ) : ViewModel() {
 
     private val eventId: String = savedStateHandle["eventId"] ?: ""
@@ -56,11 +61,15 @@ class EventDetailViewModel @Inject constructor(
                 val event = eventRepository.getEvent(eventId)
                 if (event != null) {
                     val calendar = calendarRepository.getCalendar(event.calendarId)
+                    val reflection = if (event.isLearningAgenda) {
+                        reflectionRepository.getReflectionForEvent(eventId)
+                    } else null
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             event = event,
-                            calendar = calendar
+                            calendar = calendar,
+                            reflection = reflection
                         )
                     }
                 } else {
@@ -72,6 +81,34 @@ class EventDetailViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(isLoading = false, error = e.message ?: "Onbekende fout")
                 }
+            }
+        }
+    }
+
+    fun showReflectionSheet() {
+        _uiState.update { it.copy(showReflectionSheet = true) }
+    }
+
+    fun dismissReflectionSheet() {
+        _uiState.update { it.copy(showReflectionSheet = false) }
+    }
+
+    fun saveReflection(mood: Int, whatWentWell: String?, whatToDoBetter: String?) {
+        viewModelScope.launch {
+            val reflection = ReflectionEntry(
+                id = UUID.randomUUID().toString(),
+                eventId = eventId,
+                mood = mood,
+                whatWentWell = whatWentWell?.ifBlank { null },
+                whatToDoBetter = whatToDoBetter?.ifBlank { null },
+                createdAt = Instant.now()
+            )
+            reflectionRepository.saveReflection(reflection)
+            _uiState.update {
+                it.copy(
+                    reflection = reflection,
+                    showReflectionSheet = false
+                )
             }
         }
     }
@@ -104,5 +141,7 @@ data class EventDetailUiState(
     val isDeleting: Boolean = false,
     val event: Event? = null,
     val calendar: Calendar? = null,
+    val reflection: ReflectionEntry? = null,
+    val showReflectionSheet: Boolean = false,
     val error: String? = null
 )

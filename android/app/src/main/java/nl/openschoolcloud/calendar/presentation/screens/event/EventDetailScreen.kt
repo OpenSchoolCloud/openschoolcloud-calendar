@@ -39,10 +39,13 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -50,10 +53,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -83,6 +89,9 @@ import nl.openschoolcloud.calendar.domain.model.Attendee
 import nl.openschoolcloud.calendar.domain.model.AttendeeStatus
 import nl.openschoolcloud.calendar.domain.model.Event
 import nl.openschoolcloud.calendar.domain.model.EventStatus
+import nl.openschoolcloud.calendar.domain.model.ReflectionEntry
+import nl.openschoolcloud.calendar.presentation.screens.reflection.ReflectionPromptSheet
+import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -210,6 +219,8 @@ fun EventDetailScreen(
                     event = event,
                     calendarName = uiState.calendar?.displayName,
                     calendarColor = uiState.calendar?.color,
+                    reflection = uiState.reflection,
+                    onReflectionClick = viewModel::showReflectionSheet,
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -242,6 +253,17 @@ fun EventDetailScreen(
             }
         )
     }
+
+    // Reflection bottom sheet
+    if (uiState.showReflectionSheet && uiState.event != null) {
+        ReflectionPromptSheet(
+            eventTitle = uiState.event!!.summary,
+            onDismiss = viewModel::dismissReflectionSheet,
+            onSave = { mood, whatWentWell, whatToDoBetter ->
+                viewModel.saveReflection(mood, whatWentWell, whatToDoBetter)
+            }
+        )
+    }
 }
 
 @Composable
@@ -249,6 +271,8 @@ private fun EventDetailContent(
     event: Event,
     calendarName: String?,
     calendarColor: Int?,
+    reflection: ReflectionEntry?,
+    onReflectionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val nlLocale = Locale("nl", "NL")
@@ -348,8 +372,73 @@ private fun EventDetailContent(
             }
         }
 
-        // Description
-        if (!event.description.isNullOrBlank()) {
+        // Learning agenda fields
+        if (event.isLearningAgenda) {
+            // Badge
+            AssistChip(
+                onClick = {},
+                label = { Text(stringResource(R.string.learning_agenda_badge)) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.School,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                colors = AssistChipDefaults.assistChipColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    leadingIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+
+            // Learning goal
+            if (!event.learningGoal.isNullOrBlank()) {
+                DetailCard {
+                    DetailRow(
+                        icon = Icons.Default.Flag,
+                        iconTint = MaterialTheme.colorScheme.primary
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.learning_goal_label),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = event.learningGoal,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Learning needs
+            if (!event.learningNeeds.isNullOrBlank()) {
+                DetailCard {
+                    DetailRow(
+                        icon = Icons.Default.Lightbulb,
+                        iconTint = MaterialTheme.colorScheme.primary
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.learning_needs_label),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = event.learningNeeds,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        } else if (!event.description.isNullOrBlank()) {
+            // Description (only shown for non-learning-agenda events)
             DetailCard {
                 DetailRow(
                     icon = Icons.Default.Description,
@@ -440,8 +529,80 @@ private fun EventDetailContent(
             }
         }
 
+        // Reflection section (only for learning agenda events)
+        if (event.isLearningAgenda) {
+            if (reflection != null) {
+                ReflectionSummaryCard(reflection = reflection)
+            } else {
+                val eventEnded = event.dtEnd?.let { it.isBefore(Instant.now()) } ?: false
+                if (eventEnded) {
+                    OutlinedButton(
+                        onClick = onReflectionClick,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.reflection_how_did_it_go))
+                    }
+                }
+            }
+        }
+
         // Bottom spacing for FAB
         Spacer(modifier = Modifier.height(72.dp))
+    }
+}
+
+@Composable
+private fun ReflectionSummaryCard(reflection: ReflectionEntry) {
+    val moodEmoji = when (reflection.mood) {
+        1 -> "\uD83D\uDE2B"
+        2 -> "\uD83D\uDE15"
+        3 -> "\uD83D\uDE10"
+        4 -> "\uD83D\uDE42"
+        5 -> "\uD83E\uDD29"
+        else -> "\uD83D\uDE10"
+    }
+
+    DetailCard {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.reflection_summary_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = moodEmoji,
+                    style = MaterialTheme.typography.headlineMedium
+                )
+            }
+            if (!reflection.whatWentWell.isNullOrBlank()) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.reflection_what_went_well),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = reflection.whatWentWell,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+            if (!reflection.whatToDoBetter.isNullOrBlank()) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.reflection_what_to_do_better),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = reflection.whatToDoBetter,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
     }
 }
 
