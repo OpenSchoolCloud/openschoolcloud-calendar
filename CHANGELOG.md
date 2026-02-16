@@ -7,6 +7,43 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ---
 
+## [1.2.0] - 2026-02-16
+
+### Sprint 6: Leerling-Agenda & Reflectie
+
+#### Toegevoegd
+- **Leeragenda-modus**: Optionele toggle bij het aanmaken/bewerken van afspraken
+  - Gestructureerde velden: "Wat ga ik doen?" en "Wat heb ik nodig?"
+  - Automatische beschrijving voor CalDAV-compatibiliteit
+- **Reflectie na afloop**: Lichte reflectie-prompt wanneer een leeragenda-afspraak eindigt
+  - Stemming kiezen (1-5): 😫 Moeilijk, 😕 Niet zo goed, 😐 Oké, 🙂 Goed, 🤩 Super!
+  - Optionele tekstvelden: "Wat ging goed?" en "Wat kan beter?"
+  - Bottom sheet vanuit afspraakdetails
+- **Weekoverzicht**: Visueel overzicht van reflecties per week
+  - 7-kolommen tijdlijn met stemmingsemoji's per dag
+  - Samenvattingskaart met gemiddelde stemming en aanmoediging
+  - Week-navigatie (vorige/volgende week)
+- **Reflectienotificaties**: Zachte herinnering wanneer een leeragenda-afspraak eindigt
+  - Apart notificatiekanaal (standaard prioriteit)
+  - Instelbaar via Instellingen > Leeragenda & Reflectie
+- **Leeragenda-weergave in afspraakdetails**: Badge, leerdoel en leerbehoeften kaarten
+- **Reflectiesamenvatting**: Stemming en teksten zichtbaar in afspraakdetails na invullen
+
+#### Technisch
+- Room database migratie v2 naar v3: `reflection_entries` tabel + 3 kolommen op `events`
+- `ReflectionEntity` met FK naar `events(uid)` CASCADE + indices
+- `ReflectionRepository` en `ReflectionRepositoryImpl` met Flow-gebaseerde observatie
+- `MoodSelector` herbruikbaar composable component
+- `ReflectionPromptSheet` als ModalBottomSheet
+- `WeekReviewViewModel` met combine() voor reflecties + leeragenda-afspraken
+- Notificatiekanaal `reflections` met `IMPORTANCE_DEFAULT`
+- AlarmManager-planning op `dtEnd` voor reflectieherinneringen
+- Privacy: Alle reflectiedata lokaal opgeslagen, nooit gesynchroniseerd naar CalDAV
+- Pedagogisch kader: Zimmerman's Self-Regulated Learning model
+- Versie: 1.2.0 (versionCode 4)
+
+---
+
 ## [1.1.0] - 2026-02-16
 
 ### Sprint 5: Multiculturele Feestdagenkalender
@@ -146,10 +183,10 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## Nog Te Doen
 
-### Sprint 6: Leerling-Agenda & Reflectie
-- [ ] Leeragenda-modus bij afspraken aanmaken
-- [ ] Reflectie-prompt na afloop van afspraken
-- [ ] Weekoverzicht met stemmingen
+### Sprint 7: Week Vooruit Planner
+- [ ] Maandagochtend-notificatie: "Plan je week!"
+- [ ] Begeleide weekplanning met taakselectie
+- [ ] Taken als licht-gekleurde blokken in kalender
 
 ---
 

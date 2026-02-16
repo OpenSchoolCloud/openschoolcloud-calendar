@@ -45,6 +45,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
@@ -104,6 +105,7 @@ fun CalendarScreen(
     @Suppress("UNUSED_PARAMETER") onCreateEvent: (String?) -> Unit,
     onSettingsClick: () -> Unit,
     onBookingClick: () -> Unit,
+    onWeekReviewClick: () -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -152,7 +154,8 @@ fun CalendarScreen(
                 onToday = viewModel::goToToday,
                 onSync = viewModel::syncAll,
                 onSettingsClick = onSettingsClick,
-                onBookingClick = onBookingClick
+                onBookingClick = onBookingClick,
+                onWeekReviewClick = onWeekReviewClick
             )
         },
         floatingActionButton = {
@@ -245,7 +248,8 @@ private fun CalendarTopBar(
     onToday: () -> Unit,
     onSync: () -> Unit,
     onSettingsClick: () -> Unit,
-    onBookingClick: () -> Unit
+    onBookingClick: () -> Unit,
+    onWeekReviewClick: () -> Unit
 ) {
     val weekEnd = weekStart.plusDays(6)
     val monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -310,6 +314,12 @@ private fun CalendarTopBar(
                         contentDescription = stringResource(R.string.settings_sync_now)
                     )
                 }
+            }
+            IconButton(onClick = onWeekReviewClick) {
+                Icon(
+                    Icons.Default.BarChart,
+                    contentDescription = stringResource(R.string.week_review_title)
+                )
             }
             IconButton(onClick = onBookingClick) {
                 Icon(

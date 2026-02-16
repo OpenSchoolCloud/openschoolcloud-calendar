@@ -309,6 +309,34 @@ fun SettingsScreen(
                 }
             }
 
+            // Learning agenda & Reflection section
+            SettingsSection(title = stringResource(R.string.settings_learning_agenda)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.setReflectionNotificationsEnabled(!uiState.reflectionNotificationsEnabled) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_reflection_notifications),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_reflection_notifications_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = uiState.reflectionNotificationsEnabled,
+                        onCheckedChange = { viewModel.setReflectionNotificationsEnabled(it) }
+                    )
+                }
+            }
+
             // Holiday calendars section
             SettingsSection(title = stringResource(R.string.holiday_settings_section)) {
                 SettingsRow(

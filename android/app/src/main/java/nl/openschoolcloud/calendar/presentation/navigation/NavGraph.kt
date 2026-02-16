@@ -33,6 +33,7 @@ import nl.openschoolcloud.calendar.presentation.screens.event.EventEditScreen
 import nl.openschoolcloud.calendar.presentation.screens.holidays.HolidayDiscoverScreen
 import nl.openschoolcloud.calendar.presentation.screens.login.LoginScreen
 import nl.openschoolcloud.calendar.presentation.screens.onboarding.OnboardingScreen
+import nl.openschoolcloud.calendar.presentation.screens.reflection.WeekReviewScreen
 import nl.openschoolcloud.calendar.presentation.screens.settings.SettingsScreen
 import nl.openschoolcloud.calendar.presentation.screens.splash.SplashScreen
 
@@ -54,6 +55,7 @@ sealed class Route(val route: String) {
         fun createRoute(eventId: String) = "event/$eventId/edit"
     }
     object Settings : Route("settings")
+    object WeekReview : Route("week-review")
     object HolidayDiscover : Route("holidays")
     object Booking : Route("booking")
     object QrCode : Route("qrcode?url={url}&name={name}") {
@@ -132,6 +134,9 @@ fun AppNavigation(
                 },
                 onBookingClick = {
                     navController.navigate(Route.Booking.route)
+                },
+                onWeekReviewClick = {
+                    navController.navigate(Route.WeekReview.route)
                 }
             )
         }
@@ -200,6 +205,13 @@ fun AppNavigation(
                 onHolidayDiscoverClick = {
                     navController.navigate(Route.HolidayDiscover.route)
                 }
+            )
+        }
+
+        // Week review
+        composable(Route.WeekReview.route) {
+            WeekReviewScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

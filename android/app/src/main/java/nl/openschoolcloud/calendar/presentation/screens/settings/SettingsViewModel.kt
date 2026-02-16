@@ -85,7 +85,8 @@ class SettingsViewModel @Inject constructor(
                 themeMode = appPreferences.themeMode,
                 lastSyncTime = if (lastSync > 0) Instant.ofEpochMilli(lastSync) else null,
                 notificationsEnabled = appPreferences.notificationsEnabled,
-                defaultReminderMinutes = appPreferences.defaultReminderMinutes
+                defaultReminderMinutes = appPreferences.defaultReminderMinutes,
+                reflectionNotificationsEnabled = appPreferences.reflectionNotificationsEnabled
             )
         }
     }
@@ -145,6 +146,11 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(defaultReminderMinutes = minutes) }
     }
 
+    fun setReflectionNotificationsEnabled(enabled: Boolean) {
+        appPreferences.reflectionNotificationsEnabled = enabled
+        _uiState.update { it.copy(reflectionNotificationsEnabled = enabled) }
+    }
+
     fun toggleCalendarVisibility(calendarId: String) {
         viewModelScope.launch {
             val calendar = calendarRepository.getCalendar(calendarId) ?: return@launch
@@ -175,6 +181,7 @@ data class SettingsUiState(
     val lastSyncTime: Instant? = null,
     val notificationsEnabled: Boolean = true,
     val defaultReminderMinutes: Int = AppPreferences.DEFAULT_REMINDER_MINUTES,
+    val reflectionNotificationsEnabled: Boolean = true,
     val showPromo: Boolean = false,
     val error: String? = null
 )
