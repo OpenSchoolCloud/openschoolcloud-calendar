@@ -281,6 +281,11 @@
     <string name="widget_in_minutes">Over %d min</string>
     <string name="widget_now">Nu</string>
 
+    <!-- Promo -->
+    <string name="promo_title">Eigen schoolcloud nodig?</string>
+    <string name="promo_description">OpenSchoolCloud biedt veilige Nextcloud-hosting speciaal voor scholen. Jouw data in Nederland, zonder tracking.</string>
+    <string name="promo_button">Meer informatie</string>
+
     <!-- Onboarding -->
     <string name="onboarding_privacy_title">Privacy voorop</string>
     <string name="onboarding_privacy_description">Geen Google, geen tracking, geen advertenties. Jouw data blijft van jou — veilig opgeslagen in Nederland.</string>

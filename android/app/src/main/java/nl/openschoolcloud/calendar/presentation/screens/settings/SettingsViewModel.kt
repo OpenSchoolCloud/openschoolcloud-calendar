@@ -53,6 +53,7 @@ class SettingsViewModel @Inject constructor(
         loadAccount()
         loadCalendars()
         loadPreferences()
+        loadPromoState()
     }
 
     private fun loadAccount() {
@@ -151,6 +152,15 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    private fun loadPromoState() {
+        _uiState.update { it.copy(showPromo = !appPreferences.promoDismissed) }
+    }
+
+    fun dismissPromo() {
+        appPreferences.promoDismissed = true
+        _uiState.update { it.copy(showPromo = false) }
+    }
+
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
@@ -165,5 +175,6 @@ data class SettingsUiState(
     val lastSyncTime: Instant? = null,
     val notificationsEnabled: Boolean = true,
     val defaultReminderMinutes: Int = AppPreferences.DEFAULT_REMINDER_MINUTES,
+    val showPromo: Boolean = false,
     val error: String? = null
 )
