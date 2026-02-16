@@ -281,6 +281,11 @@
     <string name="widget_in_minutes">Over %d min</string>
     <string name="widget_now">Nu</string>
 
+    <!-- Crash reporting -->
+    <string name="crash_dialog_title">OSC Calendar is gestopt</string>
+    <string name="crash_dialog_text">Er is een onverwachte fout opgetreden. Wil je een foutrapport versturen via e-mail? Er worden geen persoonlijke gegevens meegestuurd.</string>
+    <string name="crash_dialog_comment">Wat was je aan het doen? (optioneel)</string>
+
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>
     <string name="action_cancel">Annuleren</string>

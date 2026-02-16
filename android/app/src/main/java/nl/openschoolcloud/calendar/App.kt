@@ -18,11 +18,16 @@
 package nl.openschoolcloud.calendar
 
 import android.app.Application
+import android.content.Context
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import nl.openschoolcloud.calendar.notification.NotificationHelper
 import nl.openschoolcloud.calendar.notification.ReminderWorker
+import org.acra.config.dialog
+import org.acra.config.mailSender
+import org.acra.data.StringFormat
+import org.acra.ktx.initAcra
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -38,6 +43,33 @@ class App : Application(), Configuration.Provider {
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .build()
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        initAcra {
+            reportFormat = StringFormat.KEY_VALUE_LIST
+            reportContent = listOf(
+                org.acra.ReportField.APP_VERSION_CODE,
+                org.acra.ReportField.APP_VERSION_NAME,
+                org.acra.ReportField.ANDROID_VERSION,
+                org.acra.ReportField.PHONE_MODEL,
+                org.acra.ReportField.STACK_TRACE,
+                org.acra.ReportField.USER_COMMENT
+            )
+            dialog {
+                title = getString(R.string.crash_dialog_title)
+                text = getString(R.string.crash_dialog_text)
+                commentPrompt = getString(R.string.crash_dialog_comment)
+                resIcon = R.drawable.ic_osc_logo
+            }
+            mailSender {
+                mailTo = "support@openschoolcloud.nl"
+                reportAsFile = true
+                reportFileName = "osc_calendar_crash.txt"
+                subject = "OSC Calendar - Crashrapport"
+            }
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()

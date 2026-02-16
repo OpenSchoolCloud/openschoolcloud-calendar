@@ -58,6 +58,25 @@
     public static ** valueOf(java.lang.String);
 }
 
-# Debugging - remove for production
-#-keepattributes SourceFile,LineNumberTable
-#-renamesourcefileattribute SourceFile
+# Stack traces - keep source file and line numbers for crash reporting
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# ACRA crash reporting
+-dontwarn org.acra.**
+-keep class org.acra.** { *; }
+
+# Moshi
+-dontwarn com.squareup.moshi.**
+-keep class com.squareup.moshi.** { *; }
+-keepclassmembers class * {
+    @com.squareup.moshi.Json <fields>;
+}
+
+# ZXing
+-dontwarn com.google.zxing.**
+-keep class com.google.zxing.** { *; }
+
+# WorkManager
+-keep class * extends androidx.work.Worker
+-keep class * extends androidx.work.ListenableWorker

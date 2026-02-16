@@ -135,6 +135,11 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.hilt:hilt-work:1.1.0")
     ksp("androidx.hilt:hilt-compiler:1.1.0")
+
+    // ACRA crash reporting (privacy-first, email-only)
+    val acraVersion = "5.11.4"
+    implementation("ch.acra:acra-mail:$acraVersion")
+    implementation("ch.acra:acra-dialog:$acraVersion")
     
     // Desugaring (java.time for API < 26)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
