@@ -42,7 +42,10 @@ data class Event(
     val created: Instant? = null,
     val lastModified: Instant? = null,
     val etag: String? = null, // Server version tag
-    val syncStatus: SyncStatus = SyncStatus.SYNCED
+    val syncStatus: SyncStatus = SyncStatus.SYNCED,
+    val isLearningAgenda: Boolean = false,
+    val learningGoal: String? = null,    // "Wat ga ik doen?"
+    val learningNeeds: String? = null    // "Wat heb ik nodig?"
 )
 
 /**
