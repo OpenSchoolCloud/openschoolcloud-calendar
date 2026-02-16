@@ -72,6 +72,35 @@ class ReminderManager @Inject constructor(
     }
 
     /**
+     * Schedule a reflection reminder for a learning agenda event.
+     * Fires at event end time.
+     */
+    fun scheduleReflectionReminder(event: Event) {
+        if (!appPreferences.reflectionNotificationsEnabled) return
+        if (!event.isLearningAgenda) return
+        if (event.allDay) return
+
+        val endTime = event.dtEnd?.toEpochMilli() ?: return
+        if (endTime <= System.currentTimeMillis()) return
+
+        val intent = Intent(context, ReminderReceiver::class.java).apply {
+            action = ReminderReceiver.ACTION_SHOW_REFLECTION
+            putExtra(NotificationHelper.EXTRA_EVENT_ID, event.uid)
+            putExtra(NotificationHelper.EXTRA_EVENT_TITLE, event.summary)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            event.uid.hashCode() + 200,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        scheduleExactAlarm(endTime, pendingIntent)
+        Log.d(TAG, "Scheduled reflection reminder for '${event.summary}' at ${java.time.Instant.ofEpochMilli(endTime)}")
+    }
+
+    /**
      * Cancel all reminders for an event.
      */
     fun cancelReminder(eventId: String) {

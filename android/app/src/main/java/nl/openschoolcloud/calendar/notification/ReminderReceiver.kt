@@ -38,12 +38,15 @@ class ReminderReceiver : BroadcastReceiver() {
 
     companion object {
         const val ACTION_SHOW_REMINDER = "nl.openschoolcloud.calendar.ACTION_SHOW_REMINDER"
+        const val ACTION_SHOW_REFLECTION = "nl.openschoolcloud.calendar.ACTION_SHOW_REFLECTION"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             ACTION_SHOW_REMINDER -> handleShowReminder(intent)
             NotificationHelper.ACTION_SNOOZE -> handleSnooze(intent)
+            ACTION_SHOW_REFLECTION -> handleShowReflection(intent)
+            else -> { /* ignore unknown actions */ }
         }
     }
 
@@ -80,5 +83,12 @@ class ReminderReceiver : BroadcastReceiver() {
             startTime = startTime,
             location = location
         )
+    }
+
+    private fun handleShowReflection(intent: Intent) {
+        val eventId = intent.getStringExtra(NotificationHelper.EXTRA_EVENT_ID) ?: return
+        val title = intent.getStringExtra(NotificationHelper.EXTRA_EVENT_TITLE) ?: return
+
+        notificationHelper.showReflectionPrompt(eventId = eventId, title = title)
     }
 }

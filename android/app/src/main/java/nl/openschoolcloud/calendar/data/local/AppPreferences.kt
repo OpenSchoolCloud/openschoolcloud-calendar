@@ -62,6 +62,10 @@ class AppPreferences @Inject constructor(
         get() = prefs.getInt(KEY_HOLIDAY_SEED_VERSION, 0)
         set(value) = prefs.edit().putInt(KEY_HOLIDAY_SEED_VERSION, value).apply()
 
+    var reflectionNotificationsEnabled: Boolean
+        get() = prefs.getBoolean(KEY_REFLECTION_NOTIFICATIONS, true)
+        set(value) = prefs.edit().putBoolean(KEY_REFLECTION_NOTIFICATIONS, value).apply()
+
     companion object {
         private const val KEY_SYNC_INTERVAL = "sync_interval_minutes"
         private const val KEY_THEME_MODE = "theme_mode"
@@ -71,6 +75,7 @@ class AppPreferences @Inject constructor(
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
         private const val KEY_PROMO_DISMISSED = "promo_dismissed"
         private const val KEY_HOLIDAY_SEED_VERSION = "holiday_seed_version"
+        private const val KEY_REFLECTION_NOTIFICATIONS = "reflection_notifications_enabled"
 
         const val DEFAULT_SYNC_INTERVAL = 60L
         const val DEFAULT_REMINDER_MINUTES = 15

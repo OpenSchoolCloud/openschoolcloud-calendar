@@ -81,6 +81,7 @@ class App : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         notificationHelper.createNotificationChannel()
+        notificationHelper.createReflectionChannel()
         ReminderWorker.schedule(this)
 
         // Seed holiday calendars on background thread

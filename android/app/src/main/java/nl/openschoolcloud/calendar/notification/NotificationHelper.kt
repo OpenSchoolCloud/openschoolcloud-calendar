@@ -44,8 +44,10 @@ class NotificationHelper @Inject constructor(
 ) {
     companion object {
         const val CHANNEL_REMINDERS = "reminders"
+        const val CHANNEL_REFLECTIONS = "reflections"
         const val ACTION_VIEW_EVENT = "nl.openschoolcloud.calendar.ACTION_VIEW_EVENT"
         const val ACTION_SNOOZE = "nl.openschoolcloud.calendar.ACTION_SNOOZE"
+        const val ACTION_REFLECT = "nl.openschoolcloud.calendar.ACTION_REFLECT"
         const val EXTRA_EVENT_ID = "event_id"
         const val EXTRA_EVENT_TITLE = "event_title"
         const val EXTRA_EVENT_TIME = "event_time"
@@ -134,6 +136,46 @@ class NotificationHelper @Inject constructor(
             .build()
 
         NotificationManagerCompat.from(context).notify(eventId.hashCode(), notification)
+    }
+
+    fun createReflectionChannel() {
+        val channel = NotificationChannel(
+            CHANNEL_REFLECTIONS,
+            context.getString(R.string.notification_channel_reflections),
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = context.getString(R.string.notification_channel_reflections_desc)
+        }
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
+    }
+
+    fun showReflectionPrompt(eventId: String, title: String) {
+        if (!hasNotificationPermission()) return
+
+        val viewIntent = Intent(context, MainActivity::class.java).apply {
+            action = ACTION_VIEW_EVENT
+            putExtra(EXTRA_EVENT_ID, eventId)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val viewPendingIntent = PendingIntent.getActivity(
+            context,
+            eventId.hashCode() + 200,
+            viewIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_REFLECTIONS)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.notification_reflection_title, title))
+            .setContentText(context.getString(R.string.notification_reflection_text))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setContentIntent(viewPendingIntent)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(eventId.hashCode() + 200, notification)
     }
 
     fun cancelNotification(eventId: String) {

@@ -77,6 +77,9 @@ class ReminderWorker @AssistedInject constructor(
         val events = eventRepository.getEvents(now, tomorrow).first()
         events.forEach { event ->
             reminderManager.scheduleReminder(event)
+            if (event.isLearningAgenda) {
+                reminderManager.scheduleReflectionReminder(event)
+            }
         }
 
         return Result.success()
