@@ -46,8 +46,11 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
@@ -79,6 +82,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -106,6 +110,7 @@ fun CalendarScreen(
     onSettingsClick: () -> Unit,
     onBookingClick: () -> Unit,
     onWeekReviewClick: () -> Unit = {},
+    onWeekProgressClick: () -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -155,7 +160,8 @@ fun CalendarScreen(
                 onSync = viewModel::syncAll,
                 onSettingsClick = onSettingsClick,
                 onBookingClick = onBookingClick,
-                onWeekReviewClick = onWeekReviewClick
+                onWeekReviewClick = onWeekReviewClick,
+                onWeekProgressClick = onWeekProgressClick
             )
         },
         floatingActionButton = {
@@ -231,6 +237,7 @@ fun CalendarScreen(
                     holidayEvents = uiState.getHolidayEventsForDay(uiState.selectedDate),
                     onEventClick = onEventClick,
                     onHolidayClick = viewModel::onHolidayEventClick,
+                    onToggleTaskComplete = viewModel::toggleTaskComplete,
                     modifier = Modifier.weight(0.6f)
                 )
             }
@@ -249,7 +256,8 @@ private fun CalendarTopBar(
     onSync: () -> Unit,
     onSettingsClick: () -> Unit,
     onBookingClick: () -> Unit,
-    onWeekReviewClick: () -> Unit
+    onWeekReviewClick: () -> Unit,
+    onWeekProgressClick: () -> Unit
 ) {
     val weekEnd = weekStart.plusDays(6)
     val monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -314,6 +322,12 @@ private fun CalendarTopBar(
                         contentDescription = stringResource(R.string.settings_sync_now)
                     )
                 }
+            }
+            IconButton(onClick = onWeekProgressClick) {
+                Icon(
+                    Icons.Default.Checklist,
+                    contentDescription = stringResource(R.string.progress_title)
+                )
             }
             IconButton(onClick = onWeekReviewClick) {
                 Icon(
@@ -557,9 +571,14 @@ private fun EventChip(
     event: Event,
     onClick: () -> Unit
 ) {
+    val isTask = event.eventType == "TASK"
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     val startTime = event.dtStart.atZone(ZoneId.systemDefault()).toLocalTime()
-    val eventColor = event.color?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
+    val eventColor = if (isTask) {
+        MaterialTheme.colorScheme.tertiary
+    } else {
+        event.color?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
+    }
 
     Card(
         modifier = Modifier
@@ -567,23 +586,38 @@ private fun EventChip(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = eventColor.copy(alpha = 0.15f)
+            containerColor = eventColor.copy(alpha = if (isTask) 0.12f else 0.15f)
         )
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            // Left color indicator
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(if (event.allDay) 24.dp else 36.dp)
-                    .background(eventColor)
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isTask) {
+                Icon(
+                    imageVector = if (event.taskCompleted) Icons.Default.CheckCircle
+                    else Icons.Default.RadioButtonUnchecked,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .size(14.dp),
+                    tint = eventColor
+                )
+            } else {
+                // Left color indicator
+                Box(
+                    modifier = Modifier
+                        .width(3.dp)
+                        .height(if (event.allDay) 24.dp else 36.dp)
+                        .background(eventColor)
+                )
+            }
 
             Column(
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
             ) {
-                // Time for non-all-day events
-                if (!event.allDay) {
+                // Time for non-all-day events (not tasks)
+                if (!event.allDay && !isTask) {
                     Text(
                         text = startTime.format(timeFormatter),
                         style = MaterialTheme.typography.labelSmall,
@@ -598,7 +632,9 @@ private fun EventChip(
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textDecoration = if (isTask && event.taskCompleted) TextDecoration.LineThrough
+                    else TextDecoration.None
                 )
             }
         }
@@ -615,8 +651,11 @@ private fun SelectedDayPanel(
     holidayEvents: List<HolidayEvent>,
     onEventClick: (String) -> Unit,
     onHolidayClick: (String) -> Unit,
+    onToggleTaskComplete: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val tasks = events.filter { it.eventType == "TASK" }
+    val regularEvents = events.filter { it.eventType != "TASK" }
     val nlLocale = Locale("nl", "NL")
     val dateFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM", nlLocale)
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -648,7 +687,7 @@ private fun SelectedDayPanel(
                 modifier = Modifier.weight(1f)
             )
 
-            val totalCount = events.size + holidayEvents.size
+            val totalCount = regularEvents.size + tasks.size + holidayEvents.size
             if (totalCount > 0) {
                 Text(
                     text = "$totalCount",
@@ -658,7 +697,7 @@ private fun SelectedDayPanel(
             }
         }
 
-        if (events.isEmpty() && holidayEvents.isEmpty()) {
+        if (regularEvents.isEmpty() && tasks.isEmpty() && holidayEvents.isEmpty()) {
             // Empty state
             Box(
                 modifier = Modifier
@@ -708,9 +747,30 @@ private fun SelectedDayPanel(
                     }
                 }
 
+                // Tasks section
+                if (tasks.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.planning_tasks_section),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    }
+                    items(tasks.sortedBy { it.taskCompleted }, key = { "task_${it.uid}" }) { task ->
+                        TaskCard(
+                            task = task,
+                            onToggleComplete = { onToggleTaskComplete(task.uid) }
+                        )
+                    }
+                    if (regularEvents.isNotEmpty()) {
+                        item { Spacer(modifier = Modifier.height(4.dp)) }
+                    }
+                }
+
                 // Regular events
-                if (events.isNotEmpty()) {
-                    val sortedEvents = events.sortedWith(compareBy({ !it.allDay }, { it.dtStart }))
+                if (regularEvents.isNotEmpty()) {
+                    val sortedEvents = regularEvents.sortedWith(compareBy({ !it.allDay }, { it.dtStart }))
                     items(sortedEvents, key = { it.uid }) { event ->
                         SelectedDayEventCard(
                             event = event,
@@ -849,6 +909,51 @@ private fun SelectedDayEventCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TaskCard(
+    task: Event,
+    onToggleComplete: () -> Unit
+) {
+    val taskColor = MaterialTheme.colorScheme.tertiary
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggleComplete),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = taskColor.copy(alpha = 0.12f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (task.taskCompleted) Icons.Default.CheckCircle
+                else Icons.Default.RadioButtonUnchecked,
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+                tint = taskColor
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = task.summary,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface,
+                textDecoration = if (task.taskCompleted) TextDecoration.LineThrough
+                else TextDecoration.None
+            )
         }
     }
 }

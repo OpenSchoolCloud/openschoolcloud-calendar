@@ -377,6 +377,20 @@ class CalendarViewModel @Inject constructor(
     }
 
     /**
+     * Toggle task completion status
+     */
+    fun toggleTaskComplete(taskId: String) {
+        viewModelScope.launch {
+            eventRepository.toggleTaskCompleted(taskId).fold(
+                onSuccess = { loadEventsForCurrentWeek() },
+                onFailure = { error ->
+                    _uiState.update { it.copy(error = error.message) }
+                }
+            )
+        }
+    }
+
+    /**
      * Refresh the current view
      */
     fun refresh() {
