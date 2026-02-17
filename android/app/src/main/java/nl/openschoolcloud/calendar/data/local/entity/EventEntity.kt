@@ -66,5 +66,7 @@ data class EventEntity(
     val rawIcal: String?, // Original iCal data for conflict resolution
     val isLearningAgenda: Boolean = false,
     val learningGoal: String? = null,
-    val learningNeeds: String? = null
+    val learningNeeds: String? = null,
+    val eventType: String = "STANDARD",
+    val taskCompleted: Boolean = false
 )

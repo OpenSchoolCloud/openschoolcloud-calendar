@@ -48,7 +48,7 @@ import nl.openschoolcloud.calendar.data.local.entity.ReflectionEntity
         HolidayEventEntity::class,
         ReflectionEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -121,6 +121,13 @@ abstract class AppDatabase : RoomDatabase() {
 
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_reflection_entries_eventId` ON `reflection_entries` (`eventId`)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_reflection_entries_createdAt` ON `reflection_entries` (`createdAt`)")
+            }
+        }
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE events ADD COLUMN eventType TEXT NOT NULL DEFAULT 'STANDARD'")
+                database.execSQL("ALTER TABLE events ADD COLUMN taskCompleted INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

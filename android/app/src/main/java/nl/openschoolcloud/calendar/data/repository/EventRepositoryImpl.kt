@@ -189,7 +189,9 @@ private fun EventEntity.toDomain(): Event {
         syncStatus = try { SyncStatus.valueOf(syncStatus) } catch (e: Exception) { SyncStatus.SYNCED },
         isLearningAgenda = isLearningAgenda,
         learningGoal = learningGoal,
-        learningNeeds = learningNeeds
+        learningNeeds = learningNeeds,
+        eventType = eventType,
+        taskCompleted = taskCompleted
     )
 }
 
@@ -247,7 +249,9 @@ private fun Event.toEntity(): EventEntity {
         rawIcal = null,
         isLearningAgenda = isLearningAgenda,
         learningGoal = learningGoal,
-        learningNeeds = learningNeeds
+        learningNeeds = learningNeeds,
+        eventType = eventType,
+        taskCompleted = taskCompleted
     )
 }
 

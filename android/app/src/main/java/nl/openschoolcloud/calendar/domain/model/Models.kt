@@ -45,7 +45,9 @@ data class Event(
     val syncStatus: SyncStatus = SyncStatus.SYNCED,
     val isLearningAgenda: Boolean = false,
     val learningGoal: String? = null,    // "Wat ga ik doen?"
-    val learningNeeds: String? = null    // "Wat heb ik nodig?"
+    val learningNeeds: String? = null,   // "Wat heb ik nodig?"
+    val eventType: String = "STANDARD",  // "STANDARD" or "TASK"
+    val taskCompleted: Boolean = false
 )
 
 /**
