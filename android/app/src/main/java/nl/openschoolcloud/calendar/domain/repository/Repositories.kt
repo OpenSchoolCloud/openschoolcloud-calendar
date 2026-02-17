@@ -67,6 +67,16 @@ interface EventRepository {
      * Get events with pending sync status
      */
     suspend fun getPendingEvents(): List<Event>
+
+    /**
+     * Get tasks for a date range
+     */
+    fun getTasks(start: Instant, end: Instant): Flow<List<Event>>
+
+    /**
+     * Toggle task completed status
+     */
+    suspend fun toggleTaskCompleted(eventId: String): Result<Event>
 }
 
 /**

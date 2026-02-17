@@ -122,6 +122,31 @@ class EventRepositoryImpl @Inject constructor(
         return getEvents(startOfDay, endOfDay, null)
     }
 
+    override fun getTasks(start: Instant, end: Instant): Flow<List<Event>> {
+        return eventDao.getTasksInRange(
+            startMillis = start.toEpochMilli(),
+            endMillis = end.toEpochMilli()
+        ).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun toggleTaskCompleted(eventId: String): Result<Event> {
+        return try {
+            val entity = eventDao.getByUid(eventId)
+                ?: return Result.failure(IllegalArgumentException("Event not found: $eventId"))
+            val updated = entity.copy(
+                taskCompleted = !entity.taskCompleted,
+                syncStatus = "PENDING_UPDATE",
+                lastModified = Instant.now().toEpochMilli()
+            )
+            eventDao.update(updated)
+            Result.success(updated.toDomain())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     /**
      * Get events for a specific calendar
      */

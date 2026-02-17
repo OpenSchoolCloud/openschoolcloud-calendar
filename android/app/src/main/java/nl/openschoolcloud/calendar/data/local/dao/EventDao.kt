@@ -82,4 +82,27 @@ interface EventDao {
 
     @Query("DELETE FROM events WHERE calendarId = :calendarId")
     suspend fun deleteByCalendar(calendarId: String)
+
+    @Query("""
+        SELECT * FROM events
+        WHERE eventType = 'TASK'
+        AND dtStart >= :startMillis AND dtStart < :endMillis
+        ORDER BY taskCompleted ASC, dtStart ASC
+    """)
+    fun getTasksInRange(startMillis: Long, endMillis: Long): Flow<List<EventEntity>>
+
+    @Query("""
+        SELECT COUNT(*) FROM events
+        WHERE eventType = 'TASK'
+        AND taskCompleted = 1
+        AND dtStart >= :startMillis AND dtStart < :endMillis
+    """)
+    fun getCompletedTaskCountInRange(startMillis: Long, endMillis: Long): Flow<Int>
+
+    @Query("""
+        SELECT COUNT(*) FROM events
+        WHERE eventType = 'TASK'
+        AND dtStart >= :startMillis AND dtStart < :endMillis
+    """)
+    fun getTaskCountInRange(startMillis: Long, endMillis: Long): Flow<Int>
 }
