@@ -28,6 +28,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import nl.openschoolcloud.calendar.presentation.screens.booking.BookingScreen
 import nl.openschoolcloud.calendar.presentation.screens.calendar.CalendarScreen
+import nl.openschoolcloud.calendar.presentation.screens.feedback.FeedbackScreen
 import nl.openschoolcloud.calendar.presentation.screens.event.EventDetailScreen
 import nl.openschoolcloud.calendar.presentation.screens.event.EventEditScreen
 import nl.openschoolcloud.calendar.presentation.screens.holidays.HolidayDiscoverScreen
@@ -246,6 +247,13 @@ fun AppNavigation(
         // Holiday discover
         composable(Route.HolidayDiscover.route) {
             HolidayDiscoverScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Feedback
+        composable(Route.Feedback.route) {
+            FeedbackScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

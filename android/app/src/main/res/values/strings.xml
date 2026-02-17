@@ -403,6 +403,16 @@
     <string name="settings_planning_day">Planningsdag</string>
     <string name="settings_planning_time">Planningstijd</string>
 
+    <!-- Feedback -->
+    <string name="feedback_title">Feedback geven</string>
+    <string name="feedback_subtitle">Help ons OSC Calendar te verbeteren. Je feedback wordt via e-mail verstuurd.</string>
+    <string name="feedback_category_label">Categorie</string>
+    <string name="feedback_message_label">Je bericht</string>
+    <string name="feedback_message_hint">Beschrijf je feedback zo duidelijk mogelijk…</string>
+    <string name="feedback_send">Verstuur feedback</string>
+    <string name="feedback_no_email_app">Geen e-mail app gevonden</string>
+    <string name="feedback_privacy_notice">Je feedback wordt via je eigen e-mail app verstuurd. We ontvangen alleen wat je zelf invult.</string>
+
     <!-- Overflow menu -->
     <string name="menu_sync">Synchroniseren</string>
     <string name="menu_week_progress">Weekvoortgang</string>
