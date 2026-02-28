@@ -1,67 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:orientation="vertical"
     android:padding="12dp">
 
-    <!-- Header: logo + date -->
     <LinearLayout
-        android:id="@+id/widget_header"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/widget_logo"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/osc_logo" />
-
-        <TextView
-            android:id="@+id/widget_date"
-            android:layout_width="0dp"
+        <!-- Header: date + refresh button -->
+        <LinearLayout
+            android:id="@+id/widget_header"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/widget_logo"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/osc_logo" />
+
+            <TextView
+                android:id="@+id/widget_date"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:textColor="#2B7FB9"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                tools:text="Dinsdag 28 feb" />
+
+            <ImageView
+                android:id="@+id/widget_refresh"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="@string/settings_sync_now"
+                android:src="@android:drawable/ic_popup_sync"
+                android:scaleType="centerInside" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"
+            android:background="#333B9FD9" />
+
+        <!-- Event list -->
+        <ListView
+            android:id="@+id/widget_event_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:textColor="#2B7FB9"
+            android:divider="@null"
+            android:dividerHeight="0dp"
+            android:scrollbars="none" />
+
+        <!-- Empty state -->
+        <TextView
+            android:id="@+id/widget_empty"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/widget_no_events_today"
+            android:textColor="#999999"
             android:textSize="14sp"
-            android:textStyle="bold"
-            tools:text="Dinsdag 11 februari" />
+            android:visibility="gone" />
+
     </LinearLayout>
 
-    <!-- Divider -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="2dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:background="@drawable/widget_header_divider" />
-
-    <!-- Event list (using ListView with RemoteViewsService) -->
-    <ListView
-        android:id="@+id/widget_event_list"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:divider="@null"
-        android:dividerHeight="0dp" />
-
-    <!-- Empty state -->
-    <TextView
-        android:id="@+id/widget_empty"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center"
-        android:text="@string/widget_no_events"
-        android:textColor="#666666"
-        android:textSize="13sp"
-        android:visibility="gone" />
-
-</LinearLayout>
+</FrameLayout>

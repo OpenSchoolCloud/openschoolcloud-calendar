@@ -1,31 +1,28 @@
 /*
- * OpenSchoolCloud Calendar
- * Copyright (C) 2025 OpenSchoolCloud / Aldewereld Consultancy
+ * OSC Calendar - Privacy-first calendar for Dutch education
+ * Copyright (C) 2025 Aldewereld Consultancy (OpenSchoolCloud)
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package nl.openschoolcloud.calendar.widget
 
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import androidx.room.Room
 import nl.openschoolcloud.calendar.R
 import nl.openschoolcloud.calendar.data.local.AppDatabase
-import nl.openschoolcloud.calendar.data.local.entity.EventEntity
 import nl.openschoolcloud.calendar.notification.NotificationHelper
 import java.time.Instant
 import java.time.LocalDate
@@ -34,7 +31,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * RemoteViewsService that provides the factory for the Today widget's event list.
+ * RemoteViewsService that provides the factory for the Dagplanning widget's event list.
  */
 class TodayWidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
@@ -44,7 +41,8 @@ class TodayWidgetService : RemoteViewsService() {
 
 /**
  * Factory that loads today's events from the database and provides
- * RemoteViews for each event row in the widget.
+ * RemoteViews for each event row in the widget with color dots,
+ * time ranges, and optional location.
  */
 class TodayWidgetFactory(
     private val context: Context
@@ -65,6 +63,8 @@ class TodayWidgetFactory(
         val uid: String,
         val summary: String,
         val startTime: Long,
+        val endTime: Long?,
+        val location: String?,
         val calendarColor: Int
     )
 
@@ -79,27 +79,27 @@ class TodayWidgetFactory(
             val startOfDay = today.atStartOfDay(zone).toInstant().toEpochMilli()
             val endOfDay = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
 
-            // Query events directly from Room (synchronous, runs on binder thread)
             val eventDao = db.eventDao()
             val calendarDao = db.calendarDao()
 
-            // Load calendar colors
+            // Build calendar color map
             val calendars = calendarDao.getVisibleCalendarsSync()
             val colorMap = calendars.associate { it.id to it.colorInt }
             val visibleCalendarIds = calendars.map { it.id }.toSet()
 
-            // Load events in range
+            // Load today's events
             val rawEvents = eventDao.getInRangeSync(startOfDay, endOfDay)
 
             events = rawEvents
                 .filter { it.calendarId in visibleCalendarIds && it.syncStatus != "PENDING_DELETE" }
                 .sortedBy { it.dtStart }
-                .take(5)
                 .map { entity ->
                     WidgetEvent(
                         uid = entity.uid,
                         summary = entity.summary,
                         startTime = entity.dtStart,
+                        endTime = entity.dtEnd,
+                        location = entity.location,
                         calendarColor = colorMap[entity.calendarId] ?: Color.parseColor("#3B9FD9")
                     )
                 }
@@ -117,18 +117,35 @@ class TodayWidgetFactory(
     override fun getViewAt(position: Int): RemoteViews {
         val event = events[position]
         val views = RemoteViews(context.packageName, R.layout.widget_event_row)
+        val zone = ZoneId.systemDefault()
 
-        // Time
-        val time = Instant.ofEpochMilli(event.startTime)
-            .atZone(ZoneId.systemDefault())
+        // Color dot (tinted via setColorFilter)
+        views.setInt(R.id.widget_event_color, "setColorFilter", event.calendarColor)
+
+        // Time range: "09:00 - 10:30" or just "09:00"
+        val startFormatted = Instant.ofEpochMilli(event.startTime)
+            .atZone(zone)
             .format(timeFormatter)
-        views.setTextViewText(R.id.widget_event_time, time)
+        val timeText = if (event.endTime != null) {
+            val endFormatted = Instant.ofEpochMilli(event.endTime)
+                .atZone(zone)
+                .format(timeFormatter)
+            "$startFormatted - $endFormatted"
+        } else {
+            startFormatted
+        }
+        views.setTextViewText(R.id.widget_event_time, timeText)
 
         // Title
         views.setTextViewText(R.id.widget_event_title, event.summary)
 
-        // Calendar color indicator
-        views.setInt(R.id.widget_event_color, "setBackgroundColor", event.calendarColor)
+        // Location (only show if present)
+        if (!event.location.isNullOrBlank()) {
+            views.setTextViewText(R.id.widget_event_location, event.location)
+            views.setViewVisibility(R.id.widget_event_location, View.VISIBLE)
+        } else {
+            views.setViewVisibility(R.id.widget_event_location, View.GONE)
+        }
 
         // Fill-in intent for click handling
         val fillInIntent = Intent().apply {

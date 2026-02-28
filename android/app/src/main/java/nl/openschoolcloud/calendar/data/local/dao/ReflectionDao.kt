@@ -41,4 +41,7 @@ interface ReflectionDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM reflection_entries WHERE eventId = :eventId)")
     suspend fun hasReflection(eventId: String): Boolean
+
+    @Query("SELECT EXISTS(SELECT 1 FROM reflection_entries WHERE eventId = :eventId)")
+    fun hasReflectionSync(eventId: String): Boolean
 }

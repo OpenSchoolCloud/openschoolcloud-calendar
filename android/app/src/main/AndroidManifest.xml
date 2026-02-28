@@ -72,12 +72,14 @@
             </intent-filter>
         </receiver>
 
-        <!-- Today widget -->
+        <!-- Dagplanning widget -->
         <receiver
             android:name=".widget.TodayWidgetReceiver"
+            android:label="@string/widget_dagplanning_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="nl.openschoolcloud.calendar.WIDGET_TODAY_REFRESH" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
@@ -89,12 +91,14 @@
             android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="false" />
 
-        <!-- Next Event widget -->
+        <!-- Volgende Les widget -->
         <receiver
             android:name=".widget.NextEventWidgetReceiver"
+            android:label="@string/widget_volgende_les_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="nl.openschoolcloud.calendar.WIDGET_NEXT_REFRESH" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

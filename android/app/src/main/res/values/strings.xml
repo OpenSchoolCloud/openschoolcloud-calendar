@@ -272,14 +272,18 @@
     <string name="booking_not_supported">Je server ondersteunt geen afspraak-links. Hiervoor is Nextcloud Calendar v3+ nodig.</string>
 
     <!-- Widgets -->
-    <string name="widget_today_name">Vandaag</string>
-    <string name="widget_today_description">Toont de afspraken van vandaag</string>
-    <string name="widget_no_events">Geen afspraken vandaag</string>
-    <string name="widget_next_event_name">Volgende afspraak</string>
-    <string name="widget_next_event_description">Toont je eerstvolgende afspraak</string>
+    <string name="widget_dagplanning_name">Dagplanning</string>
+    <string name="widget_dagplanning_description">Overzicht van alle lessen vandaag</string>
+    <string name="widget_volgende_les_name">Volgende Les</string>
+    <string name="widget_volgende_les_description">Countdown naar je volgende les</string>
+    <string name="widget_no_events_today">Geen lessen vandaag</string>
+    <string name="widget_no_more_events">Geen lessen meer vandaag</string>
+    <string name="widget_now">Nu bezig</string>
+    <string name="widget_in_minutes">over %d min</string>
+    <string name="widget_in_hours">over %d uur</string>
+    <string name="widget_time_remaining">nog %d min</string>
+    <string name="widget_how_was_it">Hoe ging %s?</string>
     <string name="widget_no_upcoming">Geen komende afspraken</string>
-    <string name="widget_in_minutes">Over %d min</string>
-    <string name="widget_now">Nu</string>
 
     <!-- Promo -->
     <string name="promo_title">Eigen schoolcloud nodig?</string>

@@ -1,19 +1,16 @@
 /*
- * OpenSchoolCloud Calendar
- * Copyright (C) 2025 OpenSchoolCloud / Aldewereld Consultancy
+ * OSC Calendar - Privacy-first calendar for Dutch education
+ * Copyright (C) 2025 Aldewereld Consultancy (OpenSchoolCloud)
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package nl.openschoolcloud.calendar.widget
 
@@ -22,7 +19,6 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.view.View
 import android.widget.RemoteViews
 import nl.openschoolcloud.calendar.MainActivity
 import nl.openschoolcloud.calendar.R
@@ -32,11 +28,14 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Builds the RemoteViews for the "Vandaag" widget.
+ * Builds the RemoteViews for the "Dagplanning" widget (3x3).
+ * Shows today's date, a scrollable list of events with color dots,
+ * and a refresh button.
  */
 object TodayWidget {
 
-    private val dateFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale("nl"))
+    private val dateFormatter = DateTimeFormatter.ofPattern("EEEE d MMM", Locale("nl"))
+    const val ACTION_REFRESH = "nl.openschoolcloud.calendar.WIDGET_TODAY_REFRESH"
 
     fun updateWidget(
         context: Context,
@@ -45,7 +44,7 @@ object TodayWidget {
     ) {
         val views = RemoteViews(context.packageName, R.layout.widget_today)
 
-        // Set today's date
+        // Set today's date in header
         val today = LocalDate.now()
         val dateText = today.format(dateFormatter).replaceFirstChar { it.uppercase() }
         views.setTextViewText(R.id.widget_date, dateText)
@@ -61,6 +60,18 @@ object TodayWidget {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         views.setOnClickPendingIntent(R.id.widget_header, calendarPendingIntent)
+
+        // Refresh button click → trigger widget update
+        val refreshIntent = Intent(context, TodayWidgetReceiver::class.java).apply {
+            action = ACTION_REFRESH
+        }
+        val refreshPendingIntent = PendingIntent.getBroadcast(
+            context,
+            widgetId + 500,
+            refreshIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.widget_refresh, refreshPendingIntent)
 
         // Set up the ListView with RemoteViewsService
         val serviceIntent = Intent(context, TodayWidgetService::class.java).apply {
@@ -83,7 +94,7 @@ object TodayWidget {
         )
         views.setPendingIntentTemplate(R.id.widget_event_list, eventClickPendingIntent)
 
-        // Notify the widget manager to update
+        // Notify the widget manager to update data
         appWidgetManager.notifyAppWidgetViewDataChanged(widgetId, R.id.widget_event_list)
         appWidgetManager.updateAppWidget(widgetId, views)
     }

@@ -50,10 +50,12 @@ class NotificationHelper @Inject constructor(
         const val ACTION_SNOOZE = "nl.openschoolcloud.calendar.ACTION_SNOOZE"
         const val ACTION_REFLECT = "nl.openschoolcloud.calendar.ACTION_REFLECT"
         const val ACTION_PLAN_WEEK = "nl.openschoolcloud.calendar.ACTION_PLAN_WEEK"
+        const val ACTION_REFLECT_EVENT = "nl.openschoolcloud.calendar.ACTION_REFLECT_EVENT"
         const val EXTRA_EVENT_ID = "event_id"
         const val EXTRA_EVENT_TITLE = "event_title"
         const val EXTRA_EVENT_TIME = "event_time"
         const val EXTRA_EVENT_LOCATION = "event_location"
+        const val EXTRA_MOOD = "extra_mood"
         const val SNOOZE_MINUTES = 5
     }
 

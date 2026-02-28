@@ -1,77 +1,212 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/widget_next_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
     android:padding="12dp">
 
-    <!-- Calendar color indicator bar -->
-    <View
-        android:id="@+id/widget_next_color"
-        android:layout_width="4dp"
-        android:layout_height="match_parent"
-        android:layout_marginEnd="10dp"
-        tools:background="#3B9FD9" />
-
-    <!-- Event info -->
+    <!-- State 1: Upcoming event -->
     <LinearLayout
-        android:id="@+id/widget_next_content"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:id="@+id/state_upcoming"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
 
-        <!-- Title -->
+        <!-- Color accent bar -->
+        <View
+            android:id="@+id/upcoming_color_bar"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="10dp"
+            tools:background="#3B9FD9" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/upcoming_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#333333"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                tools:text="Wiskunde" />
+
+            <TextView
+                android:id="@+id/upcoming_countdown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="#3B9FD9"
+                android:textSize="13sp"
+                tools:text="over 25 min" />
+
+            <TextView
+                android:id="@+id/upcoming_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:textColor="#666666"
+                android:textSize="11sp"
+                tools:text="09:00 - 10:30" />
+
+            <TextView
+                android:id="@+id/upcoming_location"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone"
+                tools:text="Lokaal 2.13"
+                tools:visibility="visible" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- State 2: In Progress -->
+    <LinearLayout
+        android:id="@+id/state_in_progress"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <!-- Color accent bar -->
+        <View
+            android:id="@+id/progress_color_bar"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="10dp"
+            tools:background="#3B9FD9" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/progress_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_now"
+                android:textColor="#E67E22"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/progress_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#333333"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                tools:text="Wiskunde" />
+
+            <TextView
+                android:id="@+id/progress_remaining"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="#666666"
+                android:textSize="12sp"
+                tools:text="nog 35 min" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- State 3: Reflection prompt -->
+    <LinearLayout
+        android:id="@+id/state_reflection"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
         <TextView
-            android:id="@+id/widget_next_title"
+            android:id="@+id/reflection_prompt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
+            android:gravity="center"
             android:textColor="#333333"
             android:textSize="14sp"
             android:textStyle="bold"
-            tools:text="Teamoverleg" />
+            tools:text="Hoe ging Wiskunde?" />
 
-        <!-- Time -->
-        <TextView
-            android:id="@+id/widget_next_time"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="#3B9FD9"
-            android:textSize="12sp"
-            tools:text="Over 45 min" />
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:orientation="horizontal">
 
-        <!-- Location (optional) -->
-        <TextView
-            android:id="@+id/widget_next_location"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textColor="#666666"
-            android:textSize="11sp"
-            android:visibility="gone"
-            tools:text="Lokaal 2.13"
-            tools:visibility="visible" />
+            <TextView
+                android:id="@+id/reflection_bad"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="\uD83D\uDE15"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/reflection_ok"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="16dp"
+                android:gravity="center"
+                android:text="\uD83D\uDE10"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/reflection_good"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="16dp"
+                android:gravity="center"
+                android:text="\uD83D\uDE42"
+                android:textSize="24sp" />
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- Empty state (overlays content area) -->
-    <TextView
-        android:id="@+id/widget_next_empty"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
+    <!-- State 4: Empty / No more events -->
+    <LinearLayout
+        android:id="@+id/state_empty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:gravity="center"
-        android:text="@string/widget_no_upcoming"
-        android:textColor="#666666"
-        android:textSize="13sp"
-        android:visibility="gone" />
+        android:orientation="vertical"
+        android:visibility="gone">
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/empty_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="\u2705"
+            android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/empty_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/widget_no_more_events"
+            android:textColor="#999999"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+</FrameLayout>

@@ -1,19 +1,16 @@
 /*
- * OpenSchoolCloud Calendar
- * Copyright (C) 2025 OpenSchoolCloud / Aldewereld Consultancy
+ * OSC Calendar - Privacy-first calendar for Dutch education
+ * Copyright (C) 2025 Aldewereld Consultancy (OpenSchoolCloud)
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package nl.openschoolcloud.calendar.widget
 
@@ -24,8 +21,8 @@ import android.content.Context
 import android.content.Intent
 
 /**
- * AppWidgetProvider for the "Vandaag" (Today) home screen widget.
- * Shows today's date and upcoming events.
+ * AppWidgetProvider for the "Dagplanning" home screen widget.
+ * Shows today's date and all events for the day with color dots.
  */
 class TodayWidgetReceiver : AppWidgetProvider() {
 
@@ -39,6 +36,15 @@ class TodayWidgetReceiver : AppWidgetProvider() {
         }
     }
 
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+
+        // Handle refresh button tap
+        if (intent.action == TodayWidget.ACTION_REFRESH) {
+            refreshAll(context)
+        }
+    }
+
     override fun onEnabled(context: Context) {
         // First widget placed
     }
@@ -49,7 +55,7 @@ class TodayWidgetReceiver : AppWidgetProvider() {
 
     companion object {
         /**
-         * Trigger a refresh of all Today widgets.
+         * Trigger a refresh of all Dagplanning widgets.
          * Call this after event create/edit/delete.
          */
         fun refreshAll(context: Context) {

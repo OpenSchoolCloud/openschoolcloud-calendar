@@ -18,8 +18,12 @@
 package nl.openschoolcloud.calendar.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -78,9 +82,11 @@ fun AppNavigation(
     hasAccount: Boolean = false,
     onboardingCompleted: Boolean = false,
     hasCompletedModeSelection: Boolean = false,
-    isStandaloneMode: Boolean = false
+    isStandaloneMode: Boolean = false,
+    deepLinkEventId: String? = null
 ) {
     val navController = rememberNavController()
+    var deepLinkHandled by remember { mutableStateOf(false) }
 
     NavHost(
         navController = navController,
@@ -161,6 +167,14 @@ fun AppNavigation(
         
         // Main calendar view
         composable(Route.Calendar.route) {
+            // Handle deep link to event detail from widget clicks
+            LaunchedEffect(deepLinkEventId, deepLinkHandled) {
+                if (deepLinkEventId != null && !deepLinkHandled) {
+                    deepLinkHandled = true
+                    navController.navigate(Route.EventDetail.createRoute(deepLinkEventId))
+                }
+            }
+
             CalendarScreen(
                 onEventClick = { eventId ->
                     navController.navigate(Route.EventDetail.createRoute(eventId))

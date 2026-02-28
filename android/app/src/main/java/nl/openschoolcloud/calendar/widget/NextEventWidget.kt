@@ -1,19 +1,16 @@
 /*
- * OpenSchoolCloud Calendar
- * Copyright (C) 2025 OpenSchoolCloud / Aldewereld Consultancy
+ * OSC Calendar - Privacy-first calendar for Dutch education
+ * Copyright (C) 2025 Aldewereld Consultancy (OpenSchoolCloud)
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package nl.openschoolcloud.calendar.widget
 
@@ -28,35 +25,91 @@ import androidx.room.Room
 import nl.openschoolcloud.calendar.MainActivity
 import nl.openschoolcloud.calendar.R
 import nl.openschoolcloud.calendar.data.local.AppDatabase
+import nl.openschoolcloud.calendar.data.local.entity.EventEntity
 import nl.openschoolcloud.calendar.notification.NotificationHelper
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.Locale
 import java.util.concurrent.Executors
 
 /**
- * Builds the RemoteViews for the "Volgende afspraak" (Next Event) widget.
+ * Builds the RemoteViews for the "Volgende Les" widget (3x2).
+ * Supports 4 states: upcoming, in-progress, reflection, and empty.
  */
 object NextEventWidget {
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale("nl"))
+
+    const val ACTION_WIDGET_REFRESH = "nl.openschoolcloud.calendar.WIDGET_NEXT_REFRESH"
+    const val ACTION_REFLECT_EVENT = "nl.openschoolcloud.calendar.ACTION_REFLECT_EVENT"
+    const val EXTRA_MOOD = "extra_mood"
+
+    private const val REFLECTION_WINDOW_MINUTES = 15L
+
+    private enum class WidgetState {
+        UPCOMING, IN_PROGRESS, REFLECTION, EMPTY
+    }
 
     fun updateWidget(
         context: Context,
         appWidgetManager: AppWidgetManager,
         widgetId: Int
     ) {
-        // Query database on a background thread
         Executors.newSingleThreadExecutor().execute {
             val views = buildViews(context, widgetId)
             appWidgetManager.updateAppWidget(widgetId, views)
         }
     }
 
+    /**
+     * Returns the next alarm time (epoch millis) for widget auto-refresh,
+     * or null if no upcoming events need refreshing.
+     */
+    fun getNextAlarmTime(context: Context): Long? {
+        val db = Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "openschoolcloud_calendar.db"
+        ).allowMainThreadQueries().build()
+
+        try {
+            val now = System.currentTimeMillis()
+            val todayEvents = getTodayEvents(db)
+            if (todayEvents.isEmpty()) return null
+
+            val alarmTimes = mutableListOf<Long>()
+            for (event in todayEvents) {
+                // Add event start time
+                if (event.dtStart > now) {
+                    alarmTimes.add(event.dtStart)
+                }
+                // Add event end time
+                val end = event.dtEnd
+                if (end != null && end > now) {
+                    alarmTimes.add(end)
+                    // Add reflection window close time (15 min after end)
+                    alarmTimes.add(end + REFLECTION_WINDOW_MINUTES * 60_000L)
+                }
+            }
+
+            return alarmTimes.filter { it > now }.minOrNull()
+        } catch (e: Exception) {
+            return null
+        } finally {
+            db.close()
+        }
+    }
+
     private fun buildViews(context: Context, widgetId: Int): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_next_event)
+
+        // Hide all states initially
+        views.setViewVisibility(R.id.state_upcoming, View.GONE)
+        views.setViewVisibility(R.id.state_in_progress, View.GONE)
+        views.setViewVisibility(R.id.state_reflection, View.GONE)
+        views.setViewVisibility(R.id.state_empty, View.GONE)
 
         val db = Room.databaseBuilder(
             context,
@@ -66,83 +119,154 @@ object NextEventWidget {
 
         try {
             val now = System.currentTimeMillis()
-            val endOfTomorrow = Instant.now()
-                .plus(2, ChronoUnit.DAYS)
-                .toEpochMilli()
-
-            val eventDao = db.eventDao()
+            val todayEvents = getTodayEvents(db)
             val calendarDao = db.calendarDao()
+            val reflectionDao = db.reflectionDao()
 
             val calendars = calendarDao.getVisibleCalendarsSync()
             val colorMap = calendars.associate { it.id to it.colorInt }
-            val visibleIds = calendars.map { it.id }.toSet()
 
-            val nextEvent = eventDao.getInRangeSync(now, endOfTomorrow)
-                .filter { it.calendarId in visibleIds && it.syncStatus != "PENDING_DELETE" }
-                .sortedBy { it.dtStart }
-                .firstOrNull()
+            // Find current and previous/next events
+            val currentEvent = todayEvents.firstOrNull { event ->
+                event.dtStart <= now && (event.dtEnd ?: Long.MAX_VALUE) > now
+            }
+            val nextEvent = todayEvents.firstOrNull { it.dtStart > now }
+            val previousEvent = todayEvents.lastOrNull { event ->
+                val end = event.dtEnd ?: event.dtStart
+                end <= now
+            }
 
-            if (nextEvent != null) {
-                // Show event
-                views.setViewVisibility(R.id.widget_next_color, View.VISIBLE)
-                views.setViewVisibility(R.id.widget_next_content, View.VISIBLE)
-                views.setViewVisibility(R.id.widget_next_empty, View.GONE)
+            // Determine state
+            val state: WidgetState
+            val relevantEvent: EventEntity?
 
-                // Title
-                views.setTextViewText(R.id.widget_next_title, nextEvent.summary)
+            if (currentEvent != null) {
+                state = WidgetState.IN_PROGRESS
+                relevantEvent = currentEvent
+            } else if (previousEvent != null) {
+                val prevEnd = previousEvent.dtEnd ?: previousEvent.dtStart
+                val minutesSinceEnd = (now - prevEnd) / 60_000L
+                val hasReflection = try {
+                    reflectionDao.hasReflectionSync(previousEvent.uid)
+                } catch (e: Exception) {
+                    true // Assume reflected on error to avoid stuck reflection state
+                }
 
-                // Calendar color
-                val color = colorMap[nextEvent.calendarId] ?: Color.parseColor("#3B9FD9")
-                views.setInt(R.id.widget_next_color, "setBackgroundColor", color)
-
-                // Time - relative or absolute
-                val timeText = formatRelativeTime(context, nextEvent.dtStart, nextEvent.dtEnd)
-                views.setTextViewText(R.id.widget_next_time, timeText)
-
-                // Location
-                if (!nextEvent.location.isNullOrBlank()) {
-                    views.setTextViewText(R.id.widget_next_location, nextEvent.location)
-                    views.setViewVisibility(R.id.widget_next_location, View.VISIBLE)
+                if (minutesSinceEnd <= REFLECTION_WINDOW_MINUTES && !hasReflection) {
+                    state = WidgetState.REFLECTION
+                    relevantEvent = previousEvent
+                } else if (nextEvent != null) {
+                    state = WidgetState.UPCOMING
+                    relevantEvent = nextEvent
                 } else {
-                    views.setViewVisibility(R.id.widget_next_location, View.GONE)
+                    state = WidgetState.EMPTY
+                    relevantEvent = null
                 }
-
-                // Click → open event detail
-                val eventIntent = Intent(context, MainActivity::class.java).apply {
-                    action = NotificationHelper.ACTION_VIEW_EVENT
-                    putExtra(NotificationHelper.EXTRA_EVENT_ID, nextEvent.uid)
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                }
-                val eventPendingIntent = PendingIntent.getActivity(
-                    context,
-                    widgetId + 2000,
-                    eventIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_next_root, eventPendingIntent)
+            } else if (nextEvent != null) {
+                state = WidgetState.UPCOMING
+                relevantEvent = nextEvent
             } else {
-                // Empty state
-                views.setViewVisibility(R.id.widget_next_color, View.GONE)
-                views.setViewVisibility(R.id.widget_next_content, View.GONE)
-                views.setViewVisibility(R.id.widget_next_empty, View.VISIBLE)
+                state = WidgetState.EMPTY
+                relevantEvent = null
+            }
 
-                // Click → open calendar
-                val calendarIntent = Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            when (state) {
+                WidgetState.UPCOMING -> {
+                    views.setViewVisibility(R.id.state_upcoming, View.VISIBLE)
+                    val event = relevantEvent!!
+                    val color = colorMap[event.calendarId] ?: Color.parseColor("#3B9FD9")
+
+                    views.setInt(R.id.upcoming_color_bar, "setBackgroundColor", color)
+                    views.setTextViewText(R.id.upcoming_title, event.summary)
+
+                    // Countdown
+                    val diffMinutes = (event.dtStart - now) / 60_000L
+                    val countdownText = if (diffMinutes < 60) {
+                        context.getString(R.string.widget_in_minutes, diffMinutes.toInt())
+                    } else {
+                        context.getString(R.string.widget_in_hours, (diffMinutes / 60).toInt())
+                    }
+                    views.setTextViewText(R.id.upcoming_countdown, countdownText)
+
+                    // Time range
+                    val zone = ZoneId.systemDefault()
+                    val startStr = Instant.ofEpochMilli(event.dtStart).atZone(zone).format(timeFormatter)
+                    val timeText = if (event.dtEnd != null) {
+                        val endStr = Instant.ofEpochMilli(event.dtEnd).atZone(zone).format(timeFormatter)
+                        "$startStr - $endStr"
+                    } else {
+                        startStr
+                    }
+                    views.setTextViewText(R.id.upcoming_time, timeText)
+
+                    // Location
+                    if (!event.location.isNullOrBlank()) {
+                        views.setTextViewText(R.id.upcoming_location, event.location)
+                        views.setViewVisibility(R.id.upcoming_location, View.VISIBLE)
+                    } else {
+                        views.setViewVisibility(R.id.upcoming_location, View.GONE)
+                    }
+
+                    // Click → open event detail
+                    setEventClickIntent(context, views, R.id.state_upcoming, event.uid, widgetId)
                 }
-                val calendarPendingIntent = PendingIntent.getActivity(
-                    context,
-                    widgetId + 2000,
-                    calendarIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_next_root, calendarPendingIntent)
+
+                WidgetState.IN_PROGRESS -> {
+                    views.setViewVisibility(R.id.state_in_progress, View.VISIBLE)
+                    val event = relevantEvent!!
+                    val color = colorMap[event.calendarId] ?: Color.parseColor("#3B9FD9")
+
+                    views.setInt(R.id.progress_color_bar, "setBackgroundColor", color)
+                    views.setTextViewText(R.id.progress_title, event.summary)
+
+                    // Time remaining
+                    if (event.dtEnd != null) {
+                        val remainingMinutes = ((event.dtEnd - now) / 60_000L).toInt()
+                        views.setTextViewText(
+                            R.id.progress_remaining,
+                            context.getString(R.string.widget_time_remaining, remainingMinutes)
+                        )
+                    } else {
+                        views.setViewVisibility(R.id.progress_remaining, View.GONE)
+                    }
+
+                    // Click → open event detail
+                    setEventClickIntent(context, views, R.id.state_in_progress, event.uid, widgetId)
+                }
+
+                WidgetState.REFLECTION -> {
+                    views.setViewVisibility(R.id.state_reflection, View.VISIBLE)
+                    val event = relevantEvent!!
+
+                    // "Hoe ging [subject]?"
+                    val prompt = context.getString(R.string.widget_how_was_it, event.summary)
+                    views.setTextViewText(R.id.reflection_prompt, prompt)
+
+                    // Emoji buttons → open app with reflection intent + mood
+                    setReflectionClickIntent(context, views, R.id.reflection_bad, event.uid, 1, widgetId)
+                    setReflectionClickIntent(context, views, R.id.reflection_ok, event.uid, 3, widgetId)
+                    setReflectionClickIntent(context, views, R.id.reflection_good, event.uid, 5, widgetId)
+                }
+
+                WidgetState.EMPTY -> {
+                    views.setViewVisibility(R.id.state_empty, View.VISIBLE)
+
+                    // Click → open calendar
+                    val calendarIntent = Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    val calendarPendingIntent = PendingIntent.getActivity(
+                        context,
+                        widgetId + 2000,
+                        calendarIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                    views.setOnClickPendingIntent(R.id.state_empty, calendarPendingIntent)
+                }
             }
         } catch (e: Exception) {
             // Show empty state on error
-            views.setViewVisibility(R.id.widget_next_color, View.GONE)
-            views.setViewVisibility(R.id.widget_next_content, View.GONE)
-            views.setViewVisibility(R.id.widget_next_empty, View.VISIBLE)
+            views.setViewVisibility(R.id.state_empty, View.VISIBLE)
         } finally {
             db.close()
         }
@@ -150,33 +274,63 @@ object NextEventWidget {
         return views
     }
 
-    private fun formatRelativeTime(context: Context, startMillis: Long, endMillis: Long?): String {
-        val nowMillis = System.currentTimeMillis()
-        val diffMinutes = (startMillis - nowMillis) / 60_000L
-
-        val relativeText = when {
-            diffMinutes <= 0 -> context.getString(R.string.widget_now)
-            diffMinutes < 60 -> context.getString(R.string.widget_in_minutes, diffMinutes.toInt())
-            else -> null
-        }
-
+    private fun getTodayEvents(db: AppDatabase): List<EventEntity> {
+        val today = LocalDate.now()
         val zone = ZoneId.systemDefault()
-        val startFormatted = Instant.ofEpochMilli(startMillis).atZone(zone).format(timeFormatter)
+        val startOfDay = today.atStartOfDay(zone).toInstant().toEpochMilli()
+        val endOfDay = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
 
-        return if (relativeText != null) {
-            if (endMillis != null) {
-                val endFormatted = Instant.ofEpochMilli(endMillis).atZone(zone).format(timeFormatter)
-                "$relativeText · $startFormatted - $endFormatted"
-            } else {
-                "$relativeText · $startFormatted"
-            }
-        } else {
-            if (endMillis != null) {
-                val endFormatted = Instant.ofEpochMilli(endMillis).atZone(zone).format(timeFormatter)
-                "$startFormatted - $endFormatted"
-            } else {
-                startFormatted
-            }
+        val eventDao = db.eventDao()
+        val calendarDao = db.calendarDao()
+
+        val visibleIds = calendarDao.getVisibleCalendarsSync().map { it.id }.toSet()
+
+        return eventDao.getInRangeSync(startOfDay, endOfDay)
+            .filter { it.calendarId in visibleIds && it.syncStatus != "PENDING_DELETE" }
+            .sortedBy { it.dtStart }
+    }
+
+    private fun setEventClickIntent(
+        context: Context,
+        views: RemoteViews,
+        viewId: Int,
+        eventUid: String,
+        widgetId: Int
+    ) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            action = NotificationHelper.ACTION_VIEW_EVENT
+            putExtra(NotificationHelper.EXTRA_EVENT_ID, eventUid)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            widgetId + 2000,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(viewId, pendingIntent)
+    }
+
+    private fun setReflectionClickIntent(
+        context: Context,
+        views: RemoteViews,
+        viewId: Int,
+        eventUid: String,
+        mood: Int,
+        widgetId: Int
+    ) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            action = ACTION_REFLECT_EVENT
+            putExtra(NotificationHelper.EXTRA_EVENT_ID, eventUid)
+            putExtra(EXTRA_MOOD, mood)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            widgetId + 3000 + mood,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(viewId, pendingIntent)
     }
 }

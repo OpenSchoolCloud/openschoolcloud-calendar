@@ -32,8 +32,10 @@ import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
+import nl.openschoolcloud.calendar.notification.NotificationHelper
 import nl.openschoolcloud.calendar.presentation.navigation.AppNavigation
 import nl.openschoolcloud.calendar.presentation.theme.OpenSchoolCloudCalendarTheme
+import nl.openschoolcloud.calendar.widget.NextEventWidget
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -73,6 +75,15 @@ class MainActivity : ComponentActivity() {
 
         val themeMode = appPreferences.themeMode
 
+        // Handle deep link intents from widgets
+        val deepLinkEventId = when (intent?.action) {
+            NotificationHelper.ACTION_VIEW_EVENT,
+            NotificationHelper.ACTION_REFLECT_EVENT,
+            NextEventWidget.ACTION_REFLECT_EVENT ->
+                intent.getStringExtra(NotificationHelper.EXTRA_EVENT_ID)
+            else -> null
+        }
+
         setContent {
             OpenSchoolCloudCalendarTheme(themeMode = themeMode) {
                 Surface(
@@ -83,7 +94,8 @@ class MainActivity : ComponentActivity() {
                         hasAccount = hasAccount,
                         onboardingCompleted = onboardingCompleted,
                         hasCompletedModeSelection = hasCompletedModeSelection,
-                        isStandaloneMode = isStandaloneMode
+                        isStandaloneMode = isStandaloneMode,
+                        deepLinkEventId = deepLinkEventId
                     )
                 }
             }
