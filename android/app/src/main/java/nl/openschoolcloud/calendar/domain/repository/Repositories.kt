@@ -128,6 +128,11 @@ interface CalendarRepository {
      * Ensure a local-only calendar exists for standalone mode
      */
     suspend fun ensureLocalCalendarExists()
+
+    /**
+     * Generate diagnostic information for debug log export
+     */
+    suspend fun getDiagnosticInfo(): String
 }
 
 /**

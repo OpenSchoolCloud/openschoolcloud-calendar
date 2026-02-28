@@ -442,6 +442,10 @@
     <string name="standalone_connect_description">Verbind met Nextcloud om agenda\'s te delen, booking links te gebruiken en te synchroniseren tussen apparaten.</string>
     <string name="standalone_connect_button">Verbinden met Nextcloud</string>
 
+    <!-- Debug / Diagnostiek -->
+    <string name="settings_debug_export">Exporteer debug log</string>
+    <string name="settings_debug_share">Debug log delen</string>
+
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>
     <string name="action_cancel">Annuleren</string>

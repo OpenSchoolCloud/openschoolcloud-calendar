@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import nl.openschoolcloud.calendar.BuildConfig
 import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.data.sync.CalendarSyncWorker
 import nl.openschoolcloud.calendar.domain.model.Account
@@ -75,7 +76,14 @@ class SettingsViewModel @Inject constructor(
             calendarRepository.getAllCalendars()
                 .catch { /* ignore */ }
                 .collect { calendars ->
-                    _uiState.update { it.copy(calendars = calendars) }
+                    // Filter out local-only calendars when not in standalone mode
+                    // to prevent duplicates (local + Nextcloud showing same-named calendars)
+                    val filtered = if (appPreferences.isStandaloneMode) {
+                        calendars
+                    } else {
+                        calendars.filter { it.accountId != "local" }
+                    }
+                    _uiState.update { it.copy(calendars = filtered) }
                 }
         }
     }
@@ -191,6 +199,37 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(showPromo = false) }
     }
 
+    fun exportDebugLog() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isGeneratingDebugLog = true) }
+            try {
+                val diagnostics = calendarRepository.getDiagnosticInfo()
+                val log = buildString {
+                    appendLine("OSC Calendar v${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
+                    appendLine("Android ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})")
+                    appendLine("Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+                    appendLine("Standalone: ${appPreferences.isStandaloneMode}")
+                    appendLine("Sync interval: ${appPreferences.syncIntervalMinutes} min")
+                    appendLine("Last sync: ${appPreferences.lastSyncTimestamp}")
+                    appendLine()
+                    append(diagnostics)
+                }
+                _uiState.update { it.copy(isGeneratingDebugLog = false, debugLogText = log) }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isGeneratingDebugLog = false,
+                        error = "Fout bij genereren debug log: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearDebugLog() {
+        _uiState.update { it.copy(debugLogText = null) }
+    }
+
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
@@ -210,5 +249,7 @@ data class SettingsUiState(
     val planningDay: Int = 1,
     val showPromo: Boolean = false,
     val isStandaloneMode: Boolean = false,
+    val isGeneratingDebugLog: Boolean = false,
+    val debugLogText: String? = null,
     val error: String? = null
 )

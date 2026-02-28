@@ -35,6 +35,7 @@ import nl.openschoolcloud.calendar.domain.model.SyncStatus
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.SyncResult
 import java.io.IOException
+import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -273,6 +274,9 @@ class CalendarRepositoryImpl @Inject constructor(
     override suspend fun syncAll(): Result<List<SyncResult>> {
         return withContext(Dispatchers.IO) {
             try {
+                // Discover new calendars from server before syncing
+                discoverNewCalendars()
+
                 val calendars = calendarDao.getVisibleSync()
                 val results = mutableListOf<SyncResult>()
 
@@ -295,6 +299,58 @@ class CalendarRepositoryImpl @Inject constructor(
             } catch (e: Exception) {
                 Result.failure(e)
             }
+        }
+    }
+
+    /**
+     * Discover new calendars from all non-local accounts.
+     * Only inserts calendars that don't already exist in Room (preserves user visibility settings).
+     * Best-effort: failures are silently ignored so sync can proceed.
+     */
+    private suspend fun discoverNewCalendars() {
+        try {
+            val accounts = accountDao.getAllSync()
+            for (account in accounts) {
+                if (account.id == LOCAL_ACCOUNT_ID) continue
+                val calendarHome = account.calendarHomeSet ?: continue
+                val password = credentialStorage.getPassword(account.id) ?: continue
+
+                val result = calDavClient.listCalendars(
+                    calendarHomeUrl = calendarHome,
+                    username = account.username,
+                    password = password
+                )
+
+                result.onSuccess { calendarInfoList ->
+                    val existingIds = calendarDao.getAllSync()
+                        .filter { it.accountId == account.id }
+                        .map { it.id }
+                        .toSet()
+
+                    val newCalendars = calendarInfoList.mapIndexedNotNull { index, info ->
+                        val calId = "${account.id}_${info.url.hashCode()}"
+                        if (calId in existingIds) return@mapIndexedNotNull null
+                        CalendarEntity(
+                            id = calId,
+                            accountId = account.id,
+                            displayName = info.displayName,
+                            colorInt = parseColor(info.color),
+                            url = info.url,
+                            ctag = info.ctag,
+                            syncToken = info.syncToken,
+                            readOnly = info.readOnly,
+                            visible = true,
+                            sortOrder = index
+                        )
+                    }
+
+                    if (newCalendars.isNotEmpty()) {
+                        calendarDao.insertAll(newCalendars)
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            // Discovery is best-effort; don't fail the sync
         }
     }
 
@@ -334,6 +390,87 @@ class CalendarRepositoryImpl @Inject constructor(
                     )
                 )
             }
+        }
+    }
+
+    override suspend fun getDiagnosticInfo(): String {
+        return withContext(Dispatchers.IO) {
+            val sb = StringBuilder()
+            sb.appendLine("=== OSC Calendar Debug Log ===")
+            sb.appendLine("Timestamp: ${Instant.now()}")
+            sb.appendLine()
+
+            // Accounts
+            sb.appendLine("--- Accounts ---")
+            val accounts = accountDao.getAllSync()
+            if (accounts.isEmpty()) {
+                sb.appendLine("(none)")
+            }
+            for (account in accounts) {
+                sb.appendLine("ID: ${account.id}")
+                sb.appendLine("  Server: ${account.serverUrl}")
+                sb.appendLine("  Username: ${account.username}")
+                sb.appendLine("  CalendarHome: ${account.calendarHomeSet ?: "(null)"}")
+                sb.appendLine("  Default: ${account.isDefault}")
+            }
+            sb.appendLine()
+
+            // Calendars
+            sb.appendLine("--- Calendars ---")
+            val calendars = calendarDao.getAllSync()
+            if (calendars.isEmpty()) {
+                sb.appendLine("(none)")
+            }
+            for (cal in calendars) {
+                val eventCount = eventDao.getCountByCalendar(cal.id)
+                sb.appendLine("ID: ${cal.id}")
+                sb.appendLine("  Account: ${cal.accountId}")
+                sb.appendLine("  Name: ${cal.displayName}")
+                sb.appendLine("  URL: ${cal.url}")
+                sb.appendLine("  Visible: ${cal.visible}")
+                sb.appendLine("  ReadOnly: ${cal.readOnly}")
+                sb.appendLine("  CTag: ${cal.ctag ?: "(null)"}")
+                sb.appendLine("  Events: $eventCount")
+            }
+            sb.appendLine()
+
+            // CalDAV discovery test
+            sb.appendLine("--- CalDAV Discovery ---")
+            for (account in accounts) {
+                if (account.id == LOCAL_ACCOUNT_ID) continue
+                val calendarHome = account.calendarHomeSet
+                if (calendarHome == null) {
+                    sb.appendLine("Account ${account.id}: No calendarHomeSet")
+                    continue
+                }
+                val password = credentialStorage.getPassword(account.id)
+                if (password == null) {
+                    sb.appendLine("Account ${account.id}: No password stored")
+                    continue
+                }
+                try {
+                    val result = calDavClient.listCalendars(
+                        calendarHomeUrl = calendarHome,
+                        username = account.username,
+                        password = password
+                    )
+                    result.fold(
+                        onSuccess = { infos ->
+                            sb.appendLine("Account ${account.id}: Found ${infos.size} calendars on server")
+                            for (info in infos) {
+                                sb.appendLine("  - ${info.displayName} (${info.url})")
+                            }
+                        },
+                        onFailure = { error ->
+                            sb.appendLine("Account ${account.id}: Discovery failed: ${error.message}")
+                        }
+                    )
+                } catch (e: Exception) {
+                    sb.appendLine("Account ${account.id}: Exception: ${e.message}")
+                }
+            }
+
+            sb.toString()
         }
     }
 

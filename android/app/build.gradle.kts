@@ -13,8 +13,8 @@ android {
         applicationId = "nl.openschoolcloud.calendar"
         minSdk = 26
         targetSdk = 34
-        versionCode = 9
-        versionName = "1.6.1"
+        versionCode = 10
+        versionName = "1.6.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         

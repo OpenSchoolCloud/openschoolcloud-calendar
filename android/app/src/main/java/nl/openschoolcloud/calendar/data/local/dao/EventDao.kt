@@ -56,6 +56,9 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE calendarId = :calendarId")
     suspend fun getByCalendarSync(calendarId: String): List<EventEntity>
 
+    @Query("SELECT COUNT(*) FROM events WHERE calendarId = :calendarId")
+    suspend fun getCountByCalendar(calendarId: String): Int
+
     @Query("SELECT * FROM events WHERE syncStatus != 'SYNCED'")
     suspend fun getPending(): List<EventEntity>
 
