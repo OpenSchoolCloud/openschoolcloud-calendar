@@ -4,9 +4,12 @@
 -keep class nl.openschoolcloud.calendar.domain.model.** { *; }
 -keep class nl.openschoolcloud.calendar.data.local.entity.** { *; }
 
-# ical4j
+# ical4j and its transitive dependencies (groovy-dateutil → Ivy)
 -dontwarn net.fortuna.ical4j.**
 -keep class net.fortuna.ical4j.** { *; }
+-dontwarn groovy.**
+-dontwarn org.apache.ivy.**
+-dontwarn org.codehaus.groovy.**
 
 # OkHttp
 -dontwarn okhttp3.**
