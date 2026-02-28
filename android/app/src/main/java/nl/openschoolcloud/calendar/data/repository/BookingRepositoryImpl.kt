@@ -25,6 +25,7 @@ import nl.openschoolcloud.calendar.data.remote.nextcloud.AppointmentsClient
 import nl.openschoolcloud.calendar.domain.model.BookingConfig
 import nl.openschoolcloud.calendar.domain.model.BookingVisibility
 import nl.openschoolcloud.calendar.domain.repository.BookingRepository
+import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -67,8 +68,9 @@ class BookingRepositoryImpl @Inject constructor(
 
         return result.map { configs ->
             Log.d(TAG, "Mapping ${configs.size} configs to BookingConfig")
+            val baseUrl = getBaseUrl(account.serverUrl)
             configs.map { config ->
-                val bookingUrl = buildBookingUrl(account.serverUrl, config.token)
+                val bookingUrl = "$baseUrl/index.php/apps/calendar/appointment/${config.token}"
                 BookingConfig(
                     id = config.id,
                     name = config.name,
@@ -76,7 +78,7 @@ class BookingRepositoryImpl @Inject constructor(
                     duration = config.duration,
                     token = config.token,
                     bookingUrl = bookingUrl,
-                    calendarId = config.targetCalendarUri,
+                    calendarId = null,
                     visibility = when (config.visibility) {
                         "PRIVATE" -> BookingVisibility.PRIVATE
                         else -> BookingVisibility.PUBLIC
@@ -91,8 +93,14 @@ class BookingRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun buildBookingUrl(serverUrl: String, token: String): String {
-        return "${serverUrl.trimEnd('/')}/index.php/apps/calendar/appointment/$token"
+    private fun getBaseUrl(storedUrl: String): String {
+        return try {
+            val uri = URI(storedUrl)
+            val port = if (uri.port != -1) ":${uri.port}" else ""
+            "${uri.scheme}://${uri.host}$port"
+        } catch (e: Exception) {
+            storedUrl.trimEnd('/')
+        }
     }
 
     companion object {
