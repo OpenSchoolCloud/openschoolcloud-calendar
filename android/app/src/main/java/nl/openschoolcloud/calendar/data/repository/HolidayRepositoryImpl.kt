@@ -30,7 +30,9 @@ import nl.openschoolcloud.calendar.domain.model.HolidayCalendar
 import nl.openschoolcloud.calendar.domain.model.HolidayCategory
 import nl.openschoolcloud.calendar.domain.model.HolidayEvent
 import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZoneOffset
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -227,8 +229,8 @@ private fun HolidayEventEntity.toDomain(): HolidayEvent {
         title = title,
         description = description,
         classroomTip = classroomTip,
-        date = LocalDate.ofEpochDay(date / (24 * 60 * 60 * 1000)),
-        endDate = endDate?.let { LocalDate.ofEpochDay(it / (24 * 60 * 60 * 1000)) },
+        date = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate(),
+        endDate = endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
         dateCalculationType = try {
             DateCalculationType.valueOf(dateCalculationType)
         } catch (e: IllegalArgumentException) {

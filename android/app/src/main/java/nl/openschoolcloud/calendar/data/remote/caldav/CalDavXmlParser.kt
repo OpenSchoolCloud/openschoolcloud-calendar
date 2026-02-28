@@ -374,10 +374,15 @@ class CalDavXmlParser @Inject constructor() {
      * Resolve a relative URL against a base URL
      */
     internal fun resolveUrl(baseUrl: String, relativeUrl: String): String {
-        return if (relativeUrl.startsWith("http")) {
-            relativeUrl
-        } else {
-            baseUrl.trimEnd('/') + "/" + relativeUrl.trimStart('/')
+        return when {
+            relativeUrl.startsWith("http") -> relativeUrl
+            relativeUrl.startsWith("/") -> {
+                // Root-relative path: extract origin (scheme + host + port) from baseUrl
+                val uri = java.net.URI(baseUrl)
+                val port = if (uri.port != -1) ":${uri.port}" else ""
+                "${uri.scheme}://${uri.host}$port${relativeUrl}"
+            }
+            else -> baseUrl.trimEnd('/') + "/" + relativeUrl.trimStart('/')
         }
     }
 

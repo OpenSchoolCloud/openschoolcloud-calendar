@@ -115,43 +115,53 @@ class TodayWidgetFactory(
     override fun getCount(): Int = events.size
 
     override fun getViewAt(position: Int): RemoteViews {
-        val event = events[position]
         val views = RemoteViews(context.packageName, R.layout.widget_event_row)
-        val zone = ZoneId.systemDefault()
 
-        // Color dot (tinted via setColorFilter)
-        views.setInt(R.id.widget_event_color, "setColorFilter", event.calendarColor)
+        // Bounds check — can happen if data changes between getCount() and getViewAt()
+        if (position < 0 || position >= events.size) {
+            return views
+        }
 
-        // Time range: "09:00 - 10:30" or just "09:00"
-        val startFormatted = Instant.ofEpochMilli(event.startTime)
-            .atZone(zone)
-            .format(timeFormatter)
-        val timeText = if (event.endTime != null) {
-            val endFormatted = Instant.ofEpochMilli(event.endTime)
+        try {
+            val event = events[position]
+            val zone = ZoneId.systemDefault()
+
+            // Color dot (tinted via setColorFilter)
+            views.setInt(R.id.widget_event_color, "setColorFilter", event.calendarColor)
+
+            // Time range: "09:00 - 10:30" or just "09:00"
+            val startFormatted = Instant.ofEpochMilli(event.startTime)
                 .atZone(zone)
                 .format(timeFormatter)
-            "$startFormatted - $endFormatted"
-        } else {
-            startFormatted
-        }
-        views.setTextViewText(R.id.widget_event_time, timeText)
+            val timeText = if (event.endTime != null) {
+                val endFormatted = Instant.ofEpochMilli(event.endTime)
+                    .atZone(zone)
+                    .format(timeFormatter)
+                "$startFormatted - $endFormatted"
+            } else {
+                startFormatted
+            }
+            views.setTextViewText(R.id.widget_event_time, timeText)
 
-        // Title
-        views.setTextViewText(R.id.widget_event_title, event.summary)
+            // Title
+            views.setTextViewText(R.id.widget_event_title, event.summary)
 
-        // Location (only show if present)
-        if (!event.location.isNullOrBlank()) {
-            views.setTextViewText(R.id.widget_event_location, event.location)
-            views.setViewVisibility(R.id.widget_event_location, View.VISIBLE)
-        } else {
-            views.setViewVisibility(R.id.widget_event_location, View.GONE)
-        }
+            // Location (only show if present)
+            if (!event.location.isNullOrBlank()) {
+                views.setTextViewText(R.id.widget_event_location, event.location)
+                views.setViewVisibility(R.id.widget_event_location, View.VISIBLE)
+            } else {
+                views.setViewVisibility(R.id.widget_event_location, View.GONE)
+            }
 
-        // Fill-in intent for click handling
-        val fillInIntent = Intent().apply {
-            putExtra(NotificationHelper.EXTRA_EVENT_ID, event.uid)
+            // Fill-in intent for click handling
+            val fillInIntent = Intent().apply {
+                putExtra(NotificationHelper.EXTRA_EVENT_ID, event.uid)
+            }
+            views.setOnClickFillInIntent(R.id.widget_event_row, fillInIntent)
+        } catch (e: Exception) {
+            // Return empty row on error
         }
-        views.setOnClickFillInIntent(R.id.widget_event_row, fillInIntent)
 
         return views
     }

@@ -146,11 +146,24 @@ class Converters {
 
     @TypeConverter
     fun fromStringList(value: String?): List<String> {
-        return value?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
+        if (value.isNullOrEmpty()) return emptyList()
+        // Use JSON array format for safe serialization (commas in values won't corrupt data)
+        if (value.startsWith("[")) {
+            // JSON format: ["a","b","c"]
+            return value.removeSurrounding("[", "]")
+                .split("\",\"")
+                .map { it.removeSurrounding("\"") }
+                .filter { it.isNotEmpty() }
+        }
+        // Backwards compatibility: old comma-separated format
+        return value.split(",").filter { it.isNotEmpty() }
     }
 
     @TypeConverter
     fun toStringList(list: List<String>): String {
-        return list.joinToString(",")
+        if (list.isEmpty()) return ""
+        // Use JSON array format to prevent corruption from values containing commas
+        return list.joinToString(",") { "\"${it.replace("\"", "\\\"")}\"" }
+            .let { "[$it]" }
     }
 }

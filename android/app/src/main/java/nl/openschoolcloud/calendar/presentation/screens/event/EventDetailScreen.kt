@@ -206,7 +206,7 @@ fun EventDetailScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = uiState.error ?: "Event niet gevonden",
+                        text = uiState.error ?: stringResource(R.string.event_not_found),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

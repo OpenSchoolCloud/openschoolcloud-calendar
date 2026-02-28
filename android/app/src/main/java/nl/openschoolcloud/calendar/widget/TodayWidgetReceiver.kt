@@ -31,8 +31,12 @@ class TodayWidgetReceiver : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        appWidgetIds.forEach { widgetId ->
-            TodayWidget.updateWidget(context, appWidgetManager, widgetId)
+        for (widgetId in appWidgetIds) {
+            try {
+                TodayWidget.updateWidget(context, appWidgetManager, widgetId)
+            } catch (e: Exception) {
+                // Individual widget update failure shouldn't crash the provider
+            }
         }
     }
 

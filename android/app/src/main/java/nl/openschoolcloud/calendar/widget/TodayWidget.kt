@@ -44,6 +44,25 @@ object TodayWidget {
     ) {
         val views = RemoteViews(context.packageName, R.layout.widget_today)
 
+        try {
+            buildViews(context, views, widgetId)
+        } catch (e: Exception) {
+            // Widget shows safe default state from XML on error
+        }
+
+        try {
+            appWidgetManager.notifyAppWidgetViewDataChanged(widgetId, R.id.widget_event_list)
+            appWidgetManager.updateAppWidget(widgetId, views)
+        } catch (e: Exception) {
+            // Widget may have been removed
+        }
+    }
+
+    private fun buildViews(
+        context: Context,
+        views: RemoteViews,
+        widgetId: Int
+    ) {
         // Set today's date in header
         val today = LocalDate.now()
         val dateText = today.format(dateFormatter).replaceFirstChar { it.uppercase() }
@@ -93,9 +112,5 @@ object TodayWidget {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
         views.setPendingIntentTemplate(R.id.widget_event_list, eventClickPendingIntent)
-
-        // Notify the widget manager to update data
-        appWidgetManager.notifyAppWidgetViewDataChanged(widgetId, R.id.widget_event_list)
-        appWidgetManager.updateAppWidget(widgetId, views)
     }
 }

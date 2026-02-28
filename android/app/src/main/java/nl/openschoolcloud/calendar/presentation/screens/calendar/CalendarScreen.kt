@@ -612,7 +612,7 @@ private fun EventChip(
     onClick: () -> Unit
 ) {
     val isTask = event.eventType == "TASK"
-    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     val startTime = event.dtStart.atZone(ZoneId.systemDefault()).toLocalTime()
     val eventColor = if (isTask) {
         MaterialTheme.colorScheme.tertiary

@@ -42,6 +42,7 @@ interface EventDao {
     @Query("""
         SELECT * FROM events
         WHERE dtStart < :endMillis AND (dtEnd > :startMillis OR dtEnd IS NULL)
+        AND calendarId IN (SELECT id FROM calendars WHERE visible = 1)
         ORDER BY dtStart
     """)
     fun getInRangeSync(startMillis: Long, endMillis: Long): List<EventEntity>

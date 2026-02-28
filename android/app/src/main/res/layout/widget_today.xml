@@ -37,13 +37,15 @@
                 android:textStyle="bold"
                 tools:text="Dinsdag 28 feb" />
 
-            <ImageView
+            <TextView
                 android:id="@+id/widget_refresh"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:contentDescription="@string/settings_sync_now"
-                android:src="@android:drawable/ic_popup_sync"
-                android:scaleType="centerInside" />
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="\u21BB"
+                android:textColor="#3B9FD9"
+                android:textSize="18sp"
+                android:contentDescription="@string/settings_sync_now" />
         </LinearLayout>
 
         <!-- Divider -->

@@ -110,7 +110,8 @@ fun OpenSchoolCloudCalendarTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
+            val activity = view.context as? Activity ?: return@SideEffect
+            val window = activity.window
             window.statusBarColor = Color.Transparent.toArgb()
             val insetsController = WindowCompat.getInsetsController(window, view)
             insetsController.isAppearanceLightStatusBars = !darkTheme

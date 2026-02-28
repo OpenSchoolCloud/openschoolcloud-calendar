@@ -22,6 +22,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 
 /**
  * AppWidgetProvider for the "Volgende Les" home screen widget.
@@ -36,10 +37,18 @@ class NextEventWidgetReceiver : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        appWidgetIds.forEach { widgetId ->
-            NextEventWidget.updateWidget(context, appWidgetManager, widgetId)
+        for (widgetId in appWidgetIds) {
+            try {
+                NextEventWidget.updateWidget(context, appWidgetManager, widgetId)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to update widget $widgetId", e)
+            }
         }
-        scheduleNextAlarm(context)
+        try {
+            scheduleNextAlarm(context)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to schedule alarm", e)
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -51,32 +60,44 @@ class NextEventWidgetReceiver : AppWidgetProvider() {
     }
 
     override fun onEnabled(context: Context) {
-        scheduleNextAlarm(context)
+        try {
+            scheduleNextAlarm(context)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to schedule alarm on enable", e)
+        }
     }
 
     override fun onDisabled(context: Context) {
-        cancelAlarm(context)
+        try {
+            cancelAlarm(context)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to cancel alarm on disable", e)
+        }
     }
 
     companion object {
+        private const val TAG = "NextEventWidget"
         private const val ALARM_REQUEST_CODE = 9001
 
         fun refreshAll(context: Context) {
-            val intent = Intent(context, NextEventWidgetReceiver::class.java).apply {
-                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-            }
             val manager = AppWidgetManager.getInstance(context)
             val ids = manager.getAppWidgetIds(
                 ComponentName(context, NextEventWidgetReceiver::class.java)
             )
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+            if (ids.isEmpty()) return
+
+            val intent = Intent(context, NextEventWidgetReceiver::class.java).apply {
+                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+            }
             context.sendBroadcast(intent)
         }
 
         fun scheduleNextAlarm(context: Context) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
             val nextAlarmTime = NextEventWidget.getNextAlarmTime(context) ?: return
+
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+                ?: return
 
             val intent = Intent(context, NextEventWidgetReceiver::class.java).apply {
                 action = NextEventWidget.ACTION_WIDGET_REFRESH
@@ -88,20 +109,27 @@ class NextEventWidgetReceiver : AppWidgetProvider() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            // Use setExact for precise updates at event boundaries
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExact(AlarmManager.RTC, nextAlarmTime, pendingIntent)
+            // Use setExact for precise updates at event boundaries.
+            // Fall back to inexact alarm if exact alarm permission is not granted (Android 12+).
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (alarmManager.canScheduleExactAlarms()) {
+                        alarmManager.setExact(AlarmManager.RTC, nextAlarmTime, pendingIntent)
+                    } else {
+                        alarmManager.set(AlarmManager.RTC, nextAlarmTime, pendingIntent)
+                    }
                 } else {
-                    alarmManager.set(AlarmManager.RTC, nextAlarmTime, pendingIntent)
+                    alarmManager.setExact(AlarmManager.RTC, nextAlarmTime, pendingIntent)
                 }
-            } else {
-                alarmManager.setExact(AlarmManager.RTC, nextAlarmTime, pendingIntent)
+            } catch (e: SecurityException) {
+                // Exact alarm permission revoked at runtime — fall back to inexact
+                alarmManager.set(AlarmManager.RTC, nextAlarmTime, pendingIntent)
             }
         }
 
         private fun cancelAlarm(context: Context) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+                ?: return
             val intent = Intent(context, NextEventWidgetReceiver::class.java).apply {
                 action = NextEventWidget.ACTION_WIDGET_REFRESH
             }

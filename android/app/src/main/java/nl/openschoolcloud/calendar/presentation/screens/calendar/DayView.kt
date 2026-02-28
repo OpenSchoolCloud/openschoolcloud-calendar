@@ -42,7 +42,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -309,6 +314,16 @@ private fun CurrentTimeIndicator(
     startHour: Int,
     hourHeight: Dp
 ) {
+    // Trigger recomposition every 60 seconds so the indicator moves
+    var tick by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000L)
+            tick++
+        }
+    }
+    // Read tick to ensure recomposition dependency
+    @Suppress("UNUSED_EXPRESSION") tick
     val currentTime = LocalTime.now()
     val currentMinutes = currentTime.hour * 60 + currentTime.minute
     val offset = ((currentMinutes - startHour * 60) / 60f * hourHeight.value).dp

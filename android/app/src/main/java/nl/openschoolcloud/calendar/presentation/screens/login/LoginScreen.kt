@@ -202,11 +202,10 @@ fun LoginScreen(
                             } else {
                                 Icons.Default.Visibility
                             },
-                            contentDescription = if (passwordVisible) {
-                                "Hide password"
-                            } else {
-                                "Show password"
-                            }
+                            contentDescription = stringResource(
+                                if (passwordVisible) R.string.a11y_hide_password
+                                else R.string.a11y_show_password
+                            )
                         )
                     }
                 },
