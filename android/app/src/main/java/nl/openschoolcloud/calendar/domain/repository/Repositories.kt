@@ -85,9 +85,14 @@ interface EventRepository {
 interface CalendarRepository {
     
     /**
-     * Get all calendars for all accounts
+     * Get visible calendars for all accounts
      */
     fun getCalendars(): Flow<List<Calendar>>
+
+    /**
+     * Get all calendars regardless of visibility (for Settings screen toggles)
+     */
+    fun getAllCalendars(): Flow<List<Calendar>>
     
     /**
      * Get calendars for a specific account

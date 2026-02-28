@@ -9,14 +9,15 @@
     android:paddingVertical="5dp"
     android:paddingHorizontal="2dp">
 
-    <!-- Calendar color dot -->
-    <View
+    <!-- Calendar color dot (ImageView — View is not in RemoteViews whitelist) -->
+    <ImageView
         android:id="@+id/widget_event_color"
         android:layout_width="8dp"
         android:layout_height="8dp"
         android:layout_marginEnd="8dp"
-        android:background="@drawable/widget_color_dot"
-        tools:background="#3B9FD9" />
+        android:src="@drawable/widget_color_dot"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no" />
 
     <!-- Time range -->
     <TextView

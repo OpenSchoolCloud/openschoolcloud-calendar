@@ -48,13 +48,15 @@
                 android:contentDescription="@string/settings_sync_now" />
         </LinearLayout>
 
-        <!-- Divider -->
-        <View
+        <!-- Divider (ImageView instead of View — View is not in RemoteViews whitelist) -->
+        <ImageView
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="4dp"
-            android:background="#333B9FD9" />
+            android:background="#333B9FD9"
+            android:contentDescription="@null"
+            android:importantForAccessibility="no" />
 
         <!-- Event list -->
         <ListView

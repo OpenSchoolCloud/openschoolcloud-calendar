@@ -70,7 +70,9 @@ class SettingsViewModel @Inject constructor(
 
     private fun loadCalendars() {
         viewModelScope.launch {
-            calendarRepository.getCalendars()
+            // Use getAllCalendars() so hidden calendars remain visible in Settings
+            // and can be toggled back on (getCalendars() only returns visible ones)
+            calendarRepository.getAllCalendars()
                 .catch { /* ignore */ }
                 .collect { calendars ->
                     _uiState.update { it.copy(calendars = calendars) }

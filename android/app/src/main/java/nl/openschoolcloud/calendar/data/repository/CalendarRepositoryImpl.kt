@@ -60,6 +60,12 @@ class CalendarRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getAllCalendars(): Flow<List<Calendar>> {
+        return calendarDao.getAll().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
     override fun getCalendarsForAccount(accountId: String): Flow<List<Calendar>> {
         return calendarDao.getByAccount(accountId).map { entities ->
             entities.map { it.toDomain() }
