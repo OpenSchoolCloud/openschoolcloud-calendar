@@ -53,12 +53,32 @@ class BookingRepositoryImpl @Inject constructor(
             return Result.failure(IllegalStateException("Geen Nextcloud account geconfigureerd"))
         }
 
-        val password = credentialStorage.getPassword(account.id)
+        // Diagnostic: log stored credential IDs for comparison
+        val storedAccountIds = credentialStorage.getAllAccountIds()
+        Log.d(TAG, "Looking for credentials with account.id='${account.id}'")
+        Log.d(TAG, "All stored credential account IDs: $storedAccountIds")
+        Log.d(TAG, "Account entity - id=${account.id}, username=${account.username}, serverUrl=${account.serverUrl}, isDefault=${account.isDefault}")
+
+        var password = credentialStorage.getPassword(account.id)
         if (password == null) {
-            Log.e(TAG, "No credentials found for account ${account.id}")
+            Log.w(TAG, "No credentials for account.id='${account.id}', trying fallback...")
+
+            // Fallback: try all stored credential IDs (account may have been recreated with different UUID)
+            for (storedId in storedAccountIds) {
+                val candidate = credentialStorage.getPassword(storedId)
+                if (candidate != null) {
+                    Log.d(TAG, "Found credentials under alternative ID: '$storedId'")
+                    password = candidate
+                    break
+                }
+            }
+        }
+
+        if (password == null) {
+            Log.e(TAG, "No credentials found anywhere for account ${account.id}")
             return Result.failure(IllegalStateException("Inloggegevens niet gevonden voor account"))
         }
-        Log.d(TAG, "Credentials found for account ${account.id}")
+        Log.d(TAG, "Credentials found, proceeding with API call")
 
         val result = appointmentsClient.getAppointmentConfigs(
             serverUrl = account.serverUrl,

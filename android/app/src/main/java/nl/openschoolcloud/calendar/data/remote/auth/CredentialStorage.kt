@@ -73,7 +73,12 @@ class CredentialStorage @Inject constructor(
      * @return The stored password or null if not found
      */
     fun getPassword(accountId: String): String? {
-        return prefs.getString(keyForAccount(accountId), null)
+        return try {
+            prefs.getString(keyForAccount(accountId), null)
+        } catch (e: Exception) {
+            Log.e("CredentialStorage", "Error reading password for $accountId", e)
+            null
+        }
     }
 
     /**
@@ -100,9 +105,14 @@ class CredentialStorage @Inject constructor(
      * @return List of account IDs
      */
     fun getAllAccountIds(): List<String> {
-        return prefs.all.keys
-            .filter { it.startsWith(PASSWORD_PREFIX) }
-            .map { it.removePrefix(PASSWORD_PREFIX) }
+        return try {
+            prefs.all.keys
+                .filter { it.startsWith(PASSWORD_PREFIX) }
+                .map { it.removePrefix(PASSWORD_PREFIX) }
+        } catch (e: Exception) {
+            Log.e("CredentialStorage", "Error reading all account IDs", e)
+            emptyList()
+        }
     }
 
     private fun keyForAccount(accountId: String): String {
