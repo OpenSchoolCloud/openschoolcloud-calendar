@@ -40,6 +40,9 @@ interface AccountDao {
     @Query("SELECT * FROM accounts WHERE id = :id")
     suspend fun getById(id: String): AccountEntity?
 
+    @Query("SELECT * FROM accounts WHERE serverUrl = :serverUrl AND username = :username LIMIT 1")
+    suspend fun getByServerAndUsername(serverUrl: String, username: String): AccountEntity?
+
     @Query("SELECT * FROM accounts WHERE isDefault = 1 LIMIT 1")
     suspend fun getDefault(): AccountEntity?
 

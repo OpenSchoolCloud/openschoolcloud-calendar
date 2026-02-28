@@ -104,7 +104,7 @@ class CalendarRepositoryImpl @Inject constructor(
                 val account = accountDao.getById(accountId)
                     ?: return@withContext Result.failure(Exception("Account not found"))
 
-                val password = credentialStorage.getPassword(accountId)
+                val password = getPasswordWithFallback(accountId)
                     ?: return@withContext Result.failure(Exception("Credentials not found"))
 
                 val calendarHome = account.calendarHomeSet
@@ -183,7 +183,7 @@ class CalendarRepositoryImpl @Inject constructor(
         val account = accountDao.getById(calendar.accountId)
             ?: return Result.failure(Exception("Account not found"))
 
-        val password = credentialStorage.getPassword(account.id)
+        val password = getPasswordWithFallback(account.id)
             ?: return Result.failure(Exception("Credentials not found"))
 
         // Check if calendar has changed (CTag)
@@ -274,6 +274,9 @@ class CalendarRepositoryImpl @Inject constructor(
     override suspend fun syncAll(): Result<List<SyncResult>> {
         return withContext(Dispatchers.IO) {
             try {
+                // Clean up orphaned accounts (no credentials, no events)
+                cleanupOrphanedAccounts()
+
                 // Discover new calendars from server before syncing
                 discoverNewCalendars()
 
@@ -313,7 +316,7 @@ class CalendarRepositoryImpl @Inject constructor(
             for (account in accounts) {
                 if (account.id == LOCAL_ACCOUNT_ID) continue
                 val calendarHome = account.calendarHomeSet ?: continue
-                val password = credentialStorage.getPassword(account.id) ?: continue
+                val password = getPasswordWithFallback(account.id) ?: continue
 
                 val result = calDavClient.listCalendars(
                     calendarHomeUrl = calendarHome,
@@ -351,6 +354,41 @@ class CalendarRepositoryImpl @Inject constructor(
             }
         } catch (_: Exception) {
             // Discovery is best-effort; don't fail the sync
+        }
+    }
+
+    /**
+     * Remove accounts that have no stored credentials and no events in any of their calendars.
+     * These are ghost accounts left over from duplicate logins or failed setups.
+     * Best-effort: failures are silently ignored.
+     */
+    private suspend fun cleanupOrphanedAccounts() {
+        try {
+            val accounts = accountDao.getAllSync()
+            for (account in accounts) {
+                if (account.id == LOCAL_ACCOUNT_ID) continue
+
+                // Check if this account has credentials (including fallback)
+                val hasPassword = credentialStorage.getPassword(account.id) != null
+                if (hasPassword) continue
+
+                // No direct credentials — check if any stored credential exists at all
+                val anyCredentials = credentialStorage.getAllAccountIds().any { storedId ->
+                    credentialStorage.getPassword(storedId) != null
+                }
+                if (anyCredentials) continue
+
+                // No credentials at all — check if this account has any events
+                val calendars = calendarDao.getAllSync().filter { it.accountId == account.id }
+                val hasEvents = calendars.any { eventDao.getCountByCalendar(it.id) > 0 }
+                if (hasEvents) continue
+
+                // Orphaned account: no credentials and no events — clean up
+                calendarDao.deleteByAccount(account.id)
+                accountDao.deleteById(account.id)
+            }
+        } catch (_: Exception) {
+            // Cleanup is best-effort
         }
     }
 
@@ -443,9 +481,9 @@ class CalendarRepositoryImpl @Inject constructor(
                     sb.appendLine("Account ${account.id}: No calendarHomeSet")
                     continue
                 }
-                val password = credentialStorage.getPassword(account.id)
+                val password = getPasswordWithFallback(account.id)
                 if (password == null) {
-                    sb.appendLine("Account ${account.id}: No password stored")
+                    sb.appendLine("Account ${account.id}: No password stored (tried fallback)")
                     continue
                 }
                 try {
@@ -472,6 +510,27 @@ class CalendarRepositoryImpl @Inject constructor(
 
             sb.toString()
         }
+    }
+
+    /**
+     * Get password for an account, with fallback to any stored credential.
+     * Handles the case where account ID changed (e.g., EncryptedSharedPreferences issue
+     * on some devices, or account recreated with different UUID).
+     * If a fallback password is found, re-saves it under the correct account ID.
+     */
+    private fun getPasswordWithFallback(accountId: String): String? {
+        credentialStorage.getPassword(accountId)?.let { return it }
+
+        // Fallback: try all stored credential IDs
+        for (storedId in credentialStorage.getAllAccountIds()) {
+            val candidate = credentialStorage.getPassword(storedId)
+            if (candidate != null) {
+                // Re-save under current account ID for future lookups
+                credentialStorage.saveCredentials(accountId, candidate)
+                return candidate
+            }
+        }
+        return null
     }
 
     /**

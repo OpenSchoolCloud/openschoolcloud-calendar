@@ -90,7 +90,47 @@ class AccountRepositoryImpl @Inject constructor(
                 return@withContext Result.failure(Exception("No calendars found"))
             }
 
-            // 5. Create account
+            // 5. Check if account already exists for this server+username
+            val existing = accountDao.getByServerAndUsername(normalizedUrl, username)
+            if (existing != null) {
+                // Update credentials and metadata on existing account
+                credentialStorage.saveCredentials(existing.id, password)
+                val updated = existing.copy(
+                    principalUrl = principalUrl,
+                    calendarHomeSet = calendarHome
+                )
+                accountDao.update(updated)
+
+                // Insert only NEW calendars (preserve user visibility on existing ones)
+                val existingCalIds = calendarDao.getAllSync()
+                    .filter { it.accountId == existing.id }
+                    .map { it.id }
+                    .toSet()
+
+                val newCalendars = calendars.mapIndexedNotNull { index, info ->
+                    val calId = "${existing.id}_${info.url.hashCode()}"
+                    if (calId in existingCalIds) return@mapIndexedNotNull null
+                    CalendarEntity(
+                        id = calId,
+                        accountId = existing.id,
+                        displayName = info.displayName,
+                        colorInt = parseColor(info.color),
+                        url = info.url,
+                        ctag = info.ctag,
+                        syncToken = info.syncToken,
+                        readOnly = info.readOnly,
+                        visible = true,
+                        sortOrder = index
+                    )
+                }
+                if (newCalendars.isNotEmpty()) {
+                    calendarDao.insertAll(newCalendars)
+                }
+
+                return@withContext Result.success(updated.toDomain())
+            }
+
+            // 6. Create new account
             val accountId = UUID.randomUUID().toString()
             val isFirst = accountDao.getDefault() == null
 
@@ -108,7 +148,7 @@ class AccountRepositoryImpl @Inject constructor(
             accountDao.insert(entity)
             credentialStorage.saveCredentials(accountId, password)
 
-            // 6. Save discovered calendars
+            // 7. Save discovered calendars
             val calendarEntities = calendars.mapIndexed { index, info ->
                 CalendarEntity(
                     id = "${accountId}_${info.url.hashCode()}",
