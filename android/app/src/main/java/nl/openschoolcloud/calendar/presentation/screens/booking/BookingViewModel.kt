@@ -17,6 +17,7 @@
  */
 package nl.openschoolcloud.calendar.presentation.screens.booking
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,12 +43,17 @@ class BookingViewModel @Inject constructor(
     }
 
     fun loadBookingConfigs() {
+        Log.d(TAG, "Loading booking configs...")
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             val result = bookingRepository.getBookingConfigs()
             result.fold(
                 onSuccess = { configs ->
+                    Log.d(TAG, "Loaded ${configs.size} booking configs")
+                    configs.forEach { config ->
+                        Log.d(TAG, "  - ${config.name} (token=${config.token}, duration=${config.duration}min, url=${config.bookingUrl})")
+                    }
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -57,6 +63,7 @@ class BookingViewModel @Inject constructor(
                     }
                 },
                 onFailure = { error ->
+                    Log.e(TAG, "Failed to load booking configs", error)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -70,6 +77,10 @@ class BookingViewModel @Inject constructor(
 
     fun clearError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    companion object {
+        private const val TAG = "BookingViewModel"
     }
 }
 

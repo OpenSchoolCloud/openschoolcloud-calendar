@@ -17,6 +17,8 @@
  */
 package nl.openschoolcloud.calendar.data.repository
 
+import android.util.Log
+import kotlinx.coroutines.flow.firstOrNull
 import nl.openschoolcloud.calendar.data.local.dao.AccountDao
 import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
 import nl.openschoolcloud.calendar.data.remote.nextcloud.AppointmentsClient
@@ -34,11 +36,28 @@ class BookingRepositoryImpl @Inject constructor(
 ) : BookingRepository {
 
     override suspend fun getBookingConfigs(): Result<List<BookingConfig>> {
-        val account = accountDao.getDefault()
-            ?: return Result.failure(IllegalStateException("Geen account geconfigureerd"))
+        // Try default account first, fall back to any non-local Nextcloud account
+        var account = accountDao.getDefault()
+        Log.d(TAG, "Default account: ${account?.id} (serverUrl=${account?.serverUrl})")
+
+        if (account == null || account.serverUrl.isBlank()) {
+            Log.d(TAG, "No default account or local account, trying all accounts")
+            val allAccounts = accountDao.getAll().firstOrNull() ?: emptyList()
+            account = allAccounts.firstOrNull { it.serverUrl.isNotBlank() }
+            Log.d(TAG, "Fallback account: ${account?.id} (serverUrl=${account?.serverUrl})")
+        }
+
+        if (account == null || account.serverUrl.isBlank()) {
+            Log.w(TAG, "No Nextcloud account found for booking configs")
+            return Result.failure(IllegalStateException("Geen Nextcloud account geconfigureerd"))
+        }
 
         val password = credentialStorage.getPassword(account.id)
-            ?: return Result.failure(IllegalStateException("Inloggegevens niet gevonden"))
+        if (password == null) {
+            Log.e(TAG, "No credentials found for account ${account.id}")
+            return Result.failure(IllegalStateException("Inloggegevens niet gevonden voor account"))
+        }
+        Log.d(TAG, "Credentials found for account ${account.id}")
 
         val result = appointmentsClient.getAppointmentConfigs(
             serverUrl = account.serverUrl,
@@ -47,6 +66,7 @@ class BookingRepositoryImpl @Inject constructor(
         )
 
         return result.map { configs ->
+            Log.d(TAG, "Mapping ${configs.size} configs to BookingConfig")
             configs.map { config ->
                 val bookingUrl = buildBookingUrl(account.serverUrl, config.token)
                 BookingConfig(
@@ -63,10 +83,19 @@ class BookingRepositoryImpl @Inject constructor(
                     }
                 )
             }
+        }.also { result ->
+            result.fold(
+                onSuccess = { Log.d(TAG, "Successfully loaded ${it.size} booking configs") },
+                onFailure = { Log.e(TAG, "Failed to load booking configs", it) }
+            )
         }
     }
 
     private fun buildBookingUrl(serverUrl: String, token: String): String {
         return "${serverUrl.trimEnd('/')}/index.php/apps/calendar/appointment/$token"
+    }
+
+    companion object {
+        private const val TAG = "BookingRepository"
     }
 }
