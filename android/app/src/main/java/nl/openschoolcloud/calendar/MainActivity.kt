@@ -26,9 +26,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
+import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.presentation.navigation.AppNavigation
 import nl.openschoolcloud.calendar.presentation.theme.OpenSchoolCloudCalendarTheme
 import javax.inject.Inject
@@ -41,6 +44,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var appPreferences: AppPreferences
+
+    @Inject
+    lateinit var calendarRepository: CalendarRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Install splash screen before super.onCreate()
@@ -55,6 +61,15 @@ class MainActivity : ComponentActivity() {
             false
         }
         val onboardingCompleted = appPreferences.onboardingCompleted
+        val hasCompletedModeSelection = appPreferences.hasCompletedModeSelection
+        val isStandaloneMode = appPreferences.isStandaloneMode
+
+        // Ensure local calendar exists for standalone users
+        if (isStandaloneMode) {
+            lifecycleScope.launch {
+                calendarRepository.ensureLocalCalendarExists()
+            }
+        }
 
         val themeMode = appPreferences.themeMode
 
@@ -66,7 +81,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     AppNavigation(
                         hasAccount = hasAccount,
-                        onboardingCompleted = onboardingCompleted
+                        onboardingCompleted = onboardingCompleted,
+                        hasCompletedModeSelection = hasCompletedModeSelection,
+                        isStandaloneMode = isStandaloneMode
                     )
                 }
             }

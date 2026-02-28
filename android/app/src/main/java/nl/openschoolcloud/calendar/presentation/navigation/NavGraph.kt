@@ -33,6 +33,8 @@ import nl.openschoolcloud.calendar.presentation.screens.event.EventDetailScreen
 import nl.openschoolcloud.calendar.presentation.screens.event.EventEditScreen
 import nl.openschoolcloud.calendar.presentation.screens.holidays.HolidayDiscoverScreen
 import nl.openschoolcloud.calendar.presentation.screens.login.LoginScreen
+import nl.openschoolcloud.calendar.presentation.screens.modeselection.ModeSelectionScreen
+import nl.openschoolcloud.calendar.presentation.screens.modeselection.ModeSelectionViewModel
 import nl.openschoolcloud.calendar.presentation.screens.onboarding.OnboardingScreen
 import nl.openschoolcloud.calendar.presentation.screens.planning.WeekPlanningScreen
 import nl.openschoolcloud.calendar.presentation.screens.planning.WeekProgressScreen
@@ -46,6 +48,7 @@ import nl.openschoolcloud.calendar.presentation.screens.splash.SplashScreen
 sealed class Route(val route: String) {
     object Splash : Route("splash")
     object Onboarding : Route("onboarding")
+    object ModeSelection : Route("mode_selection")
     object Login : Route("login")
     object Calendar : Route("calendar")
     object EventDetail : Route("event/{eventId}") {
@@ -73,7 +76,9 @@ sealed class Route(val route: String) {
 @Composable
 fun AppNavigation(
     hasAccount: Boolean = false,
-    onboardingCompleted: Boolean = false
+    onboardingCompleted: Boolean = false,
+    hasCompletedModeSelection: Boolean = false,
+    isStandaloneMode: Boolean = false
 ) {
     val navController = rememberNavController()
 
@@ -86,6 +91,8 @@ fun AppNavigation(
             SplashScreen(
                 hasAccount = hasAccount,
                 onboardingCompleted = onboardingCompleted,
+                hasCompletedModeSelection = hasCompletedModeSelection,
+                isStandaloneMode = isStandaloneMode,
                 onNavigateToCalendar = {
                     navController.navigate(Route.Calendar.route) {
                         popUpTo(Route.Splash.route) { inclusive = true }
@@ -93,6 +100,11 @@ fun AppNavigation(
                 },
                 onNavigateToOnboarding = {
                     navController.navigate(Route.Onboarding.route) {
+                        popUpTo(Route.Splash.route) { inclusive = true }
+                    }
+                },
+                onNavigateToModeSelection = {
+                    navController.navigate(Route.ModeSelection.route) {
                         popUpTo(Route.Splash.route) { inclusive = true }
                     }
                 },
@@ -108,8 +120,29 @@ fun AppNavigation(
         composable(Route.Onboarding.route) {
             OnboardingScreen(
                 onOnboardingComplete = {
-                    navController.navigate(Route.Login.route) {
+                    navController.navigate(Route.ModeSelection.route) {
                         popUpTo(Route.Onboarding.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Mode selection (standalone vs Nextcloud)
+        composable(Route.ModeSelection.route) {
+            val modeViewModel: ModeSelectionViewModel = hiltViewModel()
+            ModeSelectionScreen(
+                onStartStandalone = {
+                    modeViewModel.selectStandalone {
+                        navController.navigate(Route.Calendar.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                },
+                onConnectNextcloud = {
+                    modeViewModel.selectNextcloud {
+                        navController.navigate(Route.Login.route) {
+                            popUpTo(Route.ModeSelection.route) { inclusive = true }
+                        }
                     }
                 }
             )
@@ -216,6 +249,9 @@ fun AppNavigation(
                 },
                 onHolidayDiscoverClick = {
                     navController.navigate(Route.HolidayDiscover.route)
+                },
+                onConnectNextcloud = {
+                    navController.navigate(Route.Login.route)
                 }
             )
         }

@@ -25,6 +25,7 @@ import kotlinx.coroutines.withContext
 import nl.openschoolcloud.calendar.data.local.dao.AccountDao
 import nl.openschoolcloud.calendar.data.local.dao.CalendarDao
 import nl.openschoolcloud.calendar.data.local.dao.EventDao
+import nl.openschoolcloud.calendar.data.local.entity.AccountEntity
 import nl.openschoolcloud.calendar.data.local.entity.CalendarEntity
 import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
 import nl.openschoolcloud.calendar.data.remote.caldav.CalDavClient
@@ -291,6 +292,45 @@ class CalendarRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun ensureLocalCalendarExists() {
+        withContext(Dispatchers.IO) {
+            // Ensure local account exists (needed for foreign key constraint)
+            val existingAccount = accountDao.getById(LOCAL_ACCOUNT_ID)
+            if (existingAccount == null) {
+                accountDao.insert(
+                    AccountEntity(
+                        id = LOCAL_ACCOUNT_ID,
+                        serverUrl = "",
+                        username = "local",
+                        displayName = "Lokaal",
+                        email = null,
+                        principalUrl = null,
+                        calendarHomeSet = null,
+                        isDefault = false
+                    )
+                )
+            }
+            // Ensure local calendar exists
+            val existingCalendar = calendarDao.getById(LOCAL_CALENDAR_ID)
+            if (existingCalendar == null) {
+                calendarDao.insert(
+                    CalendarEntity(
+                        id = LOCAL_CALENDAR_ID,
+                        accountId = LOCAL_ACCOUNT_ID,
+                        displayName = "Mijn Agenda",
+                        colorInt = DEFAULT_CALENDAR_COLOR,
+                        url = "",
+                        ctag = null,
+                        syncToken = null,
+                        readOnly = false,
+                        visible = true,
+                        sortOrder = 0
+                    )
+                )
+            }
+        }
+    }
+
     /**
      * Parse color string to Int, with fallback to default OSC blue
      */
@@ -305,6 +345,8 @@ class CalendarRepositoryImpl @Inject constructor(
 
     companion object {
         private const val DEFAULT_CALENDAR_COLOR = 0xFF3B9FD9.toInt()
+        const val LOCAL_ACCOUNT_ID = "local"
+        const val LOCAL_CALENDAR_ID = "local_default"
     }
 }
 

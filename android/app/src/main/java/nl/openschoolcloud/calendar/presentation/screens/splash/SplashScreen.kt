@@ -54,8 +54,11 @@ import nl.openschoolcloud.calendar.R
 fun SplashScreen(
     hasAccount: Boolean,
     onboardingCompleted: Boolean = false,
+    hasCompletedModeSelection: Boolean = false,
+    isStandaloneMode: Boolean = false,
     onNavigateToCalendar: () -> Unit,
     onNavigateToOnboarding: () -> Unit = {},
+    onNavigateToModeSelection: () -> Unit = {},
     onNavigateToLogin: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -69,8 +72,10 @@ fun SplashScreen(
         visible = true
         delay(2000)
         when {
-            hasAccount -> onNavigateToCalendar()
             !onboardingCompleted -> onNavigateToOnboarding()
+            !hasCompletedModeSelection -> onNavigateToModeSelection()
+            isStandaloneMode -> onNavigateToCalendar()
+            hasAccount -> onNavigateToCalendar()
             else -> onNavigateToLogin()
         }
     }

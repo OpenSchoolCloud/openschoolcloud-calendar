@@ -30,6 +30,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import java.util.concurrent.TimeUnit
 
@@ -42,10 +43,16 @@ import java.util.concurrent.TimeUnit
 class CalendarSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val calendarRepository: CalendarRepository
+    private val calendarRepository: CalendarRepository,
+    private val appPreferences: AppPreferences
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        // Skip sync in standalone mode
+        if (appPreferences.isStandaloneMode) {
+            return Result.success()
+        }
+
         return try {
             val syncResult = calendarRepository.syncAll()
 

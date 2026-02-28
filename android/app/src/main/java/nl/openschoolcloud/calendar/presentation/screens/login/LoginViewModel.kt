@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import android.util.Log
 import java.net.SocketTimeoutException
@@ -38,7 +39,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val appPreferences: AppPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -99,6 +101,8 @@ class LoginViewModel @Inject constructor(
                 result.fold(
                     onSuccess = { account ->
                         Log.d("LoginViewModel", "Login success, accountId=${account.id}")
+                        // Clear standalone mode when connecting Nextcloud
+                        appPreferences.isStandaloneMode = false
                         _uiState.update {
                             it.copy(
                                 isLoading = false,

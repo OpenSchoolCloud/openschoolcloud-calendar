@@ -153,6 +153,7 @@ fun CalendarScreen(
             CalendarTopBar(
                 weekStart = uiState.weekStart,
                 isSyncing = uiState.isSyncing,
+                isStandaloneMode = viewModel.isStandaloneMode,
                 onPreviousWeek = viewModel::previousWeek,
                 onNextWeek = viewModel::nextWeek,
                 onToday = viewModel::goToToday,
@@ -250,6 +251,7 @@ fun CalendarScreen(
 private fun CalendarTopBar(
     weekStart: LocalDate,
     isSyncing: Boolean,
+    isStandaloneMode: Boolean = false,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
     onToday: () -> Unit,
@@ -313,8 +315,8 @@ private fun CalendarTopBar(
                 )
             }
 
-            // Sync indicator (shown inline when syncing)
-            if (isSyncing) {
+            // Sync indicator (shown inline when syncing, hidden in standalone)
+            if (isSyncing && !isStandaloneMode) {
                 CircularProgressIndicator(
                     modifier = Modifier
                         .padding(end = 8.dp)
@@ -336,14 +338,16 @@ private fun CalendarTopBar(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false }
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.menu_sync)) },
-                        onClick = {
-                            menuExpanded = false
-                            onSync()
-                        },
-                        enabled = !isSyncing
-                    )
+                    if (!isStandaloneMode) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.menu_sync)) },
+                            onClick = {
+                                menuExpanded = false
+                                onSync()
+                            },
+                            enabled = !isSyncing
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_week_progress)) },
                         onClick = {
@@ -358,13 +362,15 @@ private fun CalendarTopBar(
                             onWeekReviewClick()
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.menu_booking)) },
-                        onClick = {
-                            menuExpanded = false
-                            onBookingClick()
-                        }
-                    )
+                    if (!isStandaloneMode) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.menu_booking)) },
+                            onClick = {
+                                menuExpanded = false
+                                onBookingClick()
+                            }
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_feedback)) },
                         onClick = {

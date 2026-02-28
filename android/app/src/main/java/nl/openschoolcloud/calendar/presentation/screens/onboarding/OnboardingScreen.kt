@@ -29,9 +29,9 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -70,7 +70,7 @@ fun OnboardingScreen(
             descriptionRes = R.string.onboarding_privacy_description
         ),
         OnboardingPage(
-            icon = Icons.Default.Sync,
+            icon = Icons.Default.AutoAwesome,
             titleRes = R.string.onboarding_sync_title,
             descriptionRes = R.string.onboarding_sync_description
         ),

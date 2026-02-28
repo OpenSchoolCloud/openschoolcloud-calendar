@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.domain.model.Calendar
 import nl.openschoolcloud.calendar.domain.model.Event
 import nl.openschoolcloud.calendar.domain.model.HolidayEvent
@@ -53,8 +54,11 @@ import javax.inject.Inject
 class CalendarViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     private val calendarRepository: CalendarRepository,
-    private val holidayRepository: HolidayRepository
+    private val holidayRepository: HolidayRepository,
+    private val appPreferences: AppPreferences
 ) : ViewModel() {
+
+    val isStandaloneMode: Boolean get() = appPreferences.isStandaloneMode
 
     private val _uiState = MutableStateFlow(CalendarUiState())
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()

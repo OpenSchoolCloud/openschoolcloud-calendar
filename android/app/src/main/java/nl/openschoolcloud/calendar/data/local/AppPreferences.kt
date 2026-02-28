@@ -90,6 +90,14 @@ class AppPreferences @Inject constructor(
         get() = prefs.getInt(KEY_PLANNING_STREAK, 0)
         set(value) = prefs.edit().putInt(KEY_PLANNING_STREAK, value).apply()
 
+    var isStandaloneMode: Boolean
+        get() = prefs.getBoolean(KEY_STANDALONE_MODE, false)
+        set(value) = prefs.edit().putBoolean(KEY_STANDALONE_MODE, value).apply()
+
+    var hasCompletedModeSelection: Boolean
+        get() = prefs.getBoolean(KEY_MODE_SELECTION_COMPLETED, false)
+        set(value) = prefs.edit().putBoolean(KEY_MODE_SELECTION_COMPLETED, value).apply()
+
     companion object {
         private const val KEY_SYNC_INTERVAL = "sync_interval_minutes"
         private const val KEY_THEME_MODE = "theme_mode"
@@ -106,6 +114,8 @@ class AppPreferences @Inject constructor(
         private const val KEY_PLANNING_MINUTE = "planning_time_minute"
         private const val KEY_PLANNING_LAST_WEEK_YEAR = "planning_last_week_year"
         private const val KEY_PLANNING_STREAK = "planning_streak"
+        private const val KEY_STANDALONE_MODE = "standalone_mode"
+        private const val KEY_MODE_SELECTION_COMPLETED = "mode_selection_completed"
 
         const val DEFAULT_SYNC_INTERVAL = 60L
         const val DEFAULT_REMINDER_MINUTES = 15

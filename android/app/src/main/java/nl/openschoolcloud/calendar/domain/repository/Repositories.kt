@@ -118,6 +118,11 @@ interface CalendarRepository {
      * Sync all calendars
      */
     suspend fun syncAll(): Result<List<SyncResult>>
+
+    /**
+     * Ensure a local-only calendar exists for standalone mode
+     */
+    suspend fun ensureLocalCalendarExists()
 }
 
 /**

@@ -41,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Cookie
 import androidx.compose.material.icons.filled.Gavel
@@ -48,6 +49,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -99,6 +101,7 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onLogout: () -> Unit,
     onHolidayDiscoverClick: () -> Unit = {},
+    onConnectNextcloud: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -192,92 +195,131 @@ fun SettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Account section
-            uiState.account?.let { account ->
-                SettingsSection(title = stringResource(R.string.settings_account)) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            if (uiState.isStandaloneMode) {
+                // Standalone mode: show connect card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.CloudQueue,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.standalone_connect_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = account.displayName ?: account.username,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = account.serverUrl,
+                            text = stringResource(R.string.standalone_connect_description),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(onClick = onConnectNextcloud) {
+                            Text(stringResource(R.string.standalone_connect_button))
+                        }
                     }
                 }
-            }
-
-            // Calendars section
-            if (uiState.calendars.isNotEmpty()) {
-                SettingsSection(title = stringResource(R.string.settings_calendars)) {
-                    uiState.calendars.forEach { calendar ->
-                        CalendarRow(
-                            calendar = calendar,
-                            onToggleVisibility = { viewModel.toggleCalendarVisibility(calendar.id) }
-                        )
+            } else {
+                // Account section
+                uiState.account?.let { account ->
+                    SettingsSection(title = stringResource(R.string.settings_account)) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            Text(
+                                text = account.displayName ?: account.username,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = account.serverUrl,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
-            }
 
-            // Sync section
-            SettingsSection(title = stringResource(R.string.settings_sync)) {
-                // Sync interval
-                SettingsRow(
-                    title = stringResource(R.string.settings_sync_interval),
-                    value = formatSyncInterval(uiState.syncIntervalMinutes),
-                    onClick = { showSyncIntervalDialog = true }
-                )
-
-                // Sync now
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(enabled = !uiState.isSyncing) { viewModel.syncNow() }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (uiState.isSyncing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                // Calendars section
+                if (uiState.calendars.isNotEmpty()) {
+                    SettingsSection(title = stringResource(R.string.settings_calendars)) {
+                        uiState.calendars.forEach { calendar ->
+                            CalendarRow(
+                                calendar = calendar,
+                                onToggleVisibility = { viewModel.toggleCalendarVisibility(calendar.id) }
+                            )
+                        }
                     }
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = stringResource(R.string.settings_sync_now),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
                 }
 
-                // Last sync time
-                uiState.lastSyncTime?.let { lastSync ->
-                    Text(
-                        text = stringResource(
-                            R.string.settings_last_sync,
-                            formatTimestamp(lastSync)
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                // Sync section
+                SettingsSection(title = stringResource(R.string.settings_sync)) {
+                    // Sync interval
+                    SettingsRow(
+                        title = stringResource(R.string.settings_sync_interval),
+                        value = formatSyncInterval(uiState.syncIntervalMinutes),
+                        onClick = { showSyncIntervalDialog = true }
                     )
-                } ?: run {
-                    Text(
-                        text = stringResource(R.string.settings_never_synced),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
+
+                    // Sync now
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = !uiState.isSyncing) { viewModel.syncNow() }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (uiState.isSyncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.settings_sync_now),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    // Last sync time
+                    uiState.lastSyncTime?.let { lastSync ->
+                        Text(
+                            text = stringResource(
+                                R.string.settings_last_sync,
+                                formatTimestamp(lastSync)
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
+                    } ?: run {
+                        Text(
+                            text = stringResource(R.string.settings_never_synced),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
 
@@ -392,23 +434,25 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Logout button
-            TextButton(
-                onClick = { showLogoutDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Logout,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
-                )
-                Text(
-                    text = stringResource(R.string.settings_logout),
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
+            // Logout button (hidden in standalone mode)
+            if (!uiState.isStandaloneMode) {
+                TextButton(
+                    onClick = { showLogoutDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_logout),
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
             }
 
             // Promo card

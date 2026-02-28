@@ -89,7 +89,8 @@ class SettingsViewModel @Inject constructor(
                 defaultReminderMinutes = appPreferences.defaultReminderMinutes,
                 reflectionNotificationsEnabled = appPreferences.reflectionNotificationsEnabled,
                 planningNotificationsEnabled = appPreferences.weekPlanningNotificationsEnabled,
-                planningDay = appPreferences.planningDayOfWeek
+                planningDay = appPreferences.planningDayOfWeek,
+                isStandaloneMode = appPreferences.isStandaloneMode
             )
         }
     }
@@ -206,5 +207,6 @@ data class SettingsUiState(
     val planningNotificationsEnabled: Boolean = true,
     val planningDay: Int = 1,
     val showPromo: Boolean = false,
+    val isStandaloneMode: Boolean = false,
     val error: String? = null
 )

@@ -289,10 +289,10 @@
     <!-- Onboarding -->
     <string name="onboarding_privacy_title">Privacy voorop</string>
     <string name="onboarding_privacy_description">Geen Google, geen tracking, geen advertenties. Jouw data blijft van jou — veilig opgeslagen in Nederland.</string>
-    <string name="onboarding_sync_title">Synchroniseer met je schoolcloud</string>
-    <string name="onboarding_sync_description">Verbind met je Nextcloud-server via CalDAV. Al je agenda\'s direct beschikbaar, altijd up-to-date.</string>
-    <string name="onboarding_features_title">Alles in één agenda</string>
-    <string name="onboarding_features_description">Lesroosters, afspraken en herinneringen op één plek. Met widgets, meldingen en snel afspraken aanmaken.</string>
+    <string name="onboarding_sync_title">Slim plannen en reflecteren</string>
+    <string name="onboarding_sync_description">Ontdek feestdagen uit 7 culturen, plan je week, en reflecteer op je dag. Alles om beter te leren leren.</string>
+    <string name="onboarding_features_title">Jouw keuze</string>
+    <string name="onboarding_features_description">Gebruik de app direct of verbind met Nextcloud voor synchronisatie. Alle functies werken ook zonder account.</string>
     <string name="onboarding_skip">Overslaan</string>
     <string name="onboarding_next">Volgende</string>
     <string name="onboarding_start">Aan de slag</string>
@@ -420,6 +420,20 @@
     <string name="menu_booking">Afspraak-links</string>
     <string name="menu_feedback">Feedback geven</string>
     <string name="menu_settings">Instellingen</string>
+
+    <!-- Mode selectie -->
+    <string name="mode_selection_title">Hoe wil je OSC Calendar gebruiken?</string>
+    <string name="mode_standalone_title">Direct starten</string>
+    <string name="mode_standalone_description">Gebruik de app meteen zonder account. Feestdagenkalender, weekplanner, reflecties en taken werken direct.\n\nJe kunt later altijd nog verbinden met Nextcloud.</string>
+    <string name="mode_standalone_button">Direct starten</string>
+    <string name="mode_nextcloud_title">Verbinden met Nextcloud</string>
+    <string name="mode_nextcloud_description">Synchroniseer met je school-cloud. Gedeelde agenda\'s, booking links en QR-codes voor ouders.\n\nJe hebt een Nextcloud server URL en inloggegevens nodig.</string>
+    <string name="mode_nextcloud_button">Inloggen met Nextcloud</string>
+
+    <!-- Standalone modus -->
+    <string name="standalone_connect_title">Wil je synchroniseren?</string>
+    <string name="standalone_connect_description">Verbind met Nextcloud om agenda\'s te delen, booking links te gebruiken en te synchroniseren tussen apparaten.</string>
+    <string name="standalone_connect_button">Verbinden met Nextcloud</string>
 
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>

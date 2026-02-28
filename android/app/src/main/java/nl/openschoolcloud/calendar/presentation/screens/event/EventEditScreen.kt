@@ -546,8 +546,8 @@ private fun EventEditForm(
             )
         }
 
-        // Calendar selector
-        if (uiState.availableCalendars.isNotEmpty()) {
+        // Calendar selector (hidden when only 1 calendar, e.g. standalone mode)
+        if (uiState.availableCalendars.size > 1) {
             CalendarSelector(
                 calendars = uiState.availableCalendars,
                 selectedCalendarId = uiState.selectedCalendarId,
