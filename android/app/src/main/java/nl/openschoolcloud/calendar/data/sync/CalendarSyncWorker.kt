@@ -58,8 +58,14 @@ class CalendarSyncWorker @AssistedInject constructor(
 
             syncResult.fold(
                 onSuccess = { results ->
-                    // Check if any sync failed
                     val failures = results.count { !it.success }
+                    val successes = results.count { it.success }
+
+                    // Save timestamp if at least one calendar synced successfully
+                    if (successes > 0) {
+                        appPreferences.lastSyncTimestamp = System.currentTimeMillis()
+                    }
+
                     if (failures > 0 && failures == results.size) {
                         // All syncs failed
                         Result.retry()

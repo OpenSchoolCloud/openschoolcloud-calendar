@@ -128,11 +128,22 @@ class SettingsViewModel @Inject constructor(
 
             val result = calendarRepository.syncAll()
             result.fold(
-                onSuccess = {
+                onSuccess = { results ->
                     val now = Instant.now()
                     appPreferences.lastSyncTimestamp = now.toEpochMilli()
+
+                    val failures = results.filter { !it.success }
+                    val errorMsg = if (failures.isNotEmpty()) {
+                        "Sync voltooid met ${failures.size} fout(en): " +
+                                failures.joinToString("; ") { it.error ?: "onbekend" }
+                    } else null
+
                     _uiState.update {
-                        it.copy(isSyncing = false, lastSyncTime = now)
+                        it.copy(
+                            isSyncing = false,
+                            lastSyncTime = now,
+                            error = errorMsg
+                        )
                     }
                 },
                 onFailure = { error ->

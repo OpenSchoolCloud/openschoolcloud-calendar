@@ -218,5 +218,6 @@ data class SyncResult(
     val eventsUpdated: Int = 0,
     val eventsDeleted: Int = 0,
     val conflicts: Int = 0,
-    val error: String? = null
+    val error: String? = null,
+    val syncMode: String? = null // "full", "incremental", "ctag-unchanged", or null on error
 )

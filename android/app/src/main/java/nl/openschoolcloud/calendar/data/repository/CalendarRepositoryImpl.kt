@@ -29,6 +29,8 @@ import nl.openschoolcloud.calendar.data.local.entity.AccountEntity
 import nl.openschoolcloud.calendar.data.local.entity.CalendarEntity
 import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
 import nl.openschoolcloud.calendar.data.remote.caldav.CalDavClient
+import nl.openschoolcloud.calendar.data.remote.caldav.CalDavException
+import nl.openschoolcloud.calendar.data.remote.caldav.EventData
 import nl.openschoolcloud.calendar.data.remote.ical.ICalParser
 import nl.openschoolcloud.calendar.domain.model.Calendar
 import nl.openschoolcloud.calendar.domain.model.SyncStatus
@@ -174,59 +176,196 @@ class CalendarRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Perform actual sync operation for a single calendar
+     * Perform actual sync operation for a single calendar.
+     *
+     * Sync strategy:
+     * 1. PROPFIND to get current CTag + SyncToken from server
+     * 2. CTag comparison: if CTag unchanged, skip (no changes on server)
+     * 3. If we have a stored syncToken → try incremental sync via sync-collection
+     *    - If token expired (HTTP 400/403) → fall back to full sync
+     * 4. If no syncToken → full sync via calendar-query REPORT
+     * 5. Save new CTag + SyncToken for next sync
      */
     private suspend fun doSyncCalendar(calendarId: String): Result<SyncResult> {
         val calendar = calendarDao.getById(calendarId)
-            ?: return Result.failure(Exception("Calendar not found"))
+            ?: return Result.failure(Exception("Calendar not found: $calendarId"))
 
         val account = accountDao.getById(calendar.accountId)
-            ?: return Result.failure(Exception("Account not found"))
+            ?: return Result.failure(Exception("Account not found: ${calendar.accountId}"))
 
         val password = getPasswordWithFallback(account.id)
-            ?: return Result.failure(Exception("Credentials not found"))
+            ?: return Result.failure(Exception("Credentials not found for account: ${account.id}"))
 
-        // Check if calendar has changed (CTag)
-        val currentCtag = calDavClient.getCtag(
+        // Step 1: Get current CTag + SyncToken from server
+        val ctagInfo = calDavClient.getCtagInfo(
             calendar.url,
             account.username,
             password
-        ).getOrNull()
+        ).getOrElse { e ->
+            return Result.failure(
+                Exception("PROPFIND failed for ${calendar.displayName}: ${e.message}", e)
+            )
+        }
 
-        if (currentCtag != null && currentCtag == calendar.ctag) {
-            // No changes on server
+        // Step 2: CTag comparison — skip if no changes
+        if (ctagInfo.ctag != null && ctagInfo.ctag == calendar.ctag) {
             return Result.success(
                 SyncResult(
                     calendarId = calendarId,
                     success = true,
-                    eventsAdded = 0,
-                    eventsUpdated = 0,
-                    eventsDeleted = 0
+                    syncMode = "ctag-unchanged"
                 )
             )
         }
 
-        // Fetch events (last 3 months + next 12 months)
-        val startDate = LocalDate.now().minusMonths(3)
-        val endDate = LocalDate.now().plusMonths(12)
+        // Step 3: Try incremental sync if we have a stored syncToken
+        val storedSyncToken = calendar.syncToken
+        if (storedSyncToken != null && storedSyncToken.isNotBlank()) {
+            val incrementalResult = doIncrementalSync(
+                calendarId = calendarId,
+                calendarUrl = calendar.url,
+                calendarName = calendar.displayName,
+                username = account.username,
+                password = password,
+                storedSyncToken = storedSyncToken,
+                newCtag = ctagInfo.ctag,
+                serverSyncToken = ctagInfo.syncToken
+            )
 
-        val eventsResult = calDavClient.fetchEvents(
-            calendarUrl = calendar.url,
-            username = account.username,
-            password = password,
-            startDate = startDate,
-            endDate = endDate
-        )
+            // If incremental sync succeeded, return it
+            if (incrementalResult.isSuccess) {
+                return incrementalResult
+            }
 
-        val eventDataList = eventsResult.getOrElse {
-            return Result.failure(it)
+            // If token expired (400/403), fall through to full sync
+            val error = incrementalResult.exceptionOrNull()
+            val isTokenExpired = error is CalDavException &&
+                    (error.httpCode == 400 || error.httpCode == 403)
+
+            if (!isTokenExpired) {
+                // Non-token error (network, auth) — don't retry with full sync
+                return incrementalResult
+            }
+            // Fall through to full sync
         }
 
-        // Parse and store events
+        // Step 4: Full sync via calendar-query REPORT
+        return doFullSync(
+            calendarId = calendarId,
+            calendarUrl = calendar.url,
+            calendarName = calendar.displayName,
+            username = account.username,
+            password = password,
+            newCtag = ctagInfo.ctag,
+            serverSyncToken = ctagInfo.syncToken
+        )
+    }
+
+    /**
+     * Incremental sync using sync-collection REPORT.
+     * Only fetches changed/deleted events since the last syncToken.
+     */
+    private suspend fun doIncrementalSync(
+        calendarId: String,
+        calendarUrl: String,
+        calendarName: String,
+        username: String,
+        password: String,
+        storedSyncToken: String,
+        newCtag: String?,
+        serverSyncToken: String?
+    ): Result<SyncResult> {
+        val syncResponse = calDavClient.syncCollection(
+            calendarUrl = calendarUrl,
+            username = username,
+            password = password,
+            syncToken = storedSyncToken
+        ).getOrElse { e ->
+            return Result.failure(
+                if (e is CalDavException) e
+                else Exception("sync-collection failed for $calendarName: ${e.message}", e)
+            )
+        }
+
+        // Process changed events
         var added = 0
         var updated = 0
+        for (eventData in syncResponse.changed) {
+            val entity = icalParser.parseEvent(
+                icalData = eventData.icalData,
+                calendarId = calendarId,
+                etag = eventData.etag
+            ) ?: continue
 
-        val newEventUids = mutableSetOf<String>()
+            val existing = eventDao.getByUid(entity.uid)
+            if (existing == null) {
+                eventDao.insert(entity)
+                added++
+            } else {
+                eventDao.update(entity)
+                updated++
+            }
+        }
+
+        // Process deleted events
+        var deleted = 0
+        for (href in syncResponse.deleted) {
+            val uid = extractUidFromHref(href) ?: continue
+            val existing = eventDao.getByUid(uid)
+            if (existing != null && existing.calendarId == calendarId) {
+                eventDao.deleteByUid(uid)
+                deleted++
+            }
+        }
+
+        // Save new sync state
+        val newSyncToken = syncResponse.syncToken.ifBlank { serverSyncToken }
+        calendarDao.updateSyncInfo(calendarId, newCtag, newSyncToken)
+
+        return Result.success(
+            SyncResult(
+                calendarId = calendarId,
+                success = true,
+                eventsAdded = added,
+                eventsUpdated = updated,
+                eventsDeleted = deleted,
+                syncMode = "incremental"
+            )
+        )
+    }
+
+    /**
+     * Full sync using calendar-query REPORT.
+     * Fetches ALL events and reconciles with local database.
+     */
+    private suspend fun doFullSync(
+        calendarId: String,
+        calendarUrl: String,
+        calendarName: String,
+        username: String,
+        password: String,
+        newCtag: String?,
+        serverSyncToken: String?
+    ): Result<SyncResult> {
+        // Fetch all events (no time-range for complete sync)
+        val eventsResult = calDavClient.fetchEvents(
+            calendarUrl = calendarUrl,
+            username = username,
+            password = password,
+            startDate = null,
+            endDate = null
+        )
+
+        val eventDataList = eventsResult.getOrElse { e ->
+            return Result.failure(
+                Exception("calendar-query failed for $calendarName: ${e.message}", e)
+            )
+        }
+
+        // Parse and upsert events
+        var added = 0
+        var updated = 0
+        val serverEventUids = mutableSetOf<String>()
 
         for (eventData in eventDataList) {
             val entity = icalParser.parseEvent(
@@ -235,7 +374,7 @@ class CalendarRepositoryImpl @Inject constructor(
                 etag = eventData.etag
             ) ?: continue
 
-            newEventUids.add(entity.uid)
+            serverEventUids.add(entity.uid)
 
             val existing = eventDao.getByUid(entity.uid)
             if (existing == null) {
@@ -247,18 +386,18 @@ class CalendarRepositoryImpl @Inject constructor(
             }
         }
 
-        // Delete events that no longer exist on server
-        val localEvents = eventDao.getByCalendarSync(calendarId)
+        // Delete local events that no longer exist on server
         var deleted = 0
+        val localEvents = eventDao.getByCalendarSync(calendarId)
         for (local in localEvents) {
-            if (local.uid !in newEventUids && local.syncStatus == SyncStatus.SYNCED.name) {
+            if (local.uid !in serverEventUids && local.syncStatus == SyncStatus.SYNCED.name) {
                 eventDao.deleteByUid(local.uid)
                 deleted++
             }
         }
 
-        // Update calendar ctag
-        calendarDao.updateSyncInfo(calendarId, currentCtag, null)
+        // Save new sync state (CTag + SyncToken for next incremental sync)
+        calendarDao.updateSyncInfo(calendarId, newCtag, serverSyncToken)
 
         return Result.success(
             SyncResult(
@@ -266,9 +405,21 @@ class CalendarRepositoryImpl @Inject constructor(
                 success = true,
                 eventsAdded = added,
                 eventsUpdated = updated,
-                eventsDeleted = deleted
+                eventsDeleted = deleted,
+                syncMode = "full"
             )
         )
+    }
+
+    /**
+     * Extract UID from a CalDAV event href.
+     * Nextcloud uses the UID as the filename: /remote.php/dav/.../uid.ics
+     */
+    private fun extractUidFromHref(href: String): String? {
+        val filename = href.substringAfterLast('/')
+        return if (filename.endsWith(".ics")) {
+            filename.removeSuffix(".ics")
+        } else null
     }
 
     override suspend fun syncAll(): Result<List<SyncResult>> {
@@ -445,15 +596,17 @@ class CalendarRepositoryImpl @Inject constructor(
                 sb.appendLine("(none)")
             }
             for (account in accounts) {
+                val hasPassword = getPasswordWithFallback(account.id) != null
                 sb.appendLine("ID: ${account.id}")
                 sb.appendLine("  Server: ${account.serverUrl}")
                 sb.appendLine("  Username: ${account.username}")
                 sb.appendLine("  CalendarHome: ${account.calendarHomeSet ?: "(null)"}")
                 sb.appendLine("  Default: ${account.isDefault}")
+                sb.appendLine("  Credentials: ${if (hasPassword) "OK" else "MISSING"}")
             }
             sb.appendLine()
 
-            // Calendars
+            // Calendars with sync details
             sb.appendLine("--- Calendars ---")
             val calendars = calendarDao.getAllSync()
             if (calendars.isEmpty()) {
@@ -468,24 +621,28 @@ class CalendarRepositoryImpl @Inject constructor(
                 sb.appendLine("  Visible: ${cal.visible}")
                 sb.appendLine("  ReadOnly: ${cal.readOnly}")
                 sb.appendLine("  CTag: ${cal.ctag ?: "(null)"}")
+                sb.appendLine("  SyncToken: ${cal.syncToken ?: "(null)"}")
                 sb.appendLine("  Events: $eventCount")
+                sb.appendLine("  Next sync mode: ${if (cal.syncToken != null) "incremental" else "full"}")
             }
             sb.appendLine()
 
-            // CalDAV discovery test
-            sb.appendLine("--- CalDAV Discovery ---")
+            // CalDAV discovery + sync test
+            sb.appendLine("--- CalDAV Discovery & Sync Test ---")
             for (account in accounts) {
                 if (account.id == LOCAL_ACCOUNT_ID) continue
                 val calendarHome = account.calendarHomeSet
                 if (calendarHome == null) {
-                    sb.appendLine("Account ${account.id}: No calendarHomeSet")
+                    sb.appendLine("Account ${account.username}: No calendarHomeSet")
                     continue
                 }
                 val password = getPasswordWithFallback(account.id)
                 if (password == null) {
-                    sb.appendLine("Account ${account.id}: No password stored (tried fallback)")
+                    sb.appendLine("Account ${account.username}: No password stored (tried fallback)")
                     continue
                 }
+
+                // Discovery
                 try {
                     val result = calDavClient.listCalendars(
                         calendarHomeUrl = calendarHome,
@@ -494,17 +651,47 @@ class CalendarRepositoryImpl @Inject constructor(
                     )
                     result.fold(
                         onSuccess = { infos ->
-                            sb.appendLine("Account ${account.id}: Found ${infos.size} calendars on server")
+                            sb.appendLine("Account ${account.username}: Found ${infos.size} calendars on server")
                             for (info in infos) {
-                                sb.appendLine("  - ${info.displayName} (${info.url})")
+                                sb.appendLine("  - ${info.displayName}")
+                                sb.appendLine("    URL: ${info.url}")
+                                sb.appendLine("    CTag: ${info.ctag ?: "(null)"}")
+                                sb.appendLine("    SyncToken: ${info.syncToken ?: "(null)"}")
+                                sb.appendLine("    SupportsEvents: ${info.supportsEvents}")
                             }
                         },
                         onFailure = { error ->
-                            sb.appendLine("Account ${account.id}: Discovery failed: ${error.message}")
+                            sb.appendLine("Account ${account.username}: Discovery failed: ${error.message}")
                         }
                     )
                 } catch (e: Exception) {
-                    sb.appendLine("Account ${account.id}: Exception: ${e.message}")
+                    sb.appendLine("Account ${account.username}: Exception: ${e.message}")
+                }
+
+                // Per-calendar CTag/sync test
+                val accountCalendars = calendars.filter { it.accountId == account.id }
+                for (cal in accountCalendars) {
+                    if (cal.url.isBlank()) continue
+                    try {
+                        val ctagResult = calDavClient.getCtagInfo(
+                            cal.url, account.username, password
+                        )
+                        ctagResult.fold(
+                            onSuccess = { info ->
+                                val ctagChanged = info.ctag != cal.ctag
+                                sb.appendLine("  Sync check [${cal.displayName}]:")
+                                sb.appendLine("    Server CTag: ${info.ctag ?: "(null)"}")
+                                sb.appendLine("    Stored CTag: ${cal.ctag ?: "(null)"}")
+                                sb.appendLine("    Changed: $ctagChanged")
+                                sb.appendLine("    Server SyncToken: ${info.syncToken ?: "(null)"}")
+                            },
+                            onFailure = { error ->
+                                sb.appendLine("  Sync check [${cal.displayName}]: FAILED - ${error.message}")
+                            }
+                        )
+                    } catch (e: Exception) {
+                        sb.appendLine("  Sync check [${cal.displayName}]: Exception - ${e.message}")
+                    }
                 }
             }
 

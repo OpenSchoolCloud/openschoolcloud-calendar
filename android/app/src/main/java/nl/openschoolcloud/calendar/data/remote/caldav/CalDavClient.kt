@@ -181,6 +181,25 @@ class CalDavClient @Inject constructor(
             parseCtag(response) ?: throw CalDavException("Could not get ctag")
         }
     }
+
+    /**
+     * Get calendar CTag and SyncToken together (for change detection + incremental sync)
+     */
+    suspend fun getCtagInfo(
+        calendarUrl: String,
+        username: String,
+        password: String
+    ): Result<CtagInfo> {
+        return propfind(
+            url = calendarUrl,
+            username = username,
+            password = password,
+            body = CTAG_REQUEST,
+            depth = 0
+        ).mapCatching { response ->
+            parseCtagInfo(response)
+        }
+    }
     
     /**
      * Sync collection (get changed events since last sync)
@@ -761,12 +780,40 @@ class CalDavClient @Inject constructor(
     }
 
     /**
+     * Parse both CTag and SyncToken from PROPFIND response
+     */
+    private fun parseCtagInfo(response: String): CtagInfo {
+        var ctag: String? = null
+        var syncToken: String? = null
+
+        try {
+            val parser = createParser(response)
+            var eventType = parser.eventType
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                if (eventType == XmlPullParser.START_TAG) {
+                    val localName = parser.name.substringAfter(":")
+                    when (localName) {
+                        "getctag" -> ctag = parser.nextText()
+                        "sync-token" -> syncToken = parser.nextText()
+                    }
+                }
+                eventType = parser.next()
+            }
+        } catch (_: Exception) {}
+
+        return CtagInfo(ctag = ctag, syncToken = syncToken)
+    }
+
+    /**
      * Parse sync-collection response
-     * Extracts new sync token and list of changed/deleted events
+     * Extracts new sync token, changed events with iCal data, and deleted event hrefs
+     *
+     * Changed events have propstat with 200 status containing etag + calendar-data.
+     * Deleted events have a response-level 404 status (no propstat).
      */
     private fun parseSyncCollectionResponse(response: String): SyncCollectionResponse {
-        val added = mutableListOf<String>()
-        val modified = mutableListOf<String>()
+        val changed = mutableListOf<EventData>()
         val deleted = mutableListOf<String>()
         var syncToken = ""
 
@@ -777,9 +824,10 @@ class CalDavClient @Inject constructor(
             var inResponse = false
             var inPropstat = false
             var currentHref: String? = null
-            var currentStatus: String? = null
             var currentEtag: String? = null
-            var statusCode: Int? = null
+            var currentIcalData: String? = null
+            var propstatStatusCode: Int? = null
+            var responseStatusCode: Int? = null
 
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 when (eventType) {
@@ -790,9 +838,10 @@ class CalDavClient @Inject constructor(
                             "response" -> {
                                 inResponse = true
                                 currentHref = null
-                                currentStatus = null
                                 currentEtag = null
-                                statusCode = null
+                                currentIcalData = null
+                                propstatStatusCode = null
+                                responseStatusCode = null
                             }
                             "propstat" -> inPropstat = true
                             "href" -> {
@@ -801,19 +850,25 @@ class CalDavClient @Inject constructor(
                                 }
                             }
                             "status" -> {
+                                val statusText = parser.nextText()
+                                val code = statusText.split(" ").getOrNull(1)?.toIntOrNull()
                                 if (inPropstat) {
-                                    currentStatus = parser.nextText()
-                                    // Parse status code from "HTTP/1.1 200 OK" or "HTTP/1.1 404 Not Found"
-                                    statusCode = currentStatus.split(" ").getOrNull(1)?.toIntOrNull()
+                                    propstatStatusCode = code
+                                } else if (inResponse) {
+                                    responseStatusCode = code
                                 }
                             }
                             "getetag" -> {
                                 if (inPropstat) {
-                                    currentEtag = parser.nextText()
+                                    currentEtag = parser.nextText()?.trim('"')
+                                }
+                            }
+                            "calendar-data" -> {
+                                if (inPropstat) {
+                                    currentIcalData = parser.nextText()
                                 }
                             }
                             "sync-token" -> {
-                                // Top-level sync-token (new sync token)
                                 if (!inResponse) {
                                     syncToken = parser.nextText()
                                 }
@@ -825,15 +880,22 @@ class CalDavClient @Inject constructor(
 
                         when (localName) {
                             "response" -> {
-                                // Determine if added, modified, or deleted
                                 currentHref?.let { href ->
                                     when {
-                                        statusCode == 404 -> deleted.add(href)
-                                        currentEtag != null -> {
-                                            // Has etag = exists, could be new or modified
-                                            // For simplicity, treat all as modified (caller can check existence)
-                                            modified.add(href)
+                                        // Deleted: response-level 404 status
+                                        responseStatusCode == 404 -> deleted.add(href)
+                                        // Changed: has iCal data from propstat
+                                        currentIcalData != null -> {
+                                            changed.add(
+                                                EventData(
+                                                    href = href,
+                                                    etag = currentEtag ?: "",
+                                                    icalData = currentIcalData
+                                                )
+                                            )
                                         }
+                                        // Propstat 404 also means deleted
+                                        propstatStatusCode == 404 -> deleted.add(href)
                                         else -> { /* Unknown status, skip */ }
                                     }
                                 }
@@ -845,14 +907,13 @@ class CalDavClient @Inject constructor(
                 }
                 eventType = parser.next()
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Return whatever we parsed
         }
 
         return SyncCollectionResponse(
             syncToken = syncToken,
-            added = added,
-            modified = modified,
+            changed = changed,
             deleted = deleted
         )
     }
@@ -941,22 +1002,24 @@ class CalDavClient @Inject constructor(
     
     private val SYNC_COLLECTION_REQUEST = """
         <?xml version="1.0" encoding="utf-8"?>
-        <d:sync-collection xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">
+        <d:sync-collection xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
             <d:sync-token>{{SYNC_TOKEN}}</d:sync-token>
             <d:sync-level>1</d:sync-level>
             <d:prop>
                 <d:getetag/>
+                <c:calendar-data/>
             </d:prop>
         </d:sync-collection>
     """.trimIndent()
-    
+
     private val SYNC_COLLECTION_INITIAL_REQUEST = """
         <?xml version="1.0" encoding="utf-8"?>
-        <d:sync-collection xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">
+        <d:sync-collection xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
             <d:sync-token/>
             <d:sync-level>1</d:sync-level>
             <d:prop>
                 <d:getetag/>
+                <c:calendar-data/>
             </d:prop>
         </d:sync-collection>
     """.trimIndent()
@@ -980,9 +1043,16 @@ data class CalendarInfo(
  */
 data class SyncCollectionResponse(
     val syncToken: String,
-    val added: List<String>, // Event URLs
-    val modified: List<String>,
-    val deleted: List<String>
+    val changed: List<EventData>,  // Added or modified events with iCal data
+    val deleted: List<String>      // Deleted event hrefs
+)
+
+/**
+ * CTag and SyncToken info from a calendar collection
+ */
+data class CtagInfo(
+    val ctag: String?,
+    val syncToken: String?
 )
 
 /**
