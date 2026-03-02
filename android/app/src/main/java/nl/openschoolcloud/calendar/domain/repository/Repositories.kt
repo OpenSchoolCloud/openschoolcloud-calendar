@@ -209,6 +209,22 @@ interface BookingRepository {
 }
 
 /**
+ * Repository for contacts from CardDAV addressbooks
+ */
+interface ContactRepository {
+
+    fun getContacts(): Flow<List<Contact>>
+
+    fun searchContacts(query: String): Flow<List<Contact>>
+
+    suspend fun searchContactsSync(query: String): List<Contact>
+
+    suspend fun syncContacts(accountId: String): Result<Int>
+
+    suspend fun syncAllContacts(): Result<Int>
+}
+
+/**
  * Result of a sync operation
  */
 data class SyncResult(

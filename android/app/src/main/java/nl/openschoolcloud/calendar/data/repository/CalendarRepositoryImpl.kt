@@ -126,8 +126,8 @@ class CalendarRepositoryImpl @Inject constructor(
                             displayName = info.displayName,
                             colorInt = parseColor(info.color),
                             url = info.url,
-                            ctag = info.ctag,
-                            syncToken = info.syncToken,
+                            ctag = null,      // Empty: forces full sync on first run
+                            syncToken = null,  // Empty: forces full sync on first run
                             readOnly = info.readOnly,
                             visible = true,
                             sortOrder = index
@@ -514,8 +514,8 @@ class CalendarRepositoryImpl @Inject constructor(
                             displayName = info.displayName,
                             colorInt = parseColor(info.color),
                             url = info.url,
-                            ctag = info.ctag,
-                            syncToken = info.syncToken,
+                            ctag = null,      // Empty: forces full sync on first run
+                            syncToken = null,  // Empty: forces full sync on first run
                             readOnly = info.readOnly,
                             visible = true,
                             sortOrder = index

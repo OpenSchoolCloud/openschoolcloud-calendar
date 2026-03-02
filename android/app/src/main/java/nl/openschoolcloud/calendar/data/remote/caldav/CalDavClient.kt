@@ -17,6 +17,7 @@
  */
 package nl.openschoolcloud.calendar.data.remote.caldav
 
+import android.util.Log
 import android.util.Xml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -47,9 +48,10 @@ class CalDavClient @Inject constructor(
     private val httpClient: OkHttpClient
 ) {
     companion object {
+        private const val TAG = "CalDavClient"
         private val XML_MEDIA_TYPE = "application/xml; charset=utf-8".toMediaType()
         private val ICAL_MEDIA_TYPE = "text/calendar; charset=utf-8".toMediaType()
-        
+
         // Well-known CalDAV endpoint for Nextcloud
         const val WELL_KNOWN_CALDAV = "/.well-known/caldav"
         const val NEXTCLOUD_DAV_PATH = "/remote.php/dav"
@@ -159,7 +161,11 @@ class CalDavClient @Inject constructor(
             body = LIST_CALENDARS_REQUEST,
             depth = 1
         ).mapCatching { response ->
-            parseCalendars(response, calendarHomeUrl)
+            Log.d(TAG, "PROPFIND Depth:1 on $calendarHomeUrl — response length: ${response.length}")
+            Log.d(TAG, "PROPFIND response (first 3000 chars): ${response.take(3000)}")
+            val calendars = parseCalendars(response, calendarHomeUrl)
+            Log.d(TAG, "Parsed ${calendars.size} calendars from PROPFIND response")
+            calendars
         }
     }
     
@@ -517,6 +523,90 @@ class CalDavClient @Inject constructor(
         return events
     }
 
+    // ==================== CardDAV Methods ====================
+
+    /**
+     * Discover the CardDAV addressbook home set URL
+     * PROPFIND on principal for card:addressbook-home-set
+     */
+    suspend fun discoverAddressbookHome(
+        principalUrl: String,
+        username: String,
+        password: String
+    ): Result<String> {
+        return propfind(
+            url = principalUrl,
+            username = username,
+            password = password,
+            body = ADDRESSBOOK_HOME_SET_REQUEST,
+            depth = 0
+        ).mapCatching { response ->
+            val href = parseAddressbookHomeSet(response)
+                ?: throw CalDavException("Could not find addressbook home set")
+            resolveUrl(principalUrl, href)
+        }
+    }
+
+    /**
+     * List addressbooks at the home URL
+     * PROPFIND depth=1, filter for card:addressbook resourcetype
+     */
+    suspend fun listAddressbooks(
+        addressbookHomeUrl: String,
+        username: String,
+        password: String
+    ): Result<List<AddressbookInfo>> {
+        return propfind(
+            url = addressbookHomeUrl,
+            username = username,
+            password = password,
+            body = LIST_ADDRESSBOOKS_REQUEST,
+            depth = 1
+        ).mapCatching { response ->
+            parseAddressbooks(response, addressbookHomeUrl)
+        }
+    }
+
+    /**
+     * Fetch all contacts from an addressbook via REPORT addressbook-query
+     */
+    suspend fun fetchContacts(
+        addressbookUrl: String,
+        username: String,
+        password: String
+    ): Result<List<ContactData>> {
+        return report(
+            url = addressbookUrl,
+            username = username,
+            password = password,
+            body = ADDRESSBOOK_QUERY_REQUEST,
+            depth = 1
+        ).mapCatching { response ->
+            parseAddressbookQueryResponse(response, addressbookUrl)
+        }
+    }
+
+    /**
+     * Discover the user's email address via calendar-user-address-set
+     * Used to set the ORGANIZER property on outgoing events
+     */
+    suspend fun discoverCalendarUserAddress(
+        principalUrl: String,
+        username: String,
+        password: String
+    ): Result<String> {
+        return propfind(
+            url = principalUrl,
+            username = username,
+            password = password,
+            body = CALENDAR_USER_ADDRESS_REQUEST,
+            depth = 0
+        ).mapCatching { response ->
+            parseCalendarUserAddress(response)
+                ?: throw CalDavException("Could not find calendar user address")
+        }
+    }
+
     // ==================== Private helpers ====================
     
     private suspend fun propfind(
@@ -769,6 +859,8 @@ class CalDavClient @Inject constructor(
 
                         when (localName) {
                             "response" -> {
+                                // Log every response element for diagnostics
+                                Log.d(TAG, "PROPFIND response element: href=$currentHref, isCalendar=$isCalendar, displayName=$currentDisplayName, supportsEvents=$supportsEvents")
                                 // End of response - add calendar if it's valid
                                 if (isCalendar && currentHref != null) {
                                     val resolvedUrl = resolveUrl(baseUrl, currentHref)
@@ -783,6 +875,9 @@ class CalDavClient @Inject constructor(
                                             supportsEvents = supportsEvents
                                         )
                                     )
+                                    Log.d(TAG, "  → Added calendar: ${currentDisplayName ?: "Calendar"} at $resolvedUrl")
+                                } else if (currentHref != null) {
+                                    Log.d(TAG, "  → Skipped (isCalendar=$isCalendar)")
                                 }
                                 inResponse = false
                             }
@@ -984,6 +1079,225 @@ class CalDavClient @Inject constructor(
         }
     }
     
+    /**
+     * Parse addressbook-home-set from PROPFIND response
+     */
+    private fun parseAddressbookHomeSet(response: String): String? {
+        return try {
+            val parser = createParser(response)
+            var inAddressbookHomeSet = false
+            var eventType = parser.eventType
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "addressbook-home-set") {
+                            inAddressbookHomeSet = true
+                        } else if (localName == "href" && inAddressbookHomeSet) {
+                            return parser.nextText()
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "addressbook-home-set") {
+                            inAddressbookHomeSet = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Parse addressbooks from PROPFIND response
+     */
+    private fun parseAddressbooks(response: String, baseUrl: String): List<AddressbookInfo> {
+        val addressbooks = mutableListOf<AddressbookInfo>()
+
+        try {
+            val parser = createParser(response)
+            var eventType = parser.eventType
+
+            var currentHref: String? = null
+            var currentDisplayName: String? = null
+            var isAddressbook = false
+            var inResponse = false
+            var inPropstat = false
+            var inProp = false
+            var inResourceType = false
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        when (localName) {
+                            "response" -> {
+                                inResponse = true
+                                currentHref = null
+                                currentDisplayName = null
+                                isAddressbook = false
+                            }
+                            "propstat" -> inPropstat = true
+                            "prop" -> inProp = true
+                            "resourcetype" -> inResourceType = true
+                            "href" -> {
+                                if (inResponse && !inPropstat) {
+                                    currentHref = parser.nextText()
+                                }
+                            }
+                            "displayname" -> {
+                                if (inProp) {
+                                    currentDisplayName = parser.nextText()
+                                }
+                            }
+                            "addressbook" -> {
+                                if (inResourceType) {
+                                    isAddressbook = true
+                                }
+                            }
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        when (localName) {
+                            "response" -> {
+                                if (isAddressbook && currentHref != null) {
+                                    addressbooks.add(
+                                        AddressbookInfo(
+                                            url = resolveUrl(baseUrl, currentHref),
+                                            displayName = currentDisplayName ?: "Addressbook"
+                                        )
+                                    )
+                                }
+                                inResponse = false
+                            }
+                            "propstat" -> inPropstat = false
+                            "prop" -> inProp = false
+                            "resourcetype" -> inResourceType = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+        } catch (_: Exception) {}
+
+        return addressbooks
+    }
+
+    /**
+     * Parse addressbook-query REPORT response for contacts
+     */
+    private fun parseAddressbookQueryResponse(response: String, baseUrl: String): List<ContactData> {
+        val contacts = mutableListOf<ContactData>()
+
+        try {
+            val parser = createParser(response)
+            var eventType = parser.eventType
+
+            var inResponse = false
+            var inPropstat = false
+            var currentHref: String? = null
+            var currentEtag: String? = null
+            var currentVcardData: String? = null
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        when (localName) {
+                            "response" -> {
+                                inResponse = true
+                                currentHref = null
+                                currentEtag = null
+                                currentVcardData = null
+                            }
+                            "propstat" -> inPropstat = true
+                            "href" -> {
+                                if (inResponse && !inPropstat) {
+                                    currentHref = parser.nextText()
+                                }
+                            }
+                            "getetag" -> {
+                                if (inPropstat) {
+                                    currentEtag = parser.nextText()?.trim('"')
+                                }
+                            }
+                            "address-data" -> {
+                                if (inPropstat) {
+                                    currentVcardData = parser.nextText()
+                                }
+                            }
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        when (localName) {
+                            "response" -> {
+                                if (currentHref != null && currentVcardData != null) {
+                                    contacts.add(
+                                        ContactData(
+                                            href = resolveUrl(baseUrl, currentHref),
+                                            etag = currentEtag ?: "",
+                                            vcardData = currentVcardData
+                                        )
+                                    )
+                                }
+                                inResponse = false
+                            }
+                            "propstat" -> inPropstat = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+        } catch (_: Exception) {}
+
+        return contacts
+    }
+
+    /**
+     * Parse calendar-user-address-set from PROPFIND response
+     * Returns the first mailto: address found, stripped of the prefix
+     */
+    private fun parseCalendarUserAddress(response: String): String? {
+        return try {
+            val parser = createParser(response)
+            var inCalendarUserAddressSet = false
+            var eventType = parser.eventType
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "calendar-user-address-set") {
+                            inCalendarUserAddressSet = true
+                        } else if (localName == "href" && inCalendarUserAddressSet) {
+                            val href = parser.nextText()
+                            if (href.startsWith("mailto:")) {
+                                return href.removePrefix("mailto:")
+                            }
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "calendar-user-address-set") {
+                            inCalendarUserAddressSet = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun buildSyncCollectionRequest(syncToken: String): String {
         return SYNC_COLLECTION_REQUEST.replace("{{SYNC_TOKEN}}", syncToken)
     }
@@ -1043,6 +1357,44 @@ class CalDavClient @Inject constructor(
             </d:prop>
         </d:sync-collection>
     """.trimIndent()
+
+    private val ADDRESSBOOK_HOME_SET_REQUEST = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <d:propfind xmlns:d="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav">
+            <d:prop>
+                <card:addressbook-home-set/>
+            </d:prop>
+        </d:propfind>
+    """.trimIndent()
+
+    private val LIST_ADDRESSBOOKS_REQUEST = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <d:propfind xmlns:d="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav">
+            <d:prop>
+                <d:resourcetype/>
+                <d:displayname/>
+            </d:prop>
+        </d:propfind>
+    """.trimIndent()
+
+    private val ADDRESSBOOK_QUERY_REQUEST = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <card:addressbook-query xmlns:d="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav">
+            <d:prop>
+                <d:getetag/>
+                <card:address-data/>
+            </d:prop>
+        </card:addressbook-query>
+    """.trimIndent()
+
+    private val CALENDAR_USER_ADDRESS_REQUEST = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <d:propfind xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">
+            <d:prop>
+                <cal:calendar-user-address-set/>
+            </d:prop>
+        </d:propfind>
+    """.trimIndent()
 }
 
 /**
@@ -1090,6 +1442,23 @@ data class EventData(
     val href: String,
     val etag: String,
     val icalData: String
+)
+
+/**
+ * Information about a discovered addressbook
+ */
+data class AddressbookInfo(
+    val url: String,
+    val displayName: String
+)
+
+/**
+ * Contact data returned from addressbook-query REPORT
+ */
+data class ContactData(
+    val href: String,
+    val etag: String,
+    val vcardData: String
 )
 
 /**

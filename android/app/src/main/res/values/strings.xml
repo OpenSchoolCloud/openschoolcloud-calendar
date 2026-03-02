@@ -446,6 +446,14 @@
     <string name="settings_debug_export">Exporteer debug log</string>
     <string name="settings_debug_share">Debug log delen</string>
 
+    <!-- Contacten & Deelnemers -->
+    <string name="attendee_search_hint">Deelnemer toevoegen (naam of e-mail)</string>
+    <string name="attendee_added">Deelnemer toegevoegd</string>
+    <string name="attendee_removed">Deelnemer verwijderen</string>
+    <string name="contacts_syncing">Contacten synchroniseren…</string>
+    <string name="contacts_sync_failed">Contacten synchroniseren mislukt</string>
+    <string name="contacts_count">%d contacten</string>
+
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>
     <string name="action_cancel">Annuleren</string>

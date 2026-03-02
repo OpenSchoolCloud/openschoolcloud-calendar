@@ -30,8 +30,10 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import android.util.Log
 import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
+import nl.openschoolcloud.calendar.domain.repository.ContactRepository
 import java.util.concurrent.TimeUnit
 
 /**
@@ -44,6 +46,7 @@ class CalendarSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val calendarRepository: CalendarRepository,
+    private val contactRepository: ContactRepository,
     private val appPreferences: AppPreferences
 ) : CoroutineWorker(context, params) {
 
@@ -64,6 +67,13 @@ class CalendarSyncWorker @AssistedInject constructor(
                     // Save timestamp if at least one calendar synced successfully
                     if (successes > 0) {
                         appPreferences.lastSyncTimestamp = System.currentTimeMillis()
+
+                        // Best-effort contact sync after calendar sync
+                        try {
+                            contactRepository.syncAllContacts()
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Contact sync failed (non-fatal): ${e.message}")
+                        }
                     }
 
                     if (failures > 0 && failures == results.size) {

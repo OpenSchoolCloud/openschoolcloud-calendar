@@ -17,12 +17,17 @@
  */
 package nl.openschoolcloud.calendar.data.repository
 
+import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import nl.openschoolcloud.calendar.data.local.dao.AccountDao
 import nl.openschoolcloud.calendar.data.local.dao.CalendarDao
 import nl.openschoolcloud.calendar.data.local.dao.EventDao
 import nl.openschoolcloud.calendar.data.local.entity.EventEntity
+import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
+import nl.openschoolcloud.calendar.data.remote.caldav.CalDavClient
 import nl.openschoolcloud.calendar.data.remote.ical.AttendeeJson
+import nl.openschoolcloud.calendar.data.remote.ical.ICalBuilder
 import nl.openschoolcloud.calendar.data.remote.ical.JsonSerializer
 import nl.openschoolcloud.calendar.data.remote.ical.ReminderJson
 import nl.openschoolcloud.calendar.domain.model.Attendee
@@ -49,8 +54,16 @@ import javax.inject.Singleton
 @Singleton
 class EventRepositoryImpl @Inject constructor(
     private val eventDao: EventDao,
-    private val calendarDao: CalendarDao
+    private val calendarDao: CalendarDao,
+    private val accountDao: AccountDao,
+    private val calDavClient: CalDavClient,
+    private val icalBuilder: ICalBuilder,
+    private val credentialStorage: CredentialStorage
 ) : EventRepository {
+
+    companion object {
+        private const val TAG = "EventRepository"
+    }
 
     override fun getEvents(
         start: Instant,
@@ -72,10 +85,41 @@ class EventRepositoryImpl @Inject constructor(
     }
 
     override suspend fun createEvent(event: Event, sendInvites: Boolean): Result<Event> {
-        // TODO: Implement in Sprint 2 - create event and sync to server
         return try {
             val entity = event.toEntity()
             eventDao.insert(entity)
+
+            // Push to CalDAV server if calendar has a URL
+            val calendar = calendarDao.getById(event.calendarId)
+            if (calendar != null && calendar.url.isNotBlank() && !calendar.url.startsWith("local://")) {
+                try {
+                    val account = accountDao.getById(calendar.accountId)
+                    val password = account?.let { credentialStorage.getPassword(it.id) }
+                    if (account != null && password != null) {
+                        val icalData = icalBuilder.buildVCalendar(
+                            event,
+                            organizerEmail = account.email,
+                            organizerName = account.displayName ?: account.username
+                        )
+                        val result = calDavClient.createEvent(
+                            calendarUrl = calendar.url,
+                            eventUid = event.uid,
+                            icalData = icalData,
+                            username = account.username,
+                            password = password
+                        )
+                        result.onSuccess {
+                            eventDao.update(entity.copy(syncStatus = "SYNCED", rawIcal = icalData))
+                        }
+                        result.onFailure { e ->
+                            Log.w(TAG, "Server push failed for create ${event.uid}: ${e.message}")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Server push failed for create ${event.uid}: ${e.message}")
+                }
+            }
+
             Result.success(event)
         } catch (e: Exception) {
             Result.failure(e)
@@ -83,10 +127,43 @@ class EventRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateEvent(event: Event, notifyAttendees: Boolean): Result<Event> {
-        // TODO: Implement in Sprint 2 - update event and sync to server
         return try {
             val entity = event.toEntity()
             eventDao.update(entity)
+
+            // Push to CalDAV server if calendar has a URL
+            val calendar = calendarDao.getById(event.calendarId)
+            if (calendar != null && calendar.url.isNotBlank() && !calendar.url.startsWith("local://")) {
+                try {
+                    val account = accountDao.getById(calendar.accountId)
+                    val password = account?.let { credentialStorage.getPassword(it.id) }
+                    if (account != null && password != null) {
+                        val icalData = icalBuilder.buildVCalendar(
+                            event,
+                            organizerEmail = account.email,
+                            organizerName = account.displayName ?: account.username
+                        )
+                        val existingEntity = eventDao.getByUid(event.uid)
+                        val eventUrl = "${calendar.url}${event.uid}.ics"
+                        val result = calDavClient.updateEvent(
+                            eventUrl = eventUrl,
+                            icalData = icalData,
+                            etag = existingEntity?.etag,
+                            username = account.username,
+                            password = password
+                        )
+                        result.onSuccess {
+                            eventDao.update(entity.copy(syncStatus = "SYNCED", rawIcal = icalData))
+                        }
+                        result.onFailure { e ->
+                            Log.w(TAG, "Server push failed for update ${event.uid}: ${e.message}")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Server push failed for update ${event.uid}: ${e.message}")
+                }
+            }
+
             Result.success(event)
         } catch (e: Exception) {
             Result.failure(e)
@@ -94,9 +171,32 @@ class EventRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteEvent(eventId: String, notifyAttendees: Boolean): Result<Unit> {
-        // TODO: Implement in Sprint 2 - delete event and sync to server
         return try {
+            val existingEntity = eventDao.getByUid(eventId)
             eventDao.deleteByUid(eventId)
+
+            // Delete from CalDAV server if calendar has a URL
+            if (existingEntity != null) {
+                val calendar = calendarDao.getById(existingEntity.calendarId)
+                if (calendar != null && calendar.url.isNotBlank() && !calendar.url.startsWith("local://")) {
+                    try {
+                        val account = accountDao.getById(calendar.accountId)
+                        val password = account?.let { credentialStorage.getPassword(it.id) }
+                        if (account != null && password != null) {
+                            val eventUrl = "${calendar.url}${eventId}.ics"
+                            calDavClient.deleteEvent(
+                                eventUrl = eventUrl,
+                                etag = existingEntity.etag,
+                                username = account.username,
+                                password = password
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Server delete failed for $eventId: ${e.message}")
+                    }
+                }
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

@@ -29,18 +29,21 @@ import nl.openschoolcloud.calendar.BuildConfig
 import nl.openschoolcloud.calendar.data.local.AppDatabase
 import nl.openschoolcloud.calendar.data.local.dao.AccountDao
 import nl.openschoolcloud.calendar.data.local.dao.CalendarDao
+import nl.openschoolcloud.calendar.data.local.dao.ContactDao
 import nl.openschoolcloud.calendar.data.local.dao.EventDao
 import nl.openschoolcloud.calendar.data.local.dao.HolidayDao
 import nl.openschoolcloud.calendar.data.local.dao.ReflectionDao
 import nl.openschoolcloud.calendar.data.repository.AccountRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.BookingRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.CalendarRepositoryImpl
+import nl.openschoolcloud.calendar.data.repository.ContactRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.EventRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.HolidayRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.ReflectionRepositoryImpl
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import nl.openschoolcloud.calendar.domain.repository.BookingRepository
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
+import nl.openschoolcloud.calendar.domain.repository.ContactRepository
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
 import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
 import nl.openschoolcloud.calendar.domain.repository.ReflectionRepository
@@ -82,7 +85,7 @@ object AppModule {
             AppDatabase::class.java,
             "openschoolcloud_calendar.db"
         )
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
             .build()
     }
 
@@ -97,6 +100,9 @@ object AppModule {
 
     @Provides
     fun provideHolidayDao(db: AppDatabase): HolidayDao = db.holidayDao()
+
+    @Provides
+    fun provideContactDao(db: AppDatabase): ContactDao = db.contactDao()
 
     @Provides
     fun provideReflectionDao(db: AppDatabase): ReflectionDao = db.reflectionDao()
@@ -128,6 +134,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindHolidayRepository(impl: HolidayRepositoryImpl): HolidayRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindContactRepository(impl: ContactRepositoryImpl): ContactRepository
 
     @Binds
     @Singleton

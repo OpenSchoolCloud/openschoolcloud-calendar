@@ -150,6 +150,20 @@ enum class BookingVisibility {
 }
 
 /**
+ * Represents a contact from CardDAV addressbook
+ */
+data class Contact(
+    val id: String,
+    val accountId: String,
+    val displayName: String,
+    val email: String?,
+    val allEmails: List<String> = emptyList(),
+    val phone: String?,
+    val organization: String?,
+    val photoUri: String?
+)
+
+/**
  * Sync status for offline support
  */
 enum class SyncStatus {

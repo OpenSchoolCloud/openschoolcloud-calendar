@@ -116,8 +116,8 @@ class AccountRepositoryImpl @Inject constructor(
                         displayName = info.displayName,
                         colorInt = parseColor(info.color),
                         url = info.url,
-                        ctag = info.ctag,
-                        syncToken = info.syncToken,
+                        ctag = null,      // Empty: forces full sync on first run
+                        syncToken = null,  // Empty: forces full sync on first run
                         readOnly = info.readOnly,
                         visible = true,
                         sortOrder = index
@@ -148,7 +148,7 @@ class AccountRepositoryImpl @Inject constructor(
             accountDao.insert(entity)
             credentialStorage.saveCredentials(accountId, password)
 
-            // 7. Save discovered calendars
+            // 7. Save discovered calendars (with empty CTag/SyncToken to force full sync)
             val calendarEntities = calendars.mapIndexed { index, info ->
                 CalendarEntity(
                     id = "${accountId}_${info.url.hashCode()}",
@@ -156,8 +156,8 @@ class AccountRepositoryImpl @Inject constructor(
                     displayName = info.displayName,
                     colorInt = parseColor(info.color),
                     url = info.url,
-                    ctag = info.ctag,
-                    syncToken = info.syncToken,
+                    ctag = null,      // Empty: forces full sync on first run
+                    syncToken = null,  // Empty: forces full sync on first run
                     readOnly = info.readOnly,
                     visible = true,
                     sortOrder = index

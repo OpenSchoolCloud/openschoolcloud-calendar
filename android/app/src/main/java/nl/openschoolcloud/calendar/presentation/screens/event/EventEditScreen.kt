@@ -88,7 +88,10 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import nl.openschoolcloud.calendar.R
+import nl.openschoolcloud.calendar.domain.model.Attendee
 import nl.openschoolcloud.calendar.domain.model.Calendar
+import nl.openschoolcloud.calendar.domain.model.Contact
+import nl.openschoolcloud.calendar.presentation.components.AttendeeSection
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneOffset
@@ -190,6 +193,10 @@ fun EventEditScreen(
                 onLearningAgendaToggle = viewModel::onLearningAgendaToggle,
                 onLearningGoalChange = viewModel::onLearningGoalChange,
                 onLearningNeedsChange = viewModel::onLearningNeedsChange,
+                onAttendeeSearchChange = viewModel::onAttendeeSearchChange,
+                onAddAttendeeFromContact = viewModel::addAttendeeFromContact,
+                onAddAttendeeByEmail = viewModel::addAttendeeByEmail,
+                onRemoveAttendee = viewModel::removeAttendee,
                 onStartDateClick = { showStartDatePicker = true },
                 onStartTimeClick = { showStartTimePicker = true },
                 onEndDateClick = { showEndDatePicker = true },
@@ -325,6 +332,10 @@ private fun EventEditForm(
     onLearningAgendaToggle: (Boolean) -> Unit,
     onLearningGoalChange: (String) -> Unit,
     onLearningNeedsChange: (String) -> Unit,
+    onAttendeeSearchChange: (String) -> Unit,
+    onAddAttendeeFromContact: (Contact) -> Unit,
+    onAddAttendeeByEmail: (String) -> Unit,
+    onRemoveAttendee: (Attendee) -> Unit,
     onStartDateClick: () -> Unit,
     onStartTimeClick: () -> Unit,
     onEndDateClick: () -> Unit,
@@ -463,6 +474,18 @@ private fun EventEditForm(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+        )
+
+        // Attendees
+        AttendeeSection(
+            searchQuery = uiState.attendeeSearchQuery,
+            contactSuggestions = uiState.contactSuggestions,
+            attendees = uiState.attendees,
+            isSearching = uiState.isSearchingContacts,
+            onSearchChange = onAttendeeSearchChange,
+            onAddFromContact = onAddAttendeeFromContact,
+            onAddByEmail = onAddAttendeeByEmail,
+            onRemove = onRemoveAttendee
         )
 
         // Learning agenda toggle

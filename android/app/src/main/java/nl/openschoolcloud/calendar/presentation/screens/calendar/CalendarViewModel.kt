@@ -69,6 +69,11 @@ class CalendarViewModel @Inject constructor(
         // Load calendars and initial week
         loadCalendars()
         loadEventsForCurrentWeek()
+
+        // Auto-sync on initialization when connected to a server
+        if (!appPreferences.isStandaloneMode) {
+            syncAll()
+        }
     }
 
     /**
