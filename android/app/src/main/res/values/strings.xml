@@ -483,7 +483,7 @@
 
     <!-- Herstelcodes -->
     <string name="recovery_title">Bewaar je herstelcodes</string>
-    <string name="recovery_body">Je hebt tweestapsverificatie ingesteld. Bewaar je herstelcodes op een veilige plek — je hebt ze nodig als je je telefoon kwijtraakt.</string>
+    <string name="recovery_body">Je hebt tweestapsverificatie ingesteld. Bewaar je herstelcodes op een veilige plek. Je hebt ze nodig als je je telefoon kwijtraakt.</string>
     <string name="recovery_copy">Kopieer codes</string>
     <string name="recovery_confirm">Ik heb ze bewaard</string>
 
