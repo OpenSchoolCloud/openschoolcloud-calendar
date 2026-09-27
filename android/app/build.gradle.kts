@@ -21,6 +21,15 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // OIDC / Authentik configuration. Overridden per build type / CI as needed.
+        buildConfigField("String", "OIDC_ISSUER", "\"https://id.openschoolcloud.nl/application/o/osc-calendar/\"")
+        buildConfigField("String", "OIDC_CLIENT_ID", "\"osc-calendar\"")
+        buildConfigField("String", "OIDC_REDIRECT_SCHEME", "\"nl.openschoolcloud.calendar\"")
+        // Betaalde OSC-sync (subsysteem C) — pas true zodra C gebouwd + getest is.
+        buildConfigField("Boolean", "ENABLE_OSC_CLOUD", "false")
+        // AppAuth RedirectUriReceiverActivity needs the scheme as a manifest placeholder.
+        manifestPlaceholders["appAuthRedirectScheme"] = "nl.openschoolcloud.calendar"
     }
 
     buildTypes {
@@ -117,6 +126,9 @@ dependencies {
     // Network
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // OIDC login (Authentik) via Custom Tab
+    implementation("net.openid:appauth:0.11.1")
     
     // iCalendar parsing
     implementation("org.mnode.ical4j:ical4j:3.2.14")
