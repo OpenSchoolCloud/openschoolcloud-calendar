@@ -472,4 +472,44 @@
     <string name="action_edit">Bewerken</string>
     <string name="action_retry">Opnieuw proberen</string>
     <string name="action_close">Sluiten</string>
+
+    <!-- Welkom / account -->
+    <string name="welcome_title">Eén agenda voor het hele gezin</string>
+    <string name="welcome_subtitle">Privacy-first. Jij bepaalt waar je gegevens staan.</string>
+    <string name="welcome_create_account">Account maken</string>
+    <string name="welcome_login">Inloggen</string>
+    <string name="auth_in_progress">Bezig met inloggen…</string>
+    <string name="auth_failed">Inloggen mislukt. Probeer het opnieuw.</string>
+
+    <!-- Herstelcodes -->
+    <string name="recovery_title">Bewaar je herstelcodes</string>
+    <string name="recovery_body">Je hebt tweestapsverificatie ingesteld. Bewaar je herstelcodes op een veilige plek — je hebt ze nodig als je je telefoon kwijtraakt.</string>
+    <string name="recovery_copy">Kopieer codes</string>
+    <string name="recovery_confirm">Ik heb ze bewaard</string>
+
+    <!-- Gezin opzetten -->
+    <string name="family_setup_title">Stel je gezin in</string>
+    <string name="family_name_label">Naam van je gezin</string>
+    <string name="family_name_hint">Bijv. Gezin Jansen</string>
+    <string name="profile_add">Profiel toevoegen</string>
+    <string name="profile_name_label">Naam</string>
+    <string name="profile_name_hint">Naam van het kind</string>
+    <string name="family_setup_continue">Doorgaan</string>
+
+    <!-- Sync-keuze -->
+    <string name="sync_choice_title">Waar bewaar je jullie agenda?</string>
+    <string name="sync_local_title">Alleen op dit apparaat</string>
+    <string name="sync_local_desc">Gratis. Niets verlaat je telefoon.</string>
+    <string name="sync_local_button">Kies lokaal</string>
+    <string name="sync_nextcloud_title">Eigen Nextcloud</string>
+    <string name="sync_nextcloud_desc">Gratis. Koppel je eigen server via CalDAV.</string>
+    <string name="sync_nextcloud_button">Koppel Nextcloud</string>
+    <string name="sync_osc_title">OSC-sync voor het gezin</string>
+    <string name="sync_osc_desc">Automatisch synchroniseren over alle apparaten, zonder eigen server. €1 per gezinslid per maand, eerste 30 dagen gratis.</string>
+    <string name="sync_osc_button">Probeer 30 dagen gratis</string>
+    <string name="sync_osc_soon">Binnenkort beschikbaar</string>
+
+    <!-- Profiel-switcher -->
+    <string name="profile_all">Hele gezin</string>
+    <string name="profile_switch">Wissel profiel</string>
 </resources>
