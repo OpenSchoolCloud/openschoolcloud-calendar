@@ -61,6 +61,10 @@ class AccountRepositoryImpl @Inject constructor(
         return accountDao.getDefault()?.toDomain()
     }
 
+    override suspend fun getDefaultAccountId(): String {
+        return accountDao.getDefault()?.id ?: ""
+    }
+
     override suspend fun getAccount(accountId: String): Account? {
         return accountDao.getById(accountId)?.toDomain()
     }

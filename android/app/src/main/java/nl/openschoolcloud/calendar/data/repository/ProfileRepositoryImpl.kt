@@ -34,6 +34,9 @@ class ProfileRepositoryImpl @Inject constructor(
     override fun observeProfiles(familyId: String): Flow<List<Profile>> =
         profileDao.observeByFamily(familyId).map { list -> list.map { it.toDomain() } }
 
+    override suspend fun observeProfilesOnce(familyId: String): List<Profile> =
+        profileDao.getByFamilySync(familyId).map { it.toDomain() }
+
     override suspend fun addProfile(
         familyId: String, name: String, color: Long, isOwner: Boolean
     ): Profile {

@@ -173,7 +173,12 @@ interface AccountRepository {
      * Get the default account
      */
     suspend fun getDefaultAccount(): Account?
-    
+
+    /**
+     * Get the default account's id, or empty string if there is none
+     */
+    suspend fun getDefaultAccountId(): String
+
     /**
      * Get a single account by ID
      */
@@ -275,6 +280,7 @@ interface FamilyRepository {
  */
 interface ProfileRepository {
     fun observeProfiles(familyId: String): Flow<List<Profile>>
+    suspend fun observeProfilesOnce(familyId: String): List<Profile>
     suspend fun addProfile(familyId: String, name: String, color: Long, isOwner: Boolean): Profile
     suspend fun setSyncScope(profileId: String, scope: SyncScope)
     suspend fun removeProfile(profileId: String)
