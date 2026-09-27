@@ -57,7 +57,9 @@ class AuthManager(
             ResponseTypeValues.CODE,
             Uri.parse(BuildConfig.OIDC_REDIRECT_SCHEME + "://oidc")
         ).setScopes("openid", "profile", "email", "offline_access").build()
-        return service.getAuthorizationRequestIntent(request)
+        val intent = service.getAuthorizationRequestIntent(request)
+        service.dispose()
+        return intent
     }
 
     suspend fun handleAuthResponse(data: Intent): Result<OidcIdentity> {
@@ -68,8 +70,10 @@ class AuthManager(
         }
         val service = AuthorizationService(context)
         return suspendCancellableCoroutine { cont ->
+            cont.invokeOnCancellation { service.dispose() }
             service.performTokenRequest(response.createTokenExchangeRequest()) { tokenResponse, tokenEx ->
                 if (tokenResponse == null) {
+                    service.dispose()
                     cont.resume(Result.failure(tokenEx ?: IllegalStateException("Token exchange failed")))
                     return@performTokenRequest
                 }
@@ -77,6 +81,7 @@ class AuthManager(
                 tokenStore.authStateJson = authState.jsonSerializeString()
                 val idToken = tokenResponse.idToken
                 val identity = parseIdentity(idToken)
+                service.dispose()
                 cont.resume(Result.success(identity))
             }
         }
