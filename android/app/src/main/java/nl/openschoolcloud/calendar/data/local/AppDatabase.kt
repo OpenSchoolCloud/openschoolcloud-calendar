@@ -28,14 +28,18 @@ import nl.openschoolcloud.calendar.data.local.dao.AccountDao
 import nl.openschoolcloud.calendar.data.local.dao.CalendarDao
 import nl.openschoolcloud.calendar.data.local.dao.ContactDao
 import nl.openschoolcloud.calendar.data.local.dao.EventDao
+import nl.openschoolcloud.calendar.data.local.dao.FamilyDao
 import nl.openschoolcloud.calendar.data.local.dao.HolidayDao
+import nl.openschoolcloud.calendar.data.local.dao.ProfileDao
 import nl.openschoolcloud.calendar.data.local.dao.ReflectionDao
 import nl.openschoolcloud.calendar.data.local.entity.AccountEntity
 import nl.openschoolcloud.calendar.data.local.entity.CalendarEntity
 import nl.openschoolcloud.calendar.data.local.entity.ContactEntity
 import nl.openschoolcloud.calendar.data.local.entity.EventEntity
+import nl.openschoolcloud.calendar.data.local.entity.FamilyEntity
 import nl.openschoolcloud.calendar.data.local.entity.HolidayCalendarEntity
 import nl.openschoolcloud.calendar.data.local.entity.HolidayEventEntity
+import nl.openschoolcloud.calendar.data.local.entity.ProfileEntity
 import nl.openschoolcloud.calendar.data.local.entity.ReflectionEntity
 
 /**
@@ -49,9 +53,11 @@ import nl.openschoolcloud.calendar.data.local.entity.ReflectionEntity
         EventEntity::class,
         HolidayCalendarEntity::class,
         HolidayEventEntity::class,
-        ReflectionEntity::class
+        ReflectionEntity::class,
+        FamilyEntity::class,
+        ProfileEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -62,6 +68,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
     abstract fun holidayDao(): HolidayDao
     abstract fun reflectionDao(): ReflectionDao
+    abstract fun familyDao(): FamilyDao
+    abstract fun profileDao(): ProfileDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -171,6 +179,41 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `families` (
+                        `id` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `ownerAccountId` TEXT NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent()
+                )
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `profiles` (
+                        `id` TEXT NOT NULL,
+                        `familyId` TEXT NOT NULL,
+                        `displayName` TEXT NOT NULL,
+                        `color` INTEGER NOT NULL,
+                        `avatar` TEXT,
+                        `isOwnerProfile` INTEGER NOT NULL,
+                        `syncScope` TEXT NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent()
+                )
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_profiles_familyId` ON `profiles` (`familyId`)")
+                database.execSQL("ALTER TABLE accounts ADD COLUMN oscSub TEXT DEFAULT NULL")
+                database.execSQL("ALTER TABLE accounts ADD COLUMN authProvider TEXT DEFAULT NULL")
+                database.execSQL("ALTER TABLE accounts ADD COLUMN mfaEnrolled INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE events ADD COLUMN profileId TEXT DEFAULT NULL")
+            }
+        }
+
         /**
          * All migrations in order. Single source of truth — register this on
          * every Room.databaseBuilder() in the app (Hilt module, widget services,
@@ -182,7 +225,8 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_2_3,
             MIGRATION_3_4,
             MIGRATION_4_5,
-            MIGRATION_5_6
+            MIGRATION_5_6,
+            MIGRATION_6_7
         )
 
         const val DB_NAME = "openschoolcloud_calendar.db"
