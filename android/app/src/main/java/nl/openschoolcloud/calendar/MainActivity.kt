@@ -30,7 +30,6 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.data.local.AppPreferences
-import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.notification.NotificationHelper
 import nl.openschoolcloud.calendar.presentation.navigation.AppNavigation
@@ -40,9 +39,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    @Inject
-    lateinit var credentialStorage: CredentialStorage
 
     @Inject
     lateinit var appPreferences: AppPreferences
@@ -57,13 +53,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val hasAccount = try {
-            credentialStorage.hasAnyAccount()
-        } catch (e: Exception) {
-            false
-        }
-        val onboardingCompleted = appPreferences.onboardingCompleted
-        val hasCompletedModeSelection = appPreferences.hasCompletedModeSelection
         val isStandaloneMode = appPreferences.isStandaloneMode
 
         // Ensure local calendar exists for standalone users
@@ -91,10 +80,6 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     AppNavigation(
-                        hasAccount = hasAccount,
-                        onboardingCompleted = onboardingCompleted,
-                        hasCompletedModeSelection = hasCompletedModeSelection,
-                        isStandaloneMode = isStandaloneMode,
                         deepLinkEventId = deepLinkEventId
                     )
                 }
