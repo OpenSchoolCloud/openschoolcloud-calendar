@@ -33,5 +33,9 @@ data class AccountEntity(
     val email: String?,
     val principalUrl: String?,
     val calendarHomeSet: String?,
-    val isDefault: Boolean
+    val isDefault: Boolean,
+    // OIDC identity (Authentik). Null for legacy Nextcloud-only accounts.
+    val oscSub: String? = null,
+    val authProvider: String? = null,
+    val mfaEnrolled: Boolean = false
 )

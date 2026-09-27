@@ -228,6 +228,27 @@ fun EventEditScreen(
         )
     }
 
+    // Conflict dialog — server has a newer version of this event.
+    if (uiState.conflictDetected) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissConflict,
+            title = { Text(stringResource(R.string.dialog_conflict_title)) },
+            text = { Text(stringResource(R.string.dialog_conflict_message)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.resolveConflictByOverwrite() }) {
+                    Text(stringResource(R.string.dialog_conflict_overwrite))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    viewModel.resolveConflictByReload(onDiscarded = onNavigateBack)
+                }) {
+                    Text(stringResource(R.string.dialog_conflict_reload))
+                }
+            }
+        )
+    }
+
     // Start date picker
     if (showStartDatePicker) {
         val datePickerState = rememberDatePickerState(
@@ -631,8 +652,13 @@ private fun CalendarSelector(
                         )
                         Spacer(Modifier.width(8.dp))
                     }
+                    val selectedLabel = selectedCalendar?.let { cal ->
+                        cal.ownerDisplayName?.let { owner ->
+                            stringResource(R.string.calendar_shared_by_format, cal.displayName, owner)
+                        } ?: cal.displayName
+                    } ?: ""
                     Text(
-                        text = selectedCalendar?.displayName ?: "",
+                        text = selectedLabel,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )
@@ -649,6 +675,9 @@ private fun CalendarSelector(
                 onDismissRequest = { expanded = false }
             ) {
                 calendars.forEach { calendar ->
+                    val itemLabel = calendar.ownerDisplayName?.let { owner ->
+                        stringResource(R.string.calendar_shared_by_format, calendar.displayName, owner)
+                    } ?: calendar.displayName
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -659,7 +688,7 @@ private fun CalendarSelector(
                                         .background(Color(calendar.color))
                                 )
                                 Spacer(Modifier.width(8.dp))
-                                Text(calendar.displayName)
+                                Text(itemLabel)
                             }
                         },
                         onClick = {

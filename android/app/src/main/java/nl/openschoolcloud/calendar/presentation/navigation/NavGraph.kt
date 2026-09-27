@@ -24,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -36,23 +35,28 @@ import nl.openschoolcloud.calendar.presentation.screens.feedback.FeedbackScreen
 import nl.openschoolcloud.calendar.presentation.screens.event.EventDetailScreen
 import nl.openschoolcloud.calendar.presentation.screens.event.EventEditScreen
 import nl.openschoolcloud.calendar.presentation.screens.holidays.HolidayDiscoverScreen
+import nl.openschoolcloud.calendar.presentation.screens.family.FamilySetupScreen
+import nl.openschoolcloud.calendar.presentation.screens.family.SyncChoiceScreen
 import nl.openschoolcloud.calendar.presentation.screens.login.LoginScreen
-import nl.openschoolcloud.calendar.presentation.screens.modeselection.ModeSelectionScreen
-import nl.openschoolcloud.calendar.presentation.screens.modeselection.ModeSelectionViewModel
-import nl.openschoolcloud.calendar.presentation.screens.onboarding.OnboardingScreen
 import nl.openschoolcloud.calendar.presentation.screens.planning.WeekPlanningScreen
 import nl.openschoolcloud.calendar.presentation.screens.planning.WeekProgressScreen
 import nl.openschoolcloud.calendar.presentation.screens.reflection.WeekReviewScreen
 import nl.openschoolcloud.calendar.presentation.screens.settings.SettingsScreen
 import nl.openschoolcloud.calendar.presentation.screens.splash.SplashScreen
+import nl.openschoolcloud.calendar.presentation.screens.welcome.RecoveryCodesScreen
+import nl.openschoolcloud.calendar.presentation.screens.welcome.WelcomeScreen
 
 /**
  * Navigation routes
  */
 sealed class Route(val route: String) {
     object Splash : Route("splash")
-    object Onboarding : Route("onboarding")
-    object ModeSelection : Route("mode_selection")
+    object Welcome : Route("welcome")
+    object RecoveryCodes : Route("recovery_codes")
+    object FamilySetup : Route("family_setup")
+    object SyncChoice : Route("sync_choice/{familyId}") {
+        fun createRoute(familyId: String) = "sync_choice/$familyId"
+    }
     object Login : Route("login")
     object Calendar : Route("calendar")
     object EventDetail : Route("event/{eventId}") {
@@ -77,12 +81,19 @@ sealed class Route(val route: String) {
     }
 }
 
+/**
+ * Pure start-route decision so it can be unit-tested without Compose.
+ * familyExists = a FamilyEntity is present; syncChosen = mode selection done.
+ */
+fun decideStartRoute(isLoggedIn: Boolean, familyExists: Boolean, syncChosen: Boolean): String = when {
+    !isLoggedIn -> Route.Welcome.route
+    !familyExists -> Route.FamilySetup.route
+    !syncChosen -> Route.SyncChoice.route
+    else -> Route.Calendar.route
+}
+
 @Composable
 fun AppNavigation(
-    hasAccount: Boolean = false,
-    onboardingCompleted: Boolean = false,
-    hasCompletedModeSelection: Boolean = false,
-    isStandaloneMode: Boolean = false,
     deepLinkEventId: String? = null
 ) {
     val navController = rememberNavController()
@@ -95,76 +106,75 @@ fun AppNavigation(
         // Branded splash screen
         composable(Route.Splash.route) {
             SplashScreen(
-                hasAccount = hasAccount,
-                onboardingCompleted = onboardingCompleted,
-                hasCompletedModeSelection = hasCompletedModeSelection,
-                isStandaloneMode = isStandaloneMode,
-                onNavigateToCalendar = {
+                onNavigate = { route ->
+                    navController.navigate(route) {
+                        popUpTo(Route.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Welcome (account creation / login entry point)
+        composable(Route.Welcome.route) {
+            WelcomeScreen(
+                onAuthenticated = {
+                    navController.navigate(Route.RecoveryCodes.route) {
+                        popUpTo(Route.Welcome.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Recovery codes (shown once, right after account creation)
+        composable(Route.RecoveryCodes.route) {
+            RecoveryCodesScreen(
+                onConfirmed = {
+                    navController.navigate(Route.FamilySetup.route) {
+                        popUpTo(Route.RecoveryCodes.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Family setup
+        composable(Route.FamilySetup.route) {
+            FamilySetupScreen(
+                onFamilyCreated = { familyId ->
+                    navController.navigate(Route.SyncChoice.createRoute(familyId))
+                }
+            )
+        }
+
+        // Sync choice (local/OSC vs Nextcloud)
+        composable(
+            route = Route.SyncChoice.route,
+            arguments = listOf(navArgument("familyId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val familyId = backStackEntry.arguments?.getString("familyId").orEmpty()
+            SyncChoiceScreen(
+                familyId = familyId,
+                onLocalOrOsc = {
                     navController.navigate(Route.Calendar.route) {
-                        popUpTo(Route.Splash.route) { inclusive = true }
-                    }
-                },
-                onNavigateToOnboarding = {
-                    navController.navigate(Route.Onboarding.route) {
-                        popUpTo(Route.Splash.route) { inclusive = true }
-                    }
-                },
-                onNavigateToModeSelection = {
-                    navController.navigate(Route.ModeSelection.route) {
-                        popUpTo(Route.Splash.route) { inclusive = true }
-                    }
-                },
-                onNavigateToLogin = {
-                    navController.navigate(Route.Login.route) {
-                        popUpTo(Route.Splash.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // Onboarding (first-time users)
-        composable(Route.Onboarding.route) {
-            OnboardingScreen(
-                onOnboardingComplete = {
-                    navController.navigate(Route.ModeSelection.route) {
-                        popUpTo(Route.Onboarding.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // Mode selection (standalone vs Nextcloud)
-        composable(Route.ModeSelection.route) {
-            val modeViewModel: ModeSelectionViewModel = hiltViewModel()
-            ModeSelectionScreen(
-                onStartStandalone = {
-                    modeViewModel.selectStandalone {
-                        navController.navigate(Route.Calendar.route) {
-                            popUpTo(0) { inclusive = true }
-                        }
+                        popUpTo(Route.SyncChoice.route) { inclusive = true }
                     }
                 },
                 onConnectNextcloud = {
-                    modeViewModel.selectNextcloud {
-                        navController.navigate(Route.Login.route) {
-                            popUpTo(Route.ModeSelection.route) { inclusive = true }
-                        }
-                    }
+                    navController.navigate(Route.Login.route)
                 }
             )
         }
 
-        // Login
+        // Login (Nextcloud CalDAV)
         composable(Route.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
                     navController.navigate(Route.Calendar.route) {
-                        popUpTo(Route.Login.route) { inclusive = true }
+                        popUpTo(Route.SyncChoice.route) { inclusive = true }
                     }
                 }
             )
         }
-        
+
         // Main calendar view
         composable(Route.Calendar.route) {
             // Handle deep link to event detail from widget clicks
@@ -257,7 +267,8 @@ fun AppNavigation(
             SettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onLogout = {
-                    navController.navigate(Route.Login.route) {
+                    // After logout, restart from the account-first welcome flow.
+                    navController.navigate(Route.Welcome.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 },

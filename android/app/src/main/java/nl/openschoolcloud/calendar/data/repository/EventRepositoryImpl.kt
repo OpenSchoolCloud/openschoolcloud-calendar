@@ -26,10 +26,13 @@ import nl.openschoolcloud.calendar.data.local.dao.EventDao
 import nl.openschoolcloud.calendar.data.local.entity.EventEntity
 import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
 import nl.openschoolcloud.calendar.data.remote.caldav.CalDavClient
+import nl.openschoolcloud.calendar.data.remote.caldav.CalDavException
 import nl.openschoolcloud.calendar.data.remote.ical.AttendeeJson
 import nl.openschoolcloud.calendar.data.remote.ical.ICalBuilder
+import nl.openschoolcloud.calendar.data.remote.ical.ICalParser
 import nl.openschoolcloud.calendar.data.remote.ical.JsonSerializer
 import nl.openschoolcloud.calendar.data.remote.ical.ReminderJson
+import nl.openschoolcloud.calendar.domain.repository.EventConflictException
 import nl.openschoolcloud.calendar.domain.model.Attendee
 import nl.openschoolcloud.calendar.domain.model.AttendeeRole
 import nl.openschoolcloud.calendar.domain.model.AttendeeStatus
@@ -58,6 +61,7 @@ class EventRepositoryImpl @Inject constructor(
     private val accountDao: AccountDao,
     private val calDavClient: CalDavClient,
     private val icalBuilder: ICalBuilder,
+    private val icalParser: ICalParser,
     private val credentialStorage: CredentialStorage
 ) : EventRepository {
 
@@ -126,45 +130,115 @@ class EventRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateEvent(event: Event, notifyAttendees: Boolean): Result<Event> {
+    override suspend fun updateEvent(
+        event: Event,
+        notifyAttendees: Boolean,
+        forceOverwrite: Boolean
+    ): Result<Event> {
         return try {
             val entity = event.toEntity()
             eventDao.update(entity)
 
-            // Push to CalDAV server if calendar has a URL
             val calendar = calendarDao.getById(event.calendarId)
-            if (calendar != null && calendar.url.isNotBlank() && !calendar.url.startsWith("local://")) {
-                try {
-                    val account = accountDao.getById(calendar.accountId)
-                    val password = account?.let { credentialStorage.getPassword(it.id) }
-                    if (account != null && password != null) {
-                        val icalData = icalBuilder.buildVCalendar(
-                            event,
-                            organizerEmail = account.email,
-                            organizerName = account.displayName ?: account.username
-                        )
-                        val existingEntity = eventDao.getByUid(event.uid)
-                        val eventUrl = "${calendar.url}${event.uid}.ics"
-                        val result = calDavClient.updateEvent(
-                            eventUrl = eventUrl,
-                            icalData = icalData,
-                            etag = existingEntity?.etag,
-                            username = account.username,
-                            password = password
-                        )
-                        result.onSuccess {
-                            eventDao.update(entity.copy(syncStatus = "SYNCED", rawIcal = icalData))
-                        }
-                        result.onFailure { e ->
-                            Log.w(TAG, "Server push failed for update ${event.uid}: ${e.message}")
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Server push failed for update ${event.uid}: ${e.message}")
-                }
+            // Local-only calendars and standalone mode: nothing to push.
+            if (calendar == null || calendar.url.isBlank() || calendar.url.startsWith("local://")) {
+                return Result.success(event)
             }
 
-            Result.success(event)
+            val account = accountDao.getById(calendar.accountId)
+            val password = account?.let { credentialStorage.getPassword(it.id) }
+            if (account == null || password == null) {
+                // No credentials — the user is offline-edit-only; sync worker
+                // will retry later. Mark as success.
+                return Result.success(event)
+            }
+
+            val icalData = icalBuilder.buildVCalendar(
+                event,
+                organizerEmail = account.email,
+                organizerName = account.displayName ?: account.username
+            )
+            val existingEntity = eventDao.getByUid(event.uid)
+            val eventUrl = "${calendar.url}${event.uid}.ics"
+
+            // forceOverwrite=true → skip If-Match, deliberately clobber server state.
+            // Otherwise pass the stored etag so the server can reject stale writes.
+            val ifMatchEtag = if (forceOverwrite) null else existingEntity?.etag
+
+            val result = calDavClient.updateEvent(
+                eventUrl = eventUrl,
+                icalData = icalData,
+                etag = ifMatchEtag,
+                username = account.username,
+                password = password
+            )
+
+            return result.fold(
+                onSuccess = { newEtag ->
+                    // Persist the fresh etag so the next update doesn't immediately
+                    // re-conflict. CalDavClient returns "" when the server omits
+                    // the ETag header — in that case keep the previous value.
+                    val storedEtag = newEtag.ifBlank { existingEntity?.etag }
+                    eventDao.update(
+                        entity.copy(
+                            syncStatus = "SYNCED",
+                            rawIcal = icalData,
+                            etag = storedEtag
+                        )
+                    )
+                    Result.success(event)
+                },
+                onFailure = { e ->
+                    // 412 Precondition Failed → another user (or our own other
+                    // device) wrote between our load and our PUT. Surface it.
+                    // Keep the local entity in PENDING_UPDATE so the user's edits
+                    // survive while they pick a resolution.
+                    if (e is CalDavException && e.httpCode == 412) {
+                        Log.i(TAG, "Conflict on update ${event.uid}: server has newer version")
+                        Result.failure(EventConflictException())
+                    } else {
+                        Log.w(TAG, "Server push failed for update ${event.uid}: ${e.message}")
+                        // Non-conflict network/server errors: keep PENDING_UPDATE,
+                        // surface success so the user isn't blocked — sync worker
+                        // will retry. (Preserves prior app behaviour.)
+                        Result.success(event)
+                    }
+                }
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun refreshEventFromServer(eventId: String): Result<Event> {
+        return try {
+            val existing = eventDao.getByUid(eventId)
+                ?: return Result.failure(IllegalArgumentException("Event not found locally: $eventId"))
+
+            val calendar = calendarDao.getById(existing.calendarId)
+                ?: return Result.failure(IllegalStateException("Calendar missing for event"))
+            if (calendar.url.isBlank() || calendar.url.startsWith("local://")) {
+                // Local-only event — there's nothing on the server to refresh from.
+                return Result.success(existing.toDomain())
+            }
+
+            val account = accountDao.getById(calendar.accountId)
+            val password = account?.let { credentialStorage.getPassword(it.id) }
+            if (account == null || password == null) {
+                return Result.failure(IllegalStateException("Missing credentials for refresh"))
+            }
+
+            val eventUrl = "${calendar.url}${eventId}.ics"
+            val icalData = calDavClient.getEvent(eventUrl, account.username, password)
+                .getOrElse { return Result.failure(it) }
+
+            val parsed = icalParser.parseEvent(icalData, calendar.id, etag = existing.etag)
+                ?: return Result.failure(IllegalStateException("Could not parse server response"))
+
+            // parseEvent sets syncStatus=SYNCED. Replace local copy entirely so
+            // pending edits are discarded — that's the user's explicit choice.
+            eventDao.update(parsed)
+            Result.success(parsed.toDomain())
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -316,7 +390,8 @@ private fun EventEntity.toDomain(): Event {
         learningGoal = learningGoal,
         learningNeeds = learningNeeds,
         eventType = eventType,
-        taskCompleted = taskCompleted
+        taskCompleted = taskCompleted,
+        profileId = profileId
     )
 }
 
@@ -376,7 +451,8 @@ private fun Event.toEntity(): EventEntity {
         learningGoal = learningGoal,
         learningNeeds = learningNeeds,
         eventType = eventType,
-        taskCompleted = taskCompleted
+        taskCompleted = taskCompleted,
+        profileId = profileId
     )
 }
 

@@ -21,19 +21,27 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.domain.model.Calendar
 import nl.openschoolcloud.calendar.domain.model.Event
 import nl.openschoolcloud.calendar.domain.model.HolidayEvent
+import nl.openschoolcloud.calendar.domain.model.Profile
 import nl.openschoolcloud.calendar.domain.model.SyncStatus
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
+import nl.openschoolcloud.calendar.domain.repository.FamilyRepository
 import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
+import nl.openschoolcloud.calendar.domain.repository.ProfileRepository
 import nl.openschoolcloud.calendar.domain.usecase.ParsedEvent
 import java.time.DayOfWeek
 import java.time.Instant
@@ -50,12 +58,15 @@ import javax.inject.Inject
  *
  * Manages week view state, event loading, and sync operations
  */
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     private val calendarRepository: CalendarRepository,
     private val holidayRepository: HolidayRepository,
-    private val appPreferences: AppPreferences
+    private val appPreferences: AppPreferences,
+    private val profileRepository: ProfileRepository,
+    private val familyRepository: FamilyRepository
 ) : ViewModel() {
 
     val isStandaloneMode: Boolean get() = appPreferences.isStandaloneMode
@@ -63,16 +74,56 @@ class CalendarViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CalendarUiState())
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
 
+    // Unfiltered events for the current week, keyed by day. The exposed
+    // uiState.eventsByDay is derived from this combined with the profile
+    // selection below, so profile filtering never has to touch the loading logic.
+    private val _rawEventsByDay = MutableStateFlow<Map<LocalDate, List<Event>>>(emptyMap())
+
+    private val _selectedProfileId = MutableStateFlow<String?>(null)
+    val selectedProfileId: StateFlow<String?> = _selectedProfileId.asStateFlow()
+
+    val profiles: StateFlow<List<Profile>> =
+        familyRepository.observeFamily()
+            .flatMapLatest { family ->
+                if (family == null) flowOf(emptyList())
+                else profileRepository.observeProfiles(family.id)
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private val zoneId: ZoneId = ZoneId.systemDefault()
 
     init {
         // Load calendars and initial week
         loadCalendars()
         loadEventsForCurrentWeek()
+        observeProfileFilteredEvents()
 
         // Auto-sync on initialization when connected to a server
         if (!appPreferences.isStandaloneMode) {
             syncAll()
+        }
+    }
+
+    /**
+     * Select which profile's events are visible ("Hele gezin" = null = everyone).
+     */
+    fun selectProfile(id: String?) {
+        _selectedProfileId.value = id
+    }
+
+    /**
+     * Recompute uiState.eventsByDay whenever the raw week events or the
+     * selected profile changes.
+     */
+    private fun observeProfileFilteredEvents() {
+        viewModelScope.launch {
+            combine(_rawEventsByDay, _selectedProfileId) { eventsByDay, selectedProfileId ->
+                eventsByDay.mapValues { (_, events) ->
+                    events.filter { eventVisibleForProfile(it.profileId, selectedProfileId) }
+                }
+            }.collect { filteredEventsByDay ->
+                _uiState.update { it.copy(eventsByDay = filteredEventsByDay) }
+            }
         }
     }
 
@@ -110,13 +161,14 @@ class CalendarViewModel @Inject constructor(
                     _uiState.update { it.copy(isLoading = false, error = e.message) }
                 }
                 .collect { events ->
-                    // Group events by day
+                    // Group events by day (unfiltered; profile filtering is applied
+                    // separately by observeProfileFilteredEvents())
                     val eventsByDay = groupEventsByDay(events, weekStart)
+                    _rawEventsByDay.value = eventsByDay
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             weekStart = weekStart,
-                            eventsByDay = eventsByDay,
                             error = null
                         )
                     }
@@ -407,6 +459,12 @@ class CalendarViewModel @Inject constructor(
         loadEventsForCurrentWeek()
     }
 }
+
+/** Whether an event is visible under the current profile selection.
+ *  null selection = whole family (everything). Unassigned events (null
+ *  profileId) are always visible so legacy data never disappears. */
+fun eventVisibleForProfile(eventProfileId: String?, selectedProfileId: String?): Boolean =
+    selectedProfileId == null || eventProfileId == null || eventProfileId == selectedProfileId
 
 /**
  * UI state for the calendar screen

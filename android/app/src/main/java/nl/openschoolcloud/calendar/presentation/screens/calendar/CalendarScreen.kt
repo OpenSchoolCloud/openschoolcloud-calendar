@@ -84,10 +84,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nl.openschoolcloud.calendar.R
 import nl.openschoolcloud.calendar.domain.model.Event
 import nl.openschoolcloud.calendar.domain.model.HolidayCategory
 import nl.openschoolcloud.calendar.domain.model.HolidayEvent
+import nl.openschoolcloud.calendar.presentation.components.ProfileSwitcher
 import nl.openschoolcloud.calendar.presentation.screens.holidays.HolidayDetailSheet
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -104,7 +106,7 @@ import java.util.Locale
 @Composable
 fun CalendarScreen(
     onEventClick: (String) -> Unit,
-    @Suppress("UNUSED_PARAMETER") onCreateEvent: (String?) -> Unit,
+    onCreateEvent: (String?) -> Unit,
     onSettingsClick: () -> Unit,
     onBookingClick: () -> Unit,
     onWeekReviewClick: () -> Unit = {},
@@ -113,6 +115,8 @@ fun CalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val profiles by viewModel.profiles.collectAsStateWithLifecycle()
+    val selectedProfileId by viewModel.selectedProfileId.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showQuickCapture by remember { mutableStateOf(false) }
 
@@ -162,7 +166,10 @@ fun CalendarScreen(
                 onBookingClick = onBookingClick,
                 onWeekReviewClick = onWeekReviewClick,
                 onWeekProgressClick = onWeekProgressClick,
-                onFeedbackClick = onFeedbackClick
+                onFeedbackClick = onFeedbackClick,
+                onCreateEventFullForm = {
+                    onCreateEvent(uiState.selectedDate.toString())
+                }
             )
         },
         floatingActionButton = {
@@ -182,6 +189,16 @@ fun CalendarScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Profile switcher (only shown when there's more than one profile to pick from)
+            if (profiles.size > 1) {
+                ProfileSwitcher(
+                    profiles = profiles,
+                    selectedProfileId = selectedProfileId,
+                    onSelect = viewModel::selectProfile,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+
             // Quick Capture bar (expandable)
             AnimatedVisibility(
                 visible = showQuickCapture,
@@ -260,7 +277,8 @@ private fun CalendarTopBar(
     onBookingClick: () -> Unit,
     onWeekReviewClick: () -> Unit,
     onWeekProgressClick: () -> Unit,
-    onFeedbackClick: () -> Unit = {}
+    onFeedbackClick: () -> Unit = {},
+    onCreateEventFullForm: () -> Unit = {}
 ) {
     val weekEnd = weekStart.plusDays(6)
     val monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -338,6 +356,14 @@ private fun CalendarTopBar(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false }
                 ) {
+                    // Full event-edit form (Quick Capture on the FAB is for fast entry).
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_new_event_full)) },
+                        onClick = {
+                            menuExpanded = false
+                            onCreateEventFullForm()
+                        }
+                    )
                     if (!isStandaloneMode) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.menu_sync)) },

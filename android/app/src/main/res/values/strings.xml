@@ -114,6 +114,15 @@
     <string name="dialog_discard">Negeren</string>
     <string name="dialog_keep_editing">Verder bewerken</string>
 
+    <!-- Calendar label: "Klas 3a (van Lisa)" for calendars shared by another user -->
+    <string name="calendar_shared_by_format">%1$s (van %2$s)</string>
+
+    <!-- 412 conflict dialog: shown when another user changed the event between our load and our save -->
+    <string name="dialog_conflict_title">Iemand anders heeft deze afspraak gewijzigd</string>
+    <string name="dialog_conflict_message">Tussen het openen en opslaan heeft een andere gebruiker deze afspraak aangepast. Wil je jouw versie alsnog opslaan (de andere wijziging gaat dan verloren), of de versie van de server bekijken?</string>
+    <string name="dialog_conflict_overwrite">Mijn versie opslaan</string>
+    <string name="dialog_conflict_reload">Server-versie laden</string>
+
     <!-- Instellingen -->
     <string name="settings_title">Instellingen</string>
     <string name="settings_account">Account</string>
@@ -421,6 +430,7 @@
     <string name="feedback_privacy_notice">Je feedback wordt via je eigen e-mail app verstuurd. We ontvangen alleen wat je zelf invult.</string>
 
     <!-- Overflow menu -->
+    <string name="menu_new_event_full">Nieuwe gebeurtenis…</string>
     <string name="menu_sync">Synchroniseren</string>
     <string name="menu_week_progress">Weekvoortgang</string>
     <string name="menu_week_review">Weekoverzicht</string>
@@ -462,4 +472,44 @@
     <string name="action_edit">Bewerken</string>
     <string name="action_retry">Opnieuw proberen</string>
     <string name="action_close">Sluiten</string>
+
+    <!-- Welkom / account -->
+    <string name="welcome_title">Eén agenda voor het hele gezin</string>
+    <string name="welcome_subtitle">Privacy-first. Jij bepaalt waar je gegevens staan.</string>
+    <string name="welcome_create_account">Account maken</string>
+    <string name="welcome_login">Inloggen</string>
+    <string name="auth_in_progress">Bezig met inloggen…</string>
+    <string name="auth_failed">Inloggen mislukt. Probeer het opnieuw.</string>
+
+    <!-- Herstelcodes -->
+    <string name="recovery_title">Bewaar je herstelcodes</string>
+    <string name="recovery_body">Je hebt tweestapsverificatie ingesteld. Bewaar je herstelcodes op een veilige plek. Je hebt ze nodig als je je telefoon kwijtraakt.</string>
+    <string name="recovery_copy">Kopieer codes</string>
+    <string name="recovery_confirm">Ik heb ze bewaard</string>
+
+    <!-- Gezin opzetten -->
+    <string name="family_setup_title">Stel je gezin in</string>
+    <string name="family_name_label">Naam van je gezin</string>
+    <string name="family_name_hint">Bijv. Gezin Jansen</string>
+    <string name="profile_add">Profiel toevoegen</string>
+    <string name="profile_name_label">Naam</string>
+    <string name="profile_name_hint">Naam van het kind</string>
+    <string name="family_setup_continue">Doorgaan</string>
+
+    <!-- Sync-keuze -->
+    <string name="sync_choice_title">Waar bewaar je jullie agenda?</string>
+    <string name="sync_local_title">Alleen op dit apparaat</string>
+    <string name="sync_local_desc">Gratis. Niets verlaat je telefoon.</string>
+    <string name="sync_local_button">Kies lokaal</string>
+    <string name="sync_nextcloud_title">Eigen Nextcloud</string>
+    <string name="sync_nextcloud_desc">Gratis. Koppel je eigen server via CalDAV.</string>
+    <string name="sync_nextcloud_button">Koppel Nextcloud</string>
+    <string name="sync_osc_title">OSC-sync voor het gezin</string>
+    <string name="sync_osc_desc">Automatisch synchroniseren over alle apparaten, zonder eigen server. €1 per gezinslid per maand, eerste 30 dagen gratis.</string>
+    <string name="sync_osc_button">Probeer 30 dagen gratis</string>
+    <string name="sync_osc_soon">Binnenkort beschikbaar</string>
+
+    <!-- Profiel-switcher -->
+    <string name="profile_all">Hele gezin</string>
+    <string name="profile_switch">Wissel profiel</string>
 </resources>
