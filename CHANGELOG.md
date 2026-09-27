@@ -7,6 +7,42 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ---
 
+## [2.0.0] - 2026-09-27
+
+### Plan A: Identity Layer, Gezinsmodel & Gated OSC-Sync
+
+#### Toegevoegd
+- **Account-first onboarding**: Nieuw onboarding-traject via Authentik OIDC (AppAuth)
+  - Inloggen op schoolaccount of Nextcloud (AppAuth Custom Tab)
+  - Herstelopties: herstelbewijs en recovery-codes
+  - Account-status in Splash screen bij app-herstart
+- **Verplichte MFA**: MFA-afwending in de IdP-flow (Authentik)
+  - MFA-verificatie verplicht voor account-eers onboarding
+  - Recovery-codes centraal beheerd in Authentik
+- **Gezinsmodel met profiel-switcher**: Multi-profiel ondersteuning voor ouders/verzorgers
+  - Profiel-switcher in NavigationRail en TopAppBar
+  - Profiel aanmaken: naam + kleur
+  - Per-profiel agenda en instellingen
+  - Kindvriendelijke identiteit per profiel
+- **Sync-keuze met feature flag**: Lokale sync vs. betaalde OSC Cloud
+  - Sync-keuzescherm in onboarding (LOCAL, OWN_NEXTCLOUD, OSC_CLOUD)
+  - ENABLE_OSC_CLOUD buildConfigField voor gefaseerde uitrol
+  - Local-first default (SyncScope.LOCAL)
+  - Geflagde OSC-sync-kaart in instellingen
+
+#### Technisch
+- AppAuth integratie (OpenID Connect) via `net.openid:appauth:0.11.1`
+- AuthManager + TokenStore met EncryptedSharedPreferences
+- FamilyProfile entity en ProfileRepository (Room)
+- SyncScope enum (LOCAL, OWN_NEXTCLOUD, OSC_CLOUD)
+- BuildConfig OIDC configuratie (issuer, client_id, redirect_scheme)
+- Adaptive splash-route beslissing: `decideStartRoute(isLoggedIn, familyExists, syncChosen)`
+- Profiel-switcher composable in NavigationRail/TopAppBar
+- Recovery-code gate voor account-eers flow
+- Versie: 2.0.0 (versionCode 13)
+
+---
+
 ## [1.4.0] - 2026-02-17
 
 ### Sprint 8: UX Polish, Feedback & Theme
