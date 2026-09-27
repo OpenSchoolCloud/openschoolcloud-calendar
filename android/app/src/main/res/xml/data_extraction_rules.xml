@@ -13,12 +13,16 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="osc_credentials.xml" />
+        <exclude domain="sharedpref" path="osc_oidc_tokens.xml" />
+        <exclude domain="sharedpref" path="osc_oidc_tokens_plain.xml" />
         <exclude domain="database" path="openschoolcloud_calendar.db" />
         <exclude domain="database" path="openschoolcloud_calendar.db-shm" />
         <exclude domain="database" path="openschoolcloud_calendar.db-wal" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="osc_credentials.xml" />
+        <exclude domain="sharedpref" path="osc_oidc_tokens.xml" />
+        <exclude domain="sharedpref" path="osc_oidc_tokens_plain.xml" />
         <exclude domain="database" path="openschoolcloud_calendar.db" />
         <exclude domain="database" path="openschoolcloud_calendar.db-shm" />
         <exclude domain="database" path="openschoolcloud_calendar.db-wal" />

@@ -25,14 +25,22 @@ import androidx.security.crypto.MasterKey
 
 /**
  * Stores the serialized AppAuth AuthState (tokens) at rest.
- * Uses EncryptedSharedPreferences with a lazy init + fallback to regular
- * SharedPreferences, because MasterKey creation fails on some devices/emulators.
+ * Uses EncryptedSharedPreferences with a lazy init. If EncryptedSharedPreferences
+ * cannot be initialised (rare: corrupt keystore, some custom ROMs), we fall back
+ * to an **in-memory only** store rather than persisting the OIDC refresh token
+ * in cleartext to disk — mirrors CredentialStorage's hardened fallback. The
+ * user will need to log in again after a process death in that case, but the
+ * token never touches disk unencrypted.
  * This is the OSC identity store; Nextcloud CalDAV credentials live separately
  * in CredentialStorage and must never be mixed in here.
  */
 class OidcTokenStore(private val context: Context) {
 
-    private val prefs: SharedPreferences by lazy {
+    /** In-memory fallback used only when EncryptedSharedPreferences fails. */
+    @Volatile
+    private var memoryFallback: String? = null
+
+    private val prefs: SharedPreferences? by lazy {
         try {
             val masterKey = MasterKey.Builder(context)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -45,21 +53,37 @@ class OidcTokenStore(private val context: Context) {
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (e: Exception) {
-            Log.w("OidcTokenStore", "Encrypted prefs unavailable, falling back (${e.javaClass.simpleName})")
-            context.getSharedPreferences("osc_oidc_tokens_plain", Context.MODE_PRIVATE)
+            // Do NOT fall back to plaintext SharedPreferences — privacy-first.
+            Log.e(
+                "OidcTokenStore",
+                "EncryptedSharedPreferences unavailable — using in-memory fallback only",
+                e
+            )
+            null
         }
     }
 
     var authStateJson: String?
-        get() = prefs.getString(KEY_AUTH_STATE, null)
+        get() {
+            val store = prefs
+            return if (store != null) store.getString(KEY_AUTH_STATE, null) else memoryFallback
+        }
         set(value) {
-            if (value == null) prefs.edit().remove(KEY_AUTH_STATE).apply()
-            else prefs.edit().putString(KEY_AUTH_STATE, value).apply()
+            val store = prefs
+            if (store != null) {
+                if (value == null) store.edit().remove(KEY_AUTH_STATE).apply()
+                else store.edit().putString(KEY_AUTH_STATE, value).apply()
+            } else {
+                memoryFallback = value
+            }
         }
 
     val isLoggedIn: Boolean get() = authStateJson != null
 
-    fun clear() { prefs.edit().remove(KEY_AUTH_STATE).apply() }
+    fun clear() {
+        prefs?.edit()?.remove(KEY_AUTH_STATE)?.apply()
+        memoryFallback = null
+    }
 
     private companion object { const val KEY_AUTH_STATE = "auth_state" }
 }

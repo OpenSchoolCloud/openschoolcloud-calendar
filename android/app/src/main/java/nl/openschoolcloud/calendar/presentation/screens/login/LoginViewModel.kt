@@ -105,6 +105,11 @@ class LoginViewModel @Inject constructor(
                 result.fold(
                     onSuccess = { account ->
                         appPreferences.isStandaloneMode = false
+                        // Linking a Nextcloud account is a completed mode-selection
+                        // exit from SyncChoice too (see SyncChoiceViewModel.choose()
+                        // for the LOCAL/OSC counterpart) — without this, own-Nextcloud
+                        // users loop back to SyncChoice on every cold start.
+                        appPreferences.hasCompletedModeSelection = true
                         _uiState.update {
                             it.copy(
                                 isLoading = false,

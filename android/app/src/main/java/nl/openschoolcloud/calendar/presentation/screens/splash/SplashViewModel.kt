@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.data.remote.auth.AuthManager
 import nl.openschoolcloud.calendar.domain.repository.FamilyRepository
+import nl.openschoolcloud.calendar.presentation.navigation.Route
 import nl.openschoolcloud.calendar.presentation.navigation.decideStartRoute
 import javax.inject.Inject
 
@@ -43,10 +44,19 @@ class SplashViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val familyExists = familyRepository.observeFamily().first() != null
+            val family = familyRepository.observeFamily().first()
             val isLoggedIn = authManager.isLoggedIn
             val syncChosen = appPreferences.hasCompletedModeSelection
-            _startRoute.value = decideStartRoute(isLoggedIn, familyExists, syncChosen)
+            val decided = decideStartRoute(isLoggedIn, family != null, syncChosen)
+            // decideStartRoute returns the raw SyncChoice route template
+            // ("sync_choice/{familyId}") to stay pure/testable. Resolve it to the
+            // concrete path here using the family id we already loaded, otherwise
+            // familyId arrives downstream as the literal string "{familyId}".
+            _startRoute.value = if (decided == Route.SyncChoice.route && family != null) {
+                Route.SyncChoice.createRoute(family.id)
+            } else {
+                decided
+            }
         }
     }
 }
