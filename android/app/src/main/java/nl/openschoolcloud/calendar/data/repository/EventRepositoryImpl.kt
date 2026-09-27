@@ -390,7 +390,8 @@ private fun EventEntity.toDomain(): Event {
         learningGoal = learningGoal,
         learningNeeds = learningNeeds,
         eventType = eventType,
-        taskCompleted = taskCompleted
+        taskCompleted = taskCompleted,
+        profileId = profileId
     )
 }
 
@@ -450,7 +451,8 @@ private fun Event.toEntity(): EventEntity {
         learningGoal = learningGoal,
         learningNeeds = learningNeeds,
         eventType = eventType,
-        taskCompleted = taskCompleted
+        taskCompleted = taskCompleted,
+        profileId = profileId
     )
 }
 

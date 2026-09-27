@@ -84,10 +84,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nl.openschoolcloud.calendar.R
 import nl.openschoolcloud.calendar.domain.model.Event
 import nl.openschoolcloud.calendar.domain.model.HolidayCategory
 import nl.openschoolcloud.calendar.domain.model.HolidayEvent
+import nl.openschoolcloud.calendar.presentation.components.ProfileSwitcher
 import nl.openschoolcloud.calendar.presentation.screens.holidays.HolidayDetailSheet
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -113,6 +115,8 @@ fun CalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val profiles by viewModel.profiles.collectAsStateWithLifecycle()
+    val selectedProfileId by viewModel.selectedProfileId.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showQuickCapture by remember { mutableStateOf(false) }
 
@@ -185,6 +189,16 @@ fun CalendarScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Profile switcher (only shown when there's more than one profile to pick from)
+            if (profiles.size > 1) {
+                ProfileSwitcher(
+                    profiles = profiles,
+                    selectedProfileId = selectedProfileId,
+                    onSelect = viewModel::selectProfile,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+
             // Quick Capture bar (expandable)
             AnimatedVisibility(
                 visible = showQuickCapture,

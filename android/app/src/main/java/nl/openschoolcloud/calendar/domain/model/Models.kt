@@ -47,7 +47,8 @@ data class Event(
     val learningGoal: String? = null,    // "Wat ga ik doen?"
     val learningNeeds: String? = null,   // "Wat heb ik nodig?"
     val eventType: String = "STANDARD",  // "STANDARD" or "TASK"
-    val taskCompleted: Boolean = false
+    val taskCompleted: Boolean = false,
+    val profileId: String? = null // Family profile this event belongs to (null = unassigned/legacy)
 )
 
 /**
