@@ -261,3 +261,21 @@ data class SyncResult(
     val error: String? = null,
     val syncMode: String? = null // "full", "incremental", "ctag-unchanged", or null on error
 )
+
+/**
+ * Repository for the local family
+ */
+interface FamilyRepository {
+    fun observeFamily(): Flow<Family?>
+    suspend fun createFamily(name: String, ownerAccountId: String): Family
+}
+
+/**
+ * Repository for profiles within a family
+ */
+interface ProfileRepository {
+    fun observeProfiles(familyId: String): Flow<List<Profile>>
+    suspend fun addProfile(familyId: String, name: String, color: Long, isOwner: Boolean): Profile
+    suspend fun setSyncScope(profileId: String, scope: SyncScope)
+    suspend fun removeProfile(profileId: String)
+}
