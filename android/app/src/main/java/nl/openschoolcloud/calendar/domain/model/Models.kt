@@ -112,7 +112,14 @@ data class Calendar(
     val syncToken: String? = null,
     val readOnly: Boolean = false,
     val visible: Boolean = true,
-    val order: Int = 0
+    val order: Int = 0,
+    /**
+     * Display name of the user this calendar is owned by, when different
+     * from the logged-in user. Populated from Nextcloud's
+     * `<oc:owner-displayname>` PROPFIND response. Null for own calendars
+     * or non-Nextcloud servers that don't expose this property.
+     */
+    val ownerDisplayName: String? = null
 )
 
 /**
@@ -173,3 +180,29 @@ enum class SyncStatus {
     PENDING_DELETE, // Deleted offline, needs server delete
     CONFLICT        // Server version differs
 }
+
+/** Where a profile's calendar data is allowed to sync to. */
+enum class SyncScope { LOCAL, OWN_NEXTCLOUD, OSC_CLOUD }
+
+/** A family owned by exactly one signed-in parent account. */
+data class Family(
+    val id: String,
+    val name: String,
+    val ownerAccountId: String,
+    val createdAt: java.time.Instant
+)
+
+/**
+ * A person within a family. The owner (parent) has isOwnerProfile = true and
+ * is the only one who authenticates; children are profiles without credentials.
+ * Children carry minimal data: name + color/avatar only.
+ */
+data class Profile(
+    val id: String,
+    val familyId: String,
+    val displayName: String,
+    val color: Long,
+    val avatar: String?,
+    val isOwnerProfile: Boolean,
+    val syncScope: SyncScope
+)
