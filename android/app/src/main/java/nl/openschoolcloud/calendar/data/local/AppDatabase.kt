@@ -51,7 +51,7 @@ import nl.openschoolcloud.calendar.data.local.entity.ReflectionEntity
         HolidayEventEntity::class,
         ReflectionEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -160,6 +160,32 @@ abstract class AppDatabase : RoomDatabase() {
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_contacts_displayName` ON `contacts` (`displayName`)")
             }
         }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Nextcloud exposes <oc:owner-displayname> on shared calendars.
+                // Stored here so the UI can label "Klas 3a (van Lisa)".
+                database.execSQL(
+                    "ALTER TABLE calendars ADD COLUMN ownerDisplayName TEXT DEFAULT NULL"
+                )
+            }
+        }
+
+        /**
+         * All migrations in order. Single source of truth — register this on
+         * every Room.databaseBuilder() in the app (Hilt module, widget services,
+         * and any other entry point) so a widget process can't open the DB at
+         * an older schema version and crash with IllegalStateException.
+         */
+        val ALL_MIGRATIONS: Array<Migration> = arrayOf(
+            MIGRATION_1_2,
+            MIGRATION_2_3,
+            MIGRATION_3_4,
+            MIGRATION_4_5,
+            MIGRATION_5_6
+        )
+
+        const val DB_NAME = "openschoolcloud_calendar.db"
     }
 }
 

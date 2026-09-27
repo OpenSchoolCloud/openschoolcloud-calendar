@@ -22,10 +22,19 @@ import nl.openschoolcloud.calendar.domain.model.*
 import java.time.Instant
 
 /**
+ * Thrown when the server rejects a write because the local ETag is stale
+ * (HTTP 412 Precondition Failed) — another user changed the same event
+ * between our load and our save. Callers should prompt the user to either
+ * overwrite (retry with forceOverwrite=true) or discard local changes.
+ */
+class EventConflictException(message: String = "Event was modified by another user") :
+    Exception(message)
+
+/**
  * Repository for calendar events
  */
 interface EventRepository {
-    
+
     /**
      * Get events for a date range, optionally filtered by calendars
      */
@@ -34,23 +43,38 @@ interface EventRepository {
         end: Instant,
         calendarIds: List<String>? = null
     ): Flow<List<Event>>
-    
+
     /**
      * Get a single event by ID
      */
     suspend fun getEvent(eventId: String): Event?
-    
+
     /**
      * Create a new event
      * @param sendInvites Whether to send invites to attendees
      */
     suspend fun createEvent(event: Event, sendInvites: Boolean = true): Result<Event>
-    
+
     /**
-     * Update an existing event
+     * Update an existing event.
+     *
      * @param notifyAttendees Whether to notify attendees of changes
+     * @param forceOverwrite When true, skip the If-Match precondition check
+     *   and overwrite whatever is on the server. Use only after the user
+     *   has explicitly resolved an [EventConflictException].
      */
-    suspend fun updateEvent(event: Event, notifyAttendees: Boolean = true): Result<Event>
+    suspend fun updateEvent(
+        event: Event,
+        notifyAttendees: Boolean = true,
+        forceOverwrite: Boolean = false
+    ): Result<Event>
+
+    /**
+     * Re-fetch a single event from the CalDAV server and overwrite the
+     * local copy. Used to recover from an [EventConflictException]
+     * after the user chooses to discard local changes.
+     */
+    suspend fun refreshEventFromServer(eventId: String): Result<Event>
     
     /**
      * Delete an event

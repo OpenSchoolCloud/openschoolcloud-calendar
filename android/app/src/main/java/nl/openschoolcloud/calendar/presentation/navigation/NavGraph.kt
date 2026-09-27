@@ -257,7 +257,9 @@ fun AppNavigation(
             SettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onLogout = {
-                    navController.navigate(Route.Login.route) {
+                    // After logout, restart from mode-selection: user may want to
+                    // switch to standalone or connect to a different server.
+                    navController.navigate(Route.ModeSelection.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 },

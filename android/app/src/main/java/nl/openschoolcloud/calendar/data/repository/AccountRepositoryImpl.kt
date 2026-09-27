@@ -120,7 +120,8 @@ class AccountRepositoryImpl @Inject constructor(
                         syncToken = null,  // Empty: forces full sync on first run
                         readOnly = info.readOnly,
                         visible = true,
-                        sortOrder = index
+                        sortOrder = index,
+                        ownerDisplayName = ownerDisplayNameIfShared(info, existing.username)
                     )
                 }
                 if (newCalendars.isNotEmpty()) {
@@ -160,7 +161,8 @@ class AccountRepositoryImpl @Inject constructor(
                     syncToken = null,  // Empty: forces full sync on first run
                     readOnly = info.readOnly,
                     visible = true,
-                    sortOrder = index
+                    sortOrder = index,
+                    ownerDisplayName = ownerDisplayNameIfShared(info, username)
                 )
             }
             calendarDao.insertAll(calendarEntities)
@@ -249,6 +251,22 @@ class AccountRepositoryImpl @Inject constructor(
             normalized = "https://$normalized"
         }
         return normalized.trimEnd('/')
+    }
+
+    /**
+     * Return the owner's display name only when this calendar is shared
+     * *to* the current user. If the owner matches the logged-in username
+     * we don't want to label the calendar as "(van <self>)" — that's
+     * confusing for own calendars.
+     */
+    private fun ownerDisplayNameIfShared(
+        info: nl.openschoolcloud.calendar.data.remote.caldav.CalendarInfo,
+        currentUsername: String
+    ): String? {
+        val owner = info.ownerDisplayName?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        // Compare case-insensitively. Nextcloud's owner-displayname can be the
+        // user's full name or login id; the latter would equal the username.
+        return if (owner.equals(currentUsername, ignoreCase = true)) null else owner
     }
 
     /**

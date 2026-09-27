@@ -104,7 +104,7 @@ import java.util.Locale
 @Composable
 fun CalendarScreen(
     onEventClick: (String) -> Unit,
-    @Suppress("UNUSED_PARAMETER") onCreateEvent: (String?) -> Unit,
+    onCreateEvent: (String?) -> Unit,
     onSettingsClick: () -> Unit,
     onBookingClick: () -> Unit,
     onWeekReviewClick: () -> Unit = {},
@@ -162,7 +162,10 @@ fun CalendarScreen(
                 onBookingClick = onBookingClick,
                 onWeekReviewClick = onWeekReviewClick,
                 onWeekProgressClick = onWeekProgressClick,
-                onFeedbackClick = onFeedbackClick
+                onFeedbackClick = onFeedbackClick,
+                onCreateEventFullForm = {
+                    onCreateEvent(uiState.selectedDate.toString())
+                }
             )
         },
         floatingActionButton = {
@@ -260,7 +263,8 @@ private fun CalendarTopBar(
     onBookingClick: () -> Unit,
     onWeekReviewClick: () -> Unit,
     onWeekProgressClick: () -> Unit,
-    onFeedbackClick: () -> Unit = {}
+    onFeedbackClick: () -> Unit = {},
+    onCreateEventFullForm: () -> Unit = {}
 ) {
     val weekEnd = weekStart.plusDays(6)
     val monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -338,6 +342,14 @@ private fun CalendarTopBar(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false }
                 ) {
+                    // Full event-edit form (Quick Capture on the FAB is for fast entry).
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_new_event_full)) },
+                        onClick = {
+                            menuExpanded = false
+                            onCreateEventFullForm()
+                        }
+                    )
                     if (!isStandaloneMode) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.menu_sync)) },

@@ -39,6 +39,7 @@ import nl.openschoolcloud.calendar.domain.model.SyncStatus
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.ContactRepository
+import nl.openschoolcloud.calendar.domain.repository.EventConflictException
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
 import java.time.Instant
 import java.time.LocalDate
@@ -297,6 +298,43 @@ class EventEditViewModel @Inject constructor(
     }
 
     fun save(onSuccess: () -> Unit) {
+        saveInternal(onSuccess = onSuccess, forceOverwrite = false)
+    }
+
+    /**
+     * Retry the in-flight save while ignoring the server's ETag — used after
+     * the user has acknowledged a conflict and chosen to overwrite.
+     */
+    fun resolveConflictByOverwrite() {
+        val callback = pendingSuccessCallback ?: return
+        _uiState.update { it.copy(conflictDetected = false) }
+        saveInternal(onSuccess = callback, forceOverwrite = true)
+    }
+
+    /**
+     * Discard the user's local edits, re-fetch the event from the server,
+     * and close the editor. Used after the user has acknowledged a conflict
+     * and chosen to keep the other user's version.
+     */
+    fun resolveConflictByReload(onDiscarded: () -> Unit) {
+        val state = _uiState.value
+        val eventId = state.originalEvent?.uid ?: return
+        _uiState.update { it.copy(conflictDetected = false, isSaving = true) }
+        viewModelScope.launch {
+            eventRepository.refreshEventFromServer(eventId)
+            _uiState.update { it.copy(isSaving = false) }
+            onDiscarded()
+        }
+    }
+
+    fun dismissConflict() {
+        _uiState.update { it.copy(conflictDetected = false) }
+    }
+
+    @Volatile
+    private var pendingSuccessCallback: (() -> Unit)? = null
+
+    private fun saveInternal(onSuccess: () -> Unit, forceOverwrite: Boolean) {
         val state = _uiState.value
 
         if (state.title.isBlank()) {
@@ -304,6 +342,7 @@ class EventEditViewModel @Inject constructor(
             return
         }
 
+        pendingSuccessCallback = onSuccess
         _uiState.update { it.copy(isSaving = true, error = null) }
 
         viewModelScope.launch {
@@ -337,15 +376,25 @@ class EventEditViewModel @Inject constructor(
                     learningNeeds = state.learningNeeds.ifBlank { null }
                 )
 
-                val result = eventRepository.updateEvent(updated)
+                val result = eventRepository.updateEvent(updated, forceOverwrite = forceOverwrite)
                 result.fold(
                     onSuccess = {
                         _uiState.update { it.copy(isSaving = false) }
+                        pendingSuccessCallback = null
                         onSuccess()
                     },
                     onFailure = { error ->
-                        _uiState.update {
-                            it.copy(isSaving = false, error = "Opslaan mislukt: ${error.message}")
+                        if (error is EventConflictException) {
+                            // Hold pendingSuccessCallback so the user can pick
+                            // overwrite-and-retry without us losing the callback.
+                            _uiState.update {
+                                it.copy(isSaving = false, conflictDetected = true)
+                            }
+                        } else {
+                            pendingSuccessCallback = null
+                            _uiState.update {
+                                it.copy(isSaving = false, error = "Opslaan mislukt: ${error.message}")
+                            }
                         }
                     }
                 )
@@ -372,9 +421,11 @@ class EventEditViewModel @Inject constructor(
                 result.fold(
                     onSuccess = {
                         _uiState.update { it.copy(isSaving = false) }
+                        pendingSuccessCallback = null
                         onSuccess()
                     },
                     onFailure = { error ->
+                        pendingSuccessCallback = null
                         _uiState.update {
                             it.copy(isSaving = false, error = "Aanmaken mislukt: ${error.message}")
                         }
@@ -427,7 +478,13 @@ data class EventEditUiState(
     val contactSuggestions: List<Contact> = emptyList(),
     val attendeeSearchQuery: String = "",
     val isSearchingContacts: Boolean = false,
-    val organizerEmail: String? = null
+    val organizerEmail: String? = null,
+    /**
+     * True when the last save was rejected with 412 — another user changed
+     * the event between our load and our PUT. The screen shows a dialog so
+     * the user can either overwrite or discard their local edits.
+     */
+    val conflictDetected: Boolean = false
 ) {
     fun formatStartDate(): String =
         startDate.format(DateTimeFormatter.ofPattern("EEE d MMM yyyy", java.util.Locale("nl")))

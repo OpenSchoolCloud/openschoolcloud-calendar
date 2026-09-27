@@ -51,12 +51,19 @@ class TodayWidgetFactory(
     private var events: List<WidgetEvent> = emptyList()
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale("nl"))
 
+    // RemoteViewsFactory callbacks (onDataSetChanged / getViewAt) are invoked off
+    // the main thread, so we do NOT need allowMainThreadQueries() — it's an
+    // anti-pattern that previously hid potential ANRs. Migrations must match
+    // the Hilt-built DB; otherwise the widget process opens the file at an
+    // older schema and crashes with IllegalStateException.
     private val db: AppDatabase by lazy {
         Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "openschoolcloud_calendar.db"
-        ).allowMainThreadQueries().build()
+            AppDatabase.DB_NAME
+        )
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .build()
     }
 
     data class WidgetEvent(

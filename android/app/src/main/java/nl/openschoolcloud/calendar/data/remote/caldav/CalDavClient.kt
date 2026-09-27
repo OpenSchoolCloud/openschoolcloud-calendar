@@ -270,7 +270,12 @@ class CalDavClient @Inject constructor(
     }
     
     /**
-     * Update an existing event
+     * Update an existing event.
+     *
+     * Returns the new ETag from the server response on success. The ETag may
+     * be returned as the `ETag` response header (RFC 7232), or — if the
+     * server didn't include it — we leave it empty so the caller can issue a
+     * follow-up GET. We do NOT return the response body as the ETag.
      */
     suspend fun updateEvent(
         eventUrl: String,
@@ -283,15 +288,12 @@ class CalDavClient @Inject constructor(
             .url(eventUrl)
             .header("Authorization", Credentials.basic(username, password))
             .put(icalData.toRequestBody(ICAL_MEDIA_TYPE))
-        
-        // Use ETag for optimistic locking
-        etag?.let {
-            requestBuilder.header("If-Match", it)
-        }
-        
-        return executeRequest(requestBuilder.build()).mapCatching { response ->
-            // Extract new ETag from response
-            response // TODO: parse ETag
+
+        // Optimistic locking — server returns 412 Precondition Failed on stale ETag.
+        etag?.let { requestBuilder.header("If-Match", it) }
+
+        return executeRequestWithEtag(requestBuilder.build()).map { (_, newEtag) ->
+            newEtag ?: ""
         }
     }
     
@@ -380,8 +382,11 @@ class CalDavClient @Inject constructor(
     ): Result<List<EventData>> {
         if (eventHrefs.isEmpty()) return Result.success(emptyList())
 
+        // Server-supplied hrefs are interpolated into our XML request body. If a
+        // server ever returns a value containing &, <, or > the request becomes
+        // malformed XML and the sync silently drops events. Escape defensively.
         val hrefElements = eventHrefs.joinToString("\n") { href ->
-            "    <d:href>$href</d:href>"
+            "    <d:href>${escapeXml(href)}</d:href>"
         }
 
         val body = """
@@ -661,6 +666,32 @@ class CalDavClient @Inject constructor(
             Result.failure(CalDavException("Network error: ${e.message}", cause = e))
         }
     }
+
+    /**
+     * Execute a request and surface both body and the ETag response header.
+     * Quotes are stripped so the value can be passed back as an If-Match
+     * header without double-quoting on the next call.
+     */
+    private fun executeRequestWithEtag(request: Request): Result<Pair<String, String?>> {
+        return try {
+            httpClient.newCall(request).execute().use { response ->
+                if (response.isSuccessful || response.code == 207) {
+                    val body = response.body?.string() ?: ""
+                    val etag = response.header("ETag")?.trim('"')
+                    Result.success(body to etag)
+                } else {
+                    Result.failure(
+                        CalDavException(
+                            "HTTP ${response.code} ${response.message} for ${request.method} ${request.url}",
+                            response.code
+                        )
+                    )
+                }
+            }
+        } catch (e: IOException) {
+            Result.failure(CalDavException("Network error: ${e.message}", cause = e))
+        }
+    }
     
     private fun resolveUrl(baseUrl: String, relativeUrl: String): String {
         if (relativeUrl.startsWith("http")) {
@@ -772,6 +803,7 @@ class CalDavClient @Inject constructor(
             var currentColor: String? = null
             var currentCtag: String? = null
             var currentSyncToken: String? = null
+            var currentOwnerDisplayName: String? = null
             var isCalendar = false
             var hasWritePrivilege = false
             var supportsEvents = false
@@ -799,6 +831,7 @@ class CalDavClient @Inject constructor(
                                 currentColor = null
                                 currentCtag = null
                                 currentSyncToken = null
+                                currentOwnerDisplayName = null
                                 isCalendar = false
                                 hasWritePrivilege = false
                                 supportsEvents = false
@@ -832,6 +865,11 @@ class CalDavClient @Inject constructor(
                             "sync-token" -> {
                                 if (inProp) {
                                     currentSyncToken = parser.nextText()
+                                }
+                            }
+                            "owner-displayname" -> {
+                                if (inProp) {
+                                    currentOwnerDisplayName = parser.nextText()
                                 }
                             }
                             "calendar" -> {
@@ -872,7 +910,9 @@ class CalDavClient @Inject constructor(
                                             ctag = currentCtag,
                                             syncToken = currentSyncToken,
                                             readOnly = !hasWritePrivilege,
-                                            supportsEvents = supportsEvents
+                                            supportsEvents = supportsEvents,
+                                            ownerDisplayName = currentOwnerDisplayName
+                                                ?.takeIf { it.isNotBlank() }
                                         )
                                     )
                                     Log.d(TAG, "  → Added calendar: ${currentDisplayName ?: "Calendar"} at $resolvedUrl")
@@ -1299,7 +1339,21 @@ class CalDavClient @Inject constructor(
     }
 
     private fun buildSyncCollectionRequest(syncToken: String): String {
-        return SYNC_COLLECTION_REQUEST.replace("{{SYNC_TOKEN}}", syncToken)
+        return SYNC_COLLECTION_REQUEST.replace("{{SYNC_TOKEN}}", escapeXml(syncToken))
+    }
+
+    /**
+     * Escape XML special characters in text content. We deliberately avoid
+     * pulling in a full XML serializer for these one-off request bodies —
+     * the four entities below are sufficient for character data.
+     */
+    private fun escapeXml(value: String): String {
+        return value
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
     }
     
     // ==================== XML Request Templates ====================
@@ -1333,6 +1387,7 @@ class CalDavClient @Inject constructor(
                 <x1:calendar-color/>
                 <c:supported-calendar-component-set/>
                 <d:current-user-privilege-set/>
+                <oc:owner-displayname/>
             </d:prop>
         </d:propfind>
     """.trimIndent()
@@ -1407,7 +1462,14 @@ data class CalendarInfo(
     val ctag: String?,
     val syncToken: String?,
     val readOnly: Boolean,
-    val supportsEvents: Boolean
+    val supportsEvents: Boolean,
+    /**
+     * Nextcloud-specific. The display name of the user who owns this
+     * calendar — populated only when it's a calendar shared *to* us
+     * (i.e. owner != logged-in user). Null on other CalDAV servers
+     * or for own calendars.
+     */
+    val ownerDisplayName: String? = null
 )
 
 /**

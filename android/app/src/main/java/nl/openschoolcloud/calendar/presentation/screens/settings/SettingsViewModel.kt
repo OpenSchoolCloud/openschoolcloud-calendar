@@ -244,6 +244,42 @@ class SettingsViewModel @Inject constructor(
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
+
+    /**
+     * Sign out the current account.
+     *
+     * Removes credentials from EncryptedSharedPreferences, deletes the account row
+     * (which cascades calendars/events via Room FK ON DELETE CASCADE), cancels any
+     * scheduled sync, and resets mode-selection so the user lands back on the
+     * mode-selection screen instead of a half-empty calendar.
+     *
+     * The completion callback fires after cleanup so navigation can proceed only
+     * once persisted state is gone — otherwise the splash router can route the
+     * user straight back to Calendar.
+     */
+    fun logout(onCompleted: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val accountId = _uiState.value.account?.id
+                    ?: accountRepository.getDefaultAccount()?.id
+                if (accountId != null) {
+                    accountRepository.removeAccount(accountId)
+                }
+                // Stop background sync that would otherwise fail without credentials.
+                CalendarSyncWorker.cancelAll(appContext)
+                ReminderWorker.cancel(appContext)
+                PlanningReminderWorker.cancel(appContext)
+                // Reset onboarding/mode flags so the user re-enters the connect flow.
+                appPreferences.isStandaloneMode = false
+                appPreferences.hasCompletedModeSelection = false
+                appPreferences.lastSyncTimestamp = 0L
+            } catch (_: Exception) {
+                // Best-effort: even if cleanup fails partially, still navigate away.
+            } finally {
+                onCompleted()
+            }
+        }
+    }
 }
 
 data class SettingsUiState(

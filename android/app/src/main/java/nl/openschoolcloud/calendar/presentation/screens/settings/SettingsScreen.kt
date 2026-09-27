@@ -140,7 +140,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showLogoutDialog = false
-                    onLogout()
+                    viewModel.logout(onCompleted = onLogout)
                 }) {
                     Text(stringResource(R.string.dialog_yes))
                 }
@@ -634,8 +634,13 @@ private fun CalendarRow(
         )
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
+            // Show "Klas 3a (van Lisa)" when this is a shared calendar so the
+            // user understands they're toggling someone else's calendar.
+            val title = calendar.ownerDisplayName?.let { owner ->
+                stringResource(R.string.calendar_shared_by_format, calendar.displayName, owner)
+            } ?: calendar.displayName
             Text(
-                text = calendar.displayName,
+                text = title,
                 style = MaterialTheme.typography.bodyLarge
             )
             if (calendar.readOnly) {

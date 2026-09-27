@@ -26,8 +26,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.data.local.AppPreferences
+import nl.openschoolcloud.calendar.data.remote.caldav.CalDavException
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import android.util.Log
+import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import javax.inject.Inject
@@ -91,7 +93,9 @@ class LoginViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                Log.d("LoginViewModel", "Connecting to ${state.serverUrl} as ${state.username}")
+                // Do not log server URL or username — both are PII (user identity
+                // on the Nextcloud instance), and the URL can identify a school.
+                Log.d("LoginViewModel", "Starting CalDAV discovery")
                 val result = accountRepository.addAccount(
                     serverUrl = state.serverUrl,
                     username = state.username,
@@ -100,8 +104,6 @@ class LoginViewModel @Inject constructor(
 
                 result.fold(
                     onSuccess = { account ->
-                        Log.d("LoginViewModel", "Login success, accountId=${account.id}")
-                        // Clear standalone mode when connecting Nextcloud
                         appPreferences.isStandaloneMode = false
                         _uiState.update {
                             it.copy(
@@ -117,29 +119,56 @@ class LoginViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
-                Log.e("LoginViewModel", "Unexpected error during connect", e)
+                Log.w("LoginViewModel", "Unexpected error during connect (${e.javaClass.simpleName})")
                 _uiState.update { it.copy(isLoading = false, error = LoginError.SERVER) }
             }
         }
     }
 
     /**
-     * Map exceptions to user-friendly error types
+     * Map exceptions to user-friendly error types.
+     *
+     * Prefer exception type and HTTP status code over message-string matching:
+     * messages are localised by the OS or server and brittle to changes.
+     * The string-matching branch remains as a final fallback for wrapped
+     * exceptions where we can't introspect the cause.
      */
     private fun mapErrorToLoginError(error: Throwable): LoginError {
-        Log.e("LoginViewModel", "Login error: ${error.message}", error)
-        return when {
-            error.message?.contains("401") == true -> LoginError.AUTH_FAILED
-            error.message?.contains("No calendars") == true -> LoginError.NO_CALENDARS
-            error is UnknownHostException -> LoginError.NETWORK
-            error is SocketTimeoutException -> LoginError.NETWORK
-            error.message?.contains("Unable to resolve host") == true -> LoginError.NETWORK
-            error.message?.contains("timeout") == true -> LoginError.NETWORK
-            error.message?.contains("Connection refused") == true -> LoginError.NETWORK
-            error.message?.contains("Could not find principal") == true -> LoginError.SERVER
-            error.message?.contains("Could not find calendar") == true -> LoginError.SERVER
-            else -> LoginError.SERVER
+        // Avoid logging the full URL/username; just the type and HTTP code.
+        Log.w("LoginViewModel", "Login failed (${error.javaClass.simpleName})")
+
+        // 1. CalDAV-specific failures: use HTTP status code where available.
+        if (error is CalDavException) {
+            when (error.httpCode) {
+                401, 403 -> return LoginError.AUTH_FAILED
+                in 500..599 -> return LoginError.SERVER
+            }
+            // Treat "no calendars" as its own bucket so the UI can hint.
+            if (error.message?.contains("No calendars", ignoreCase = true) == true) {
+                return LoginError.NO_CALENDARS
+            }
         }
+
+        // 2. Network-layer failures by exception type.
+        when (error) {
+            is UnknownHostException, is SocketTimeoutException, is IOException ->
+                return LoginError.NETWORK
+        }
+
+        // 3. Same checks against the cause chain (CalDavException wraps IO errors).
+        var cause: Throwable? = error.cause
+        while (cause != null) {
+            when (cause) {
+                is UnknownHostException, is SocketTimeoutException, is IOException ->
+                    return LoginError.NETWORK
+            }
+            cause = cause.cause
+        }
+
+        // 4. Last-resort message scan. Kept for "No calendars" raised as plain Exception.
+        val msg = error.message.orEmpty()
+        if (msg.contains("No calendars", ignoreCase = true)) return LoginError.NO_CALENDARS
+        return LoginError.SERVER
     }
 }
 
