@@ -2,7 +2,7 @@
 
 **Datum:** 2026-09-27
 **Status:** Ontwerp goedgekeurd, klaar voor implementatieplan
-**Scope van deze spec:** Subsysteem **A** (app-laag) + **B** (identity-backend). Subsysteem **C** (betaalde sync-backend) wordt hier alleen als *contractgrens* en *economisch model* vastgelegd; de technische bouw van C krijgt een eigen spec.
+**Scope van deze spec:** Subsysteem **A** (app-laag) + **B** (identity-backend), inclusief het economische model en de contractgrens voor **C** (betaalde sync-backend). C wordt in dezelfde werkstroom gebouwd zodat OSC-sync meteen live kan, maar krijgt vanwege de omvang een **eigen implementatieplan/spec**.
 
 ---
 
@@ -128,9 +128,12 @@ Het **WinRAR-model** (ongelimiteerd gratis, nooit afdwingen) past hier niet: geh
 |---|---|---|
 | Lokaal | €0 eeuwig | Alles op het apparaat |
 | Eigen Nextcloud | €0 eeuwig | CalDAV-koppeling |
-| OSC-sync (per gezin) | ~€2–4/mnd of jaar met korting | Gehoste multi-device gezins-sync, geen eigen server |
+| OSC-sync | **€1 per gezinslid / maand** | Gehoste multi-device gezins-sync, geen eigen server |
+| OSC-sync jaarplan | **€1/lid/mnd − 20% bij jaarlijkse vooruitbetaling** | Zelfde, goedkoper + minder churn/transactiekosten |
 
-**Trial (D7):** 30 dagen, **geen kaart vooraf**. Rond **dag 25** een vriendelijke betaalprompt (Mollie-mandaat). Betaalt men niet → **sync pauzeert, data blijft lokaal, niets verwijderd**. Betalen heractiveert direct. Jaarplan met korting drukt churn + transactiekosten.
+**Prijs per lid (eigenaarsbesluit, "lekker makkelijk"):** €1 per actief profiel per maand. Gevolg: het abonnement is **gekoppeld aan het aantal actieve profielen** en beweegt mee als de ouder een profiel toevoegt/verwijdert. C moet dus prorata/quantity-updates op het Mollie-abonnement doen bij profielwijziging (niet een vast bedrag). Trade-off t.o.v. per-gezin: grotere gezinnen betalen meer — bewust geaccepteerd voor eenvoud en transparantie.
+
+**Trial (D7):** 30 dagen, **geen kaart vooraf**. Rond **dag 25** een vriendelijke betaalprompt (Mollie-mandaat). Betaalt men niet → **sync pauzeert, data blijft lokaal, niets verwijderd**. Betalen heractiveert direct. Jaarplan (−20%) drukt churn + transactiekosten.
 
 **Betaalprovider:** Mollie **Subscriptions** (eerste betaling = mandaat, daarna recurring).
 - Test-key (placeholder, later vervangen): `test_QkEj…D7x`.
@@ -138,9 +141,9 @@ Het **WinRAR-model** (ongelimiteerd gratis, nooit afdwingen) past hier niet: geh
 
 ### 7.3 Naad naar subsysteem C (nu bouwen: de naad, niet C)
 - `SyncProvider`-interface met impls `LocalSyncProvider`, `NextcloudCalDavProvider`, en een **stub** `OscCloudProvider` die C later invult.
-- Feature-flag `ENABLE_OSC_CLOUD` (default `false`): Kaart 3 toont "Binnenkort" tot C live is; live-schakelen zonder app-release.
-- Placeholder-flow voor Kaart 3: propositie + prijsindicatie + knop naar `openschoolcloud.nl` / interesse achterlaten.
-- **Contractgrens die C moet leveren:** geprovisioneerd Nextcloud-account per klant; CalDAV-endpoint + app-password teruggeven aan de app; koppelen aan `oscSub`; abonnement-/trial-status opvraagbaar zodat de app zacht kan degraderen.
+- Feature-flag `ENABLE_OSC_CLOUD` (default `false`): veiligheidsschakelaar. Kaart 3 toont "Binnenkort" tot C gebouwd + getest is; daarna vlag aan → live zonder nieuwe app-release.
+- **Besluit:** C wordt in dezelfde werkstroom meegebouwd zodat OSC-sync **meteen live kan** zodra hij getest is (dus géén blijvende placeholder). C krijgt wel een eigen implementatieplan/spec vanwege de omvang.
+- **Contractgrens die C moet leveren:** geprovisioneerd Nextcloud-account per klant; CalDAV-endpoint + app-password teruggeven aan de app; koppelen aan `oscSub`; abonnement-/trial-status opvraagbaar zodat de app zacht kan degraderen; **Mollie-abonnement met quantity = aantal actieve profielen**, prorata bij wijziging; webhook voor betaal-/mandaatstatus.
 
 ## 8. Privacy & compliance (blijft gelden)
 - Geen Google Play Services / Firebase / analytics.
