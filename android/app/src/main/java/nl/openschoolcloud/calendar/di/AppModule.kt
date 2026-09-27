@@ -35,6 +35,8 @@ import nl.openschoolcloud.calendar.data.local.dao.FamilyDao
 import nl.openschoolcloud.calendar.data.local.dao.HolidayDao
 import nl.openschoolcloud.calendar.data.local.dao.ProfileDao
 import nl.openschoolcloud.calendar.data.local.dao.ReflectionDao
+import nl.openschoolcloud.calendar.data.remote.auth.AuthManager
+import nl.openschoolcloud.calendar.data.remote.auth.OidcTokenStore
 import nl.openschoolcloud.calendar.data.repository.AccountRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.BookingRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.CalendarRepositoryImpl
@@ -125,6 +127,16 @@ object AppModule {
 
     @Provides
     fun provideProfileDao(db: AppDatabase): ProfileDao = db.profileDao()
+
+    @Provides
+    @Singleton
+    fun provideOidcTokenStore(@ApplicationContext context: Context): OidcTokenStore =
+        OidcTokenStore(context)
+
+    @Provides
+    @Singleton
+    fun provideAuthManager(@ApplicationContext context: Context, store: OidcTokenStore): AuthManager =
+        AuthManager(context, store)
 }
 
 /**
