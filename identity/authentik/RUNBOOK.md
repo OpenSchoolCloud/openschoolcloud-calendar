@@ -10,6 +10,10 @@ put it on the running Authentik and verify it.
   legacy newline-string form and flows may not require `invalidation_flow`.
 - Confirm the default signing keypair name matches the `osc-signing-key` identifier
   (`name: authentik Self-signed Certificate`); adjust if renamed.
+- Confirm the stock invalidation flow slug `default-provider-invalidation-flow` exists
+  (Admin UI → Flows). The provider `!Find`s it; if renamed/absent the apply fails.
+- Confirm the built-in scope mappings exist for openid/profile/email/offline_access; if
+  `offline_access` has no mapping on this version, add one (else no refresh token is issued).
 
 ## 1. DNS
 - Create an **A record**: `id.openschoolcloud.nl` → `88.222.220.64`
