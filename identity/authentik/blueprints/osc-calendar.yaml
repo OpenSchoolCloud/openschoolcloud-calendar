@@ -1,0 +1,308 @@
+# OSC Calendar - Authentik identity blueprint
+# Applied by Authentik's blueprint loader (mount into /blueprints or import via UI/API).
+# OIDC contract values MUST match the OSC Calendar app BuildConfig (Plan A).
+version: 1
+metadata:
+  name: osc-calendar-identity
+  labels:
+    blueprints.goauthentik.io/description: "OSC Calendar OIDC provider, app, brand and MFA-enforced flows"
+entries:
+  # --- Reuse the default RSA signing key that ships with Authentik ---
+  - model: authentik_crypto.certificatekeypair
+    id: osc-signing-key
+    identifiers:
+      name: authentik Self-signed Certificate
+    state: present
+  - model: authentik_providers_oauth2.oauth2provider
+    id: osc-provider
+    identifiers:
+      name: osc-calendar
+    attrs:
+      name: osc-calendar
+      client_type: public
+      client_id: osc-calendar
+      authorization_flow: !KeyOf osc-authentication-flow
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      signing_key: !KeyOf osc-signing-key
+      sub_mode: hashed_user_id
+      include_claims_in_id_token: true
+      issuer_mode: per_provider
+      access_code_validity: "minutes=1"
+      access_token_validity: "minutes=5"
+      refresh_token_validity: "days=30"
+      redirect_uris:
+        - matching_mode: strict
+          url: "nl.openschoolcloud.calendar://oidc"
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, offline_access]]
+  - model: authentik_core.application
+    id: osc-application
+    identifiers:
+      slug: osc-calendar
+    attrs:
+      name: OSC Calendar
+      slug: osc-calendar
+      provider: !KeyOf osc-provider
+      meta_launch_url: ""
+      policy_engine_mode: any
+  - model: authentik_core.brand
+    id: osc-brand
+    identifiers:
+      domain: id.openschoolcloud.nl
+    attrs:
+      domain: id.openschoolcloud.nl
+      branding_title: OpenSchoolCloud
+      default: false
+      flow_authentication: !KeyOf osc-authentication-flow
+      flow_enrollment: !KeyOf osc-enrollment-flow
+      flow_recovery: !KeyOf osc-recovery-flow
+  # --- Enrollment flow with mandatory TOTP + static recovery codes ---
+  - model: authentik_flows.flow
+    id: osc-enrollment-flow
+    identifiers:
+      slug: osc-enrollment
+    attrs:
+      name: OSC Calendar Registratie
+      title: Maak je OSC-account
+      designation: enrollment
+      authentication: none
+      layout: stacked
+  - model: authentik_stages_prompt.prompt
+    id: osc-field-email
+    identifiers:
+      field_key: email
+    attrs:
+      label: E-mailadres
+      type: email
+      required: true
+      placeholder: "jij@voorbeeld.nl"
+      order: 0
+  - model: authentik_stages_prompt.prompt
+    id: osc-field-password
+    identifiers:
+      field_key: password
+    attrs:
+      label: Wachtwoord
+      type: password
+      required: true
+      order: 1
+  - model: authentik_stages_prompt.prompt
+    id: osc-field-password-repeat
+    identifiers:
+      field_key: password_repeat
+    attrs:
+      label: Herhaal wachtwoord
+      type: password
+      required: true
+      order: 2
+  - model: authentik_stages_prompt.promptstage
+    id: osc-enroll-prompt
+    identifiers:
+      name: osc-enroll-prompt
+    attrs:
+      name: osc-enroll-prompt
+      fields:
+        - !KeyOf osc-field-email
+        - !KeyOf osc-field-password
+        - !KeyOf osc-field-password-repeat
+  - model: authentik_stages_user_write.userwritestage
+    id: osc-user-write
+    identifiers:
+      name: osc-user-write
+    attrs:
+      name: osc-user-write
+      create_users_as_inactive: false
+      user_creation_mode: always_create
+  - model: authentik_stages_authenticator_totp.authenticatortotpstage
+    id: osc-totp-setup
+    identifiers:
+      name: osc-totp-setup
+    attrs:
+      name: osc-totp-setup
+      digits: 6
+  - model: authentik_stages_authenticator_static.authenticatorstaticstage
+    id: osc-static-codes
+    identifiers:
+      name: osc-static-codes
+    attrs:
+      name: osc-static-codes
+      token_count: 6
+  - model: authentik_stages_user_login.userloginstage
+    id: osc-user-login
+    identifiers:
+      name: osc-user-login
+    attrs:
+      name: osc-user-login
+      session_duration: "days=30"
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-enrollment-flow
+      stage: !KeyOf osc-enroll-prompt
+      order: 10
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-enrollment-flow
+      stage: !KeyOf osc-user-write
+      order: 20
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-enrollment-flow
+      stage: !KeyOf osc-totp-setup
+      order: 30
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-enrollment-flow
+      stage: !KeyOf osc-static-codes
+      order: 40
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-enrollment-flow
+      stage: !KeyOf osc-user-login
+      order: 50
+  # --- Authentication flow with mandatory TOTP validation ---
+  - model: authentik_flows.flow
+    id: osc-authentication-flow
+    identifiers:
+      slug: osc-authentication
+    attrs:
+      name: OSC Calendar Inloggen
+      title: Inloggen bij OSC
+      designation: authentication
+      authentication: require_unauthenticated
+      layout: stacked
+  - model: authentik_stages_identification.identificationstage
+    id: osc-ident
+    identifiers:
+      name: osc-ident
+    attrs:
+      name: osc-ident
+      user_fields:
+        - email
+        - username
+      password_stage: !KeyOf osc-password
+      enrollment_flow: !KeyOf osc-enrollment-flow
+      recovery_flow: !KeyOf osc-recovery-flow
+  - model: authentik_stages_password.passwordstage
+    id: osc-password
+    identifiers:
+      name: osc-password
+    attrs:
+      name: osc-password
+      backends:
+        - authentik.core.auth.InbuiltBackend
+  - model: authentik_stages_authenticator_validate.authenticatorvalidatestage
+    id: osc-totp-validate
+    identifiers:
+      name: osc-totp-validate
+    attrs:
+      name: osc-totp-validate
+      device_classes:
+        - totp
+        - static
+      not_configured_action: deny
+      last_auth_threshold: "seconds=0"
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-authentication-flow
+      stage: !KeyOf osc-ident
+      order: 10
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-authentication-flow
+      stage: !KeyOf osc-password
+      order: 20
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-authentication-flow
+      stage: !KeyOf osc-totp-validate
+      order: 30
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-authentication-flow
+      stage: !KeyOf osc-user-login
+      order: 40
+  # --- Recovery flow (email link → new password) ---
+  - model: authentik_flows.flow
+    id: osc-recovery-flow
+    identifiers:
+      slug: osc-recovery
+    attrs:
+      name: OSC Calendar Herstel
+      title: Wachtwoord opnieuw instellen
+      designation: recovery
+      authentication: require_unauthenticated
+      layout: stacked
+  - model: authentik_stages_identification.identificationstage
+    id: osc-recovery-ident
+    identifiers:
+      name: osc-recovery-ident
+    attrs:
+      name: osc-recovery-ident
+      user_fields:
+        - email
+  - model: authentik_stages_email.emailstage
+    id: osc-recovery-email
+    identifiers:
+      name: osc-recovery-email
+    attrs:
+      name: osc-recovery-email
+      use_global_settings: true
+      token_expiry: 30
+      subject: OSC Calendar - wachtwoord opnieuw instellen
+  - model: authentik_stages_prompt.prompt
+    id: osc-field-newpw
+    identifiers:
+      field_key: password
+    attrs:
+      label: Nieuw wachtwoord
+      type: password
+      required: true
+      order: 0
+  - model: authentik_stages_prompt.prompt
+    id: osc-field-newpw-repeat
+    identifiers:
+      field_key: password_repeat
+    attrs:
+      label: Herhaal nieuw wachtwoord
+      type: password
+      required: true
+      order: 1
+  - model: authentik_stages_prompt.promptstage
+    id: osc-recovery-prompt
+    identifiers:
+      name: osc-recovery-prompt
+    attrs:
+      name: osc-recovery-prompt
+      fields:
+        - !KeyOf osc-field-newpw
+        - !KeyOf osc-field-newpw-repeat
+  - model: authentik_stages_user_write.userwritestage
+    id: osc-recovery-write
+    identifiers:
+      name: osc-recovery-write
+    attrs:
+      name: osc-recovery-write
+      user_creation_mode: never_create
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-recovery-flow
+      stage: !KeyOf osc-recovery-ident
+      order: 10
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-recovery-flow
+      stage: !KeyOf osc-recovery-email
+      order: 20
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-recovery-flow
+      stage: !KeyOf osc-recovery-prompt
+      order: 30
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-recovery-flow
+      stage: !KeyOf osc-recovery-write
+      order: 40
