@@ -66,7 +66,7 @@ open class OscCloudApi @Inject constructor(
         jsonBody: String?
     ): Result<OscCloudStatus> = withContext(Dispatchers.IO) {
         try {
-            val token = authManager.currentAccessToken()
+            val token = authManager.freshAccessToken()
                 ?: return@withContext Result.failure(IllegalStateException("Not logged in"))
 
             val requestBuilder = Request.Builder()

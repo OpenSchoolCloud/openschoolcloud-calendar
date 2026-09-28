@@ -50,7 +50,7 @@ class OscCloudApiTest {
     private fun apiAgainst(baseUrl: String) = TestableOscCloudApi(OkHttpClient(), authManager, baseUrl)
 
     @Test fun `startTrial sends a bearer header and parses the status`() = runTest {
-        coEvery { authManager.currentAccessToken() } returns "token-123"
+        coEvery { authManager.freshAccessToken() } returns "token-123"
         server.enqueue(
             MockResponse().setResponseCode(200).setBody(
                 """{"status":"TRIAL","trial_days_left":30,"member_count":2,"caldav_url":"https://x/dav/","app_password":"pw"}"""
@@ -71,7 +71,7 @@ class OscCloudApiTest {
     }
 
     @Test fun `status fails without throwing when there is no access token`() = runTest {
-        coEvery { authManager.currentAccessToken() } returns null
+        coEvery { authManager.freshAccessToken() } returns null
 
         val result = apiAgainst(server.url("/").toString().trimEnd('/')).status()
 
@@ -80,7 +80,7 @@ class OscCloudApiTest {
     }
 
     @Test fun `status surfaces a failure Result on a non-2xx response`() = runTest {
-        coEvery { authManager.currentAccessToken() } returns "token-123"
+        coEvery { authManager.freshAccessToken() } returns "token-123"
         server.enqueue(MockResponse().setResponseCode(402))
 
         val result = apiAgainst(server.url("/").toString().trimEnd('/')).status()
