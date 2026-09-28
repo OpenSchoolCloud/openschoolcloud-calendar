@@ -59,3 +59,106 @@ entries:
       flow_authentication: !KeyOf osc-authentication-flow
       flow_enrollment: !KeyOf osc-enrollment-flow
       flow_recovery: !KeyOf osc-recovery-flow
+  # --- Enrollment flow with mandatory TOTP + static recovery codes ---
+  - model: authentik_flows.flow
+    id: osc-enrollment-flow
+    identifiers:
+      slug: osc-enrollment
+    attrs:
+      name: OSC Calendar Registratie
+      title: Maak je OSC-account
+      designation: enrollment
+      authentication: none
+      layout: stacked
+  - model: authentik_stages_prompt.prompt
+    id: osc-field-email
+    identifiers:
+      field_key: email
+    attrs:
+      label: E-mailadres
+      type: email
+      required: true
+      placeholder: "jij@voorbeeld.nl"
+      order: 0
+  - model: authentik_stages_prompt.prompt
+    id: osc-field-password
+    identifiers:
+      field_key: password
+    attrs:
+      label: Wachtwoord
+      type: password
+      required: true
+      order: 1
+  - model: authentik_stages_prompt.prompt
+    id: osc-field-password-repeat
+    identifiers:
+      field_key: password_repeat
+    attrs:
+      label: Herhaal wachtwoord
+      type: password
+      required: true
+      order: 2
+  - model: authentik_stages_prompt.promptstage
+    id: osc-enroll-prompt
+    identifiers:
+      name: osc-enroll-prompt
+    attrs:
+      name: osc-enroll-prompt
+      fields:
+        - !KeyOf osc-field-email
+        - !KeyOf osc-field-password
+        - !KeyOf osc-field-password-repeat
+  - model: authentik_stages_user_write.userwritestage
+    id: osc-user-write
+    identifiers:
+      name: osc-user-write
+    attrs:
+      name: osc-user-write
+      create_users_as_inactive: false
+      user_creation_mode: always_create
+  - model: authentik_stages_authenticator_totp.authenticatortotpstage
+    id: osc-totp-setup
+    identifiers:
+      name: osc-totp-setup
+    attrs:
+      name: osc-totp-setup
+      digits: 6
+  - model: authentik_stages_authenticator_static.authenticatorstaticstage
+    id: osc-static-codes
+    identifiers:
+      name: osc-static-codes
+    attrs:
+      name: osc-static-codes
+      token_count: 6
+  - model: authentik_stages_user_login.userloginstage
+    id: osc-user-login
+    identifiers:
+      name: osc-user-login
+    attrs:
+      name: osc-user-login
+      session_duration: "days=30"
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-enrollment-flow
+      stage: !KeyOf osc-enroll-prompt
+      order: 10
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-enrollment-flow
+      stage: !KeyOf osc-user-write
+      order: 20
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-enrollment-flow
+      stage: !KeyOf osc-totp-setup
+      order: 30
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-enrollment-flow
+      stage: !KeyOf osc-static-codes
+      order: 40
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf osc-enrollment-flow
+      stage: !KeyOf osc-user-login
+      order: 50
