@@ -30,6 +30,7 @@ class OscCloudModelsTest {
             trialDaysLeft = 12,
             memberCount = 3,
             caldavUrl = "https://sync.openschoolcloud.nl/remote.php/dav/family_1/",
+            nextcloudUsername = "fam-abc123",
             appPassword = "app-pw"
         )
 
@@ -39,7 +40,22 @@ class OscCloudModelsTest {
         assertEquals(12, domain.trialDaysLeft)
         assertEquals(3, domain.memberCount)
         assertEquals("https://sync.openschoolcloud.nl/remote.php/dav/family_1/", domain.caldavUrl)
+        assertEquals("fam-abc123", domain.nextcloudUsername)
         assertEquals("app-pw", domain.appPassword)
+    }
+
+    @Test fun `toDomain parses nextcloud_username from the moshi wire adapter`() {
+        val moshi = com.squareup.moshi.Moshi.Builder().build()
+        val adapter = moshi.adapter(OscCloudStatusJson::class.java)
+        val body = """
+            {"status":"TRIAL","trial_days_left":30,"member_count":2,
+             "caldav_url":"https://sync.osc.nl/dav/f1/",
+             "nextcloud_username":"fam-abc123","app_password":"s3cr3t"}
+        """.trimIndent()
+
+        val domain = adapter.fromJson(body)!!.toDomain()
+
+        assertEquals("fam-abc123", domain.nextcloudUsername)
     }
 
     @Test fun `toDomain defaults trialDaysLeft to zero when absent`() {

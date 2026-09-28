@@ -17,9 +17,13 @@
  */
 package nl.openschoolcloud.calendar.data.remote.osccloud
 
+import android.util.Log
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
 import nl.openschoolcloud.calendar.domain.model.Account
 import nl.openschoolcloud.calendar.domain.model.Profile
@@ -41,8 +45,15 @@ class OscCloudSyncProviderTest {
         Profile("p2", "f1", "Milo", 0L, null, false, SyncScope.LOCAL)
     )
 
-    @Test fun `startTrialAndActivate links the caldav account and moves every profile to OSC_CLOUD`() = runTest {
-        val status = OscCloudStatus("TRIAL", 30, 2, "https://sync.osc.nl/dav/f1/", "app-pw")
+    @Test fun `startTrialAndActivate links the caldav account with the backend-provided nextcloud username`() = runTest {
+        val status = OscCloudStatus(
+            status = "TRIAL",
+            trialDaysLeft = 30,
+            memberCount = 2,
+            caldavUrl = "https://sync.osc.nl/dav/f1/",
+            nextcloudUsername = "fam-abc123",
+            appPassword = "app-pw"
+        )
         coEvery { api.startTrial("f1", 2) } returns Result.success(status)
         coEvery { accountRepository.addAccount(any(), any(), any()) } returns Result.success(mockk<Account>())
         coEvery { profileRepository.observeProfilesOnce("f1") } returns profiles
@@ -51,7 +62,7 @@ class OscCloudSyncProviderTest {
         val result = provider.startTrialAndActivate("f1", 2)
 
         assertTrue(result.isSuccess)
-        coVerify { accountRepository.addAccount("https://sync.osc.nl/dav/f1/", any(), "app-pw") }
+        coVerify { accountRepository.addAccount("https://sync.osc.nl/dav/f1/", "fam-abc123", "app-pw") }
         coVerify { profileRepository.setSyncScope("p1", SyncScope.OSC_CLOUD) }
         coVerify { profileRepository.setSyncScope("p2", SyncScope.OSC_CLOUD) }
     }
@@ -66,6 +77,31 @@ class OscCloudSyncProviderTest {
 
         assertTrue(result.isSuccess)
         coVerify(exactly = 0) { accountRepository.addAccount(any(), any(), any()) }
+    }
+
+    @Test fun `startTrialAndActivate skips linking when nextcloud_username is missing but credentials are present`() = runTest {
+        mockkStatic(Log::class)
+        every { Log.w(any(), any<String>()) } returns 0
+        try {
+        val status = OscCloudStatus(
+            status = "TRIAL",
+            trialDaysLeft = 30,
+            memberCount = 2,
+            caldavUrl = "https://sync.osc.nl/dav/f1/",
+            nextcloudUsername = null,
+            appPassword = "app-pw"
+        )
+        coEvery { api.startTrial("f1", 2) } returns Result.success(status)
+        coEvery { profileRepository.observeProfilesOnce("f1") } returns profiles
+        coEvery { profileRepository.setSyncScope(any(), any()) } returns Unit
+
+        val result = provider.startTrialAndActivate("f1", 2)
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 0) { accountRepository.addAccount(any(), any(), any()) }
+        } finally {
+            unmockkStatic(Log::class)
+        }
     }
 
     @Test fun `refreshAndMaybeDegrade soft-degrades every profile to LOCAL when the status is PAUSED`() = runTest {

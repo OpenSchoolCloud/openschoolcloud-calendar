@@ -27,6 +27,7 @@ data class OscCloudStatusJson(
     @Json(name = "trial_days_left") val trialDaysLeft: Int? = null,
     @Json(name = "member_count") val memberCount: Int = 0,
     @Json(name = "caldav_url") val caldavUrl: String? = null,
+    @Json(name = "nextcloud_username") val nextcloudUsername: String? = null,
     // Only present in the /v1/sync/trial response, and only once.
     @Json(name = "app_password") val appPassword: String? = null
 )
@@ -48,6 +49,7 @@ data class OscCloudStatus(
     val trialDaysLeft: Int,
     val memberCount: Int,
     val caldavUrl: String?,
+    val nextcloudUsername: String? = null,
     val appPassword: String? = null
 )
 
@@ -56,6 +58,7 @@ fun OscCloudStatusJson.toDomain(): OscCloudStatus = OscCloudStatus(
     trialDaysLeft = trialDaysLeft ?: 0,
     memberCount = memberCount,
     caldavUrl = caldavUrl,
+    nextcloudUsername = nextcloudUsername,
     appPassword = appPassword
 )
 

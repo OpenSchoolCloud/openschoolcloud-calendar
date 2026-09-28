@@ -17,6 +17,7 @@
  */
 package nl.openschoolcloud.calendar.data.remote.osccloud
 
+import android.util.Log
 import nl.openschoolcloud.calendar.domain.model.SyncScope
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import nl.openschoolcloud.calendar.domain.repository.ProfileRepository
@@ -42,9 +43,14 @@ class OscCloudSyncProvider @Inject constructor(
 
         val caldavUrl = status.caldavUrl
         val appPassword = status.appPassword
+        val nextcloudUsername = status.nextcloudUsername
         if (caldavUrl != null && appPassword != null) {
-            accountRepository.addAccount(caldavUrl, accountUsername(familyId), appPassword)
-                .onFailure { return Result.failure(it) }
+            if (nextcloudUsername != null) {
+                accountRepository.addAccount(caldavUrl, nextcloudUsername, appPassword)
+                    .onFailure { return Result.failure(it) }
+            } else {
+                Log.w(TAG, "No nextcloud_username in trial response, skipping account link (non-fatal)")
+            }
         }
 
         profileRepository.observeProfilesOnce(familyId).forEach {
@@ -64,5 +70,7 @@ class OscCloudSyncProvider @Inject constructor(
         return Result.success(status)
     }
 
-    private fun accountUsername(familyId: String) = "osc-cloud-$familyId"
+    private companion object {
+        const val TAG = "OscCloudSyncProvider"
+    }
 }
