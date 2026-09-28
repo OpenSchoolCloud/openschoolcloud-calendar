@@ -89,6 +89,20 @@ class AuthManager(
 
     fun logout() = tokenStore.clear()
 
+    /**
+     * The current OIDC access token, or null if not logged in / unreadable.
+     * Read-only: does not refresh an expired token. Used only as a bearer
+     * header value — never logged.
+     */
+    suspend fun currentAccessToken(): String? {
+        val json = tokenStore.authStateJson ?: return null
+        return try {
+            AuthState.jsonDeserialize(json).accessToken
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /** Extract sub + email from the ID token payload (base64url middle segment). */
     private fun parseIdentity(idToken: String?): OidcIdentity {
         if (idToken == null) return OidcIdentity(sub = "", email = null)
