@@ -28,6 +28,8 @@ android {
         buildConfigField("String", "OIDC_REDIRECT_SCHEME", "\"nl.openschoolcloud.calendar\"")
         // Betaalde OSC-sync (subsysteem C) — pas true zodra C gebouwd + getest is.
         buildConfigField("Boolean", "ENABLE_OSC_CLOUD", "false")
+        // OSC-Cloud sync backend base URL (Plan C tasks 1-8).
+        buildConfigField("String", "OSC_CLOUD_API_BASE", "\"https://sync.openschoolcloud.nl\"")
         // AppAuth RedirectUriReceiverActivity needs the scheme as a manifest placeholder.
         manifestPlaceholders["appAuthRedirectScheme"] = "nl.openschoolcloud.calendar"
     }

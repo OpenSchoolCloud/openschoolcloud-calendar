@@ -89,6 +89,32 @@ class AuthManager(
 
     fun logout() = tokenStore.clear()
 
+    /**
+     * A fresh, valid OIDC access token, or null if not logged in / refresh
+     * failed. Access tokens live only 5 minutes (refresh tokens 30 days), so
+     * this always goes through AppAuth's [AuthState.performActionWithFreshTokens],
+     * which transparently refreshes using the stored refresh token when the
+     * access token has expired. The (possibly updated) AuthState is persisted
+     * back to [tokenStore]. Used only as a bearer header value — never logged.
+     */
+    suspend fun freshAccessToken(): String? {
+        val json = tokenStore.authStateJson ?: return null
+        val authState = try {
+            AuthState.jsonDeserialize(json)
+        } catch (e: Exception) {
+            return null
+        }
+        val service = AuthorizationService(context)
+        return suspendCancellableCoroutine { cont ->
+            cont.invokeOnCancellation { service.dispose() }
+            authState.performActionWithFreshTokens(service) { accessToken, _, ex ->
+                tokenStore.authStateJson = authState.jsonSerializeString()
+                service.dispose()
+                if (ex != null) cont.resume(null) else cont.resume(accessToken)
+            }
+        }
+    }
+
     /** Extract sub + email from the ID token payload (base64url middle segment). */
     private fun parseIdentity(idToken: String?): OidcIdentity {
         if (idToken == null) return OidcIdentity(sub = "", email = null)

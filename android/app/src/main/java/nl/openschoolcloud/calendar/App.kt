@@ -25,10 +25,15 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudSyncProvider
+import nl.openschoolcloud.calendar.data.sync.OscCloudStatusWorker
+import nl.openschoolcloud.calendar.domain.repository.FamilyRepository
 import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
+import nl.openschoolcloud.calendar.domain.repository.ProfileRepository
 import nl.openschoolcloud.calendar.notification.NotificationHelper
 import nl.openschoolcloud.calendar.notification.PlanningReminderWorker
 import nl.openschoolcloud.calendar.notification.ReminderWorker
+import nl.openschoolcloud.calendar.util.FeatureFlags
 import org.acra.config.dialog
 import org.acra.config.mailSender
 import org.acra.data.StringFormat
@@ -46,6 +51,15 @@ class App : Application(), Configuration.Provider {
 
     @Inject
     lateinit var holidayRepository: HolidayRepository
+
+    @Inject
+    lateinit var familyRepository: FamilyRepository
+
+    @Inject
+    lateinit var profileRepository: ProfileRepository
+
+    @Inject
+    lateinit var oscCloudSyncProvider: OscCloudSyncProvider
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -93,6 +107,21 @@ class App : Application(), Configuration.Provider {
                 holidayRepository.seedIfNeeded()
             } catch (e: Exception) {
                 // Seeding is non-critical; don't crash the app
+            }
+        }
+
+        // OSC-Cloud soft-degrade: periodic check + one opportunistic check at start.
+        // Stays fully dark until ENABLE_OSC_CLOUD flips on for go-live.
+        if (FeatureFlags.oscCloudEnabled) {
+            OscCloudStatusWorker.schedulePeriodic(this)
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    OscCloudStatusWorker.checkAndDegradeIfNeeded(
+                        familyRepository, profileRepository, oscCloudSyncProvider
+                    )
+                } catch (e: Exception) {
+                    // Non-critical; the periodic worker will retry later.
+                }
             }
         }
     }
