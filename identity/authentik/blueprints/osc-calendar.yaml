@@ -1,0 +1,61 @@
+# OSC Calendar - Authentik identity blueprint
+# Applied by Authentik's blueprint loader (mount into /blueprints or import via UI/API).
+# OIDC contract values MUST match the OSC Calendar app BuildConfig (Plan A).
+version: 1
+metadata:
+  name: osc-calendar-identity
+  labels:
+    blueprints.goauthentik.io/description: "OSC Calendar OIDC provider, app, brand and MFA-enforced flows"
+entries:
+  # --- Reuse the default RSA signing key that ships with Authentik ---
+  - model: authentik_crypto.certificatekeypair
+    id: osc-signing-key
+    identifiers:
+      name: authentik Self-signed Certificate
+    state: present
+  - model: authentik_providers_oauth2.oauth2provider
+    id: osc-provider
+    identifiers:
+      name: osc-calendar
+    attrs:
+      name: osc-calendar
+      client_type: public
+      client_id: osc-calendar
+      authorization_flow: !KeyOf osc-authentication-flow
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      signing_key: !KeyOf osc-signing-key
+      sub_mode: hashed_user_id
+      include_claims_in_id_token: true
+      issuer_mode: per_provider
+      access_code_validity: "minutes=1"
+      access_token_validity: "minutes=5"
+      refresh_token_validity: "days=30"
+      redirect_uris:
+        - matching_mode: strict
+          url: "nl.openschoolcloud.calendar://oidc"
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, offline_access]]
+  - model: authentik_core.application
+    id: osc-application
+    identifiers:
+      slug: osc-calendar
+    attrs:
+      name: OSC Calendar
+      slug: osc-calendar
+      provider: !KeyOf osc-provider
+      meta_launch_url: ""
+      policy_engine_mode: any
+  - model: authentik_core.brand
+    id: osc-brand
+    identifiers:
+      domain: id.openschoolcloud.nl
+    attrs:
+      domain: id.openschoolcloud.nl
+      branding_title: OpenSchoolCloud
+      default: false
+      flow_authentication: !KeyOf osc-authentication-flow
+      flow_enrollment: !KeyOf osc-enrollment-flow
+      flow_recovery: !KeyOf osc-recovery-flow
