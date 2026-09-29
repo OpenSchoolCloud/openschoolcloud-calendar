@@ -364,7 +364,9 @@ class ICalParserTest {
         val result = parser.parseEvent(icalData, "calendar-1", null)
 
         assertNotNull(result)
-        assertNull(result!!.dtEnd)
+        // RFC 5545: a date-time DTSTART with no DTEND and no DURATION has
+        // zero duration, i.e. it ends at the same instant it starts.
+        assertEquals(result!!.dtStart, result.dtEnd)
     }
 
     @Test
