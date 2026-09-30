@@ -65,6 +65,13 @@ fun WelcomeScreen(
         if (uiState.authenticated) onAuthenticated()
     }
 
+    LaunchedEffect(uiState.authIntent) {
+        uiState.authIntent?.let { intent ->
+            launcher.launch(intent)
+            viewModel.authIntentLaunched()
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -95,12 +102,12 @@ fun WelcomeScreen(
             CircularProgressIndicator()
         } else {
             Button(
-                onClick = { launcher.launch(viewModel.buildAuthIntent()) },
+                onClick = { viewModel.startLogin() },
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) { Text(stringResource(R.string.welcome_create_account)) }
             Spacer(Modifier.height(12.dp))
             OutlinedButton(
-                onClick = { launcher.launch(viewModel.buildAuthIntent()) },
+                onClick = { viewModel.startLogin() },
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) { Text(stringResource(R.string.welcome_login)) }
         }

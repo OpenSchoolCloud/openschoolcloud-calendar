@@ -30,6 +30,7 @@ import net.openid.appauth.AuthorizationServiceConfiguration
 import net.openid.appauth.ResponseTypeValues
 import nl.openschoolcloud.calendar.BuildConfig
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 data class OidcIdentity(val sub: String, val email: String?)
 
@@ -42,17 +43,35 @@ class AuthManager(
     private val context: Context,
     private val tokenStore: OidcTokenStore
 ) {
-    private val serviceConfig = AuthorizationServiceConfiguration(
-        Uri.parse(BuildConfig.OIDC_ISSUER + "authorize/"),
-        Uri.parse(BuildConfig.OIDC_ISSUER + "token/")
-    )
+    // Populated lazily by [serviceConfig] via OIDC discovery, then reused.
+    // Authentik's real authorize/token endpoints are global (not per-app),
+    // so we discover them from the issuer's well-known document instead of
+    // hardcoding paths.
+    private var discoveredServiceConfig: AuthorizationServiceConfiguration? = null
 
     val isLoggedIn: Boolean get() = tokenStore.isLoggedIn
 
-    fun buildAuthRequestIntent(): Intent {
+    private suspend fun serviceConfig(): AuthorizationServiceConfiguration {
+        discoveredServiceConfig?.let { return it }
+        return suspendCancellableCoroutine { cont ->
+            AuthorizationServiceConfiguration.fetchFromIssuer(
+                Uri.parse(BuildConfig.OIDC_ISSUER)
+            ) { config, ex ->
+                if (config != null) {
+                    discoveredServiceConfig = config
+                    cont.resume(config)
+                } else {
+                    cont.resumeWithException(ex ?: IllegalStateException("OIDC discovery failed"))
+                }
+            }
+        }
+    }
+
+    suspend fun buildAuthRequestIntent(): Intent {
+        val config = serviceConfig()
         val service = AuthorizationService(context)
         val request = AuthorizationRequest.Builder(
-            serviceConfig,
+            config,
             BuildConfig.OIDC_CLIENT_ID,
             ResponseTypeValues.CODE,
             Uri.parse(BuildConfig.OIDC_REDIRECT_SCHEME + "://oidc")

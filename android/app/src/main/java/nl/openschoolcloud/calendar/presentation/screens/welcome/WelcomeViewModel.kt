@@ -32,7 +32,11 @@ import javax.inject.Inject
 data class WelcomeUiState(
     val loading: Boolean = false,
     val authenticated: Boolean = false,
-    val error: Boolean = false
+    val error: Boolean = false,
+    // One-shot: the Custom Tab intent once OIDC discovery + request building
+    // finished. The screen launches it, then calls [authIntentLaunched] to
+    // clear this so it isn't relaunched on recomposition/rotation.
+    val authIntent: Intent? = null
 )
 
 @HiltViewModel
@@ -43,7 +47,23 @@ class WelcomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(WelcomeUiState())
     val uiState: StateFlow<WelcomeUiState> = _uiState.asStateFlow()
 
-    fun buildAuthIntent(): Intent = authManager.buildAuthRequestIntent()
+    /** Runs OIDC discovery (network) then builds the auth request intent. */
+    fun startLogin() {
+        _uiState.update { it.copy(loading = true, error = false) }
+        viewModelScope.launch {
+            try {
+                val intent = authManager.buildAuthRequestIntent()
+                _uiState.update { it.copy(loading = false, authIntent = intent) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(loading = false, error = true) }
+            }
+        }
+    }
+
+    /** Called by the screen right after launching [WelcomeUiState.authIntent]. */
+    fun authIntentLaunched() {
+        _uiState.update { it.copy(authIntent = null) }
+    }
 
     fun onAuthResult(data: Intent) {
         _uiState.update { it.copy(loading = true, error = false) }
