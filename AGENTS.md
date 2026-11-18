@@ -25,3 +25,8 @@ Drie plannen via subagent-driven dev (elke taak TDD + review; brede eind-reviews
 ## Go-live-gates (vóór ENABLE_OSC_CLOUD aan)
 
 Jaar-−20% wiren · checkout/member-change-UI · NC-disable-cron bij trial-verloop · JWKS-rotatie-refresh · live bevestigen dat Authentik access-token `aud=osc-calendar` draagt. VPS-details + de B/C-runbooks: `identity/authentik/RUNBOOK.md` en de osc-cloud-sync-repo.
+
+## Geparkeerd idee (2026-11-18): huiswerk/taken leraar → kind
+
+Eerst originele scope releasen, feedback ophalen, dan pas dit. Idee: leraar/coach/mentor/ouder geeft todo's met deadline; kind noteert huiswerk zelf aan eind van de les; ouder kijkt mee om te begeleiden. Leraar via web én app. Scholen melden zich apart aan via openschoolcloud.nl.
+Blokkade om eerst op te lossen: kind heeft nu GEEN eigen account (credentialloos profiel op ouder-toestel, zie Models.kt), terwijl dit idee een eigen kind-toestel + sync vereist. Bouwt voort op bestaande `screens/planning` + `screens/reflection`. Scholen/B2B staan in de gezinsspec van 27-09 expliciet als niet-doel.
