@@ -17,6 +17,7 @@
  */
 package nl.openschoolcloud.calendar.presentation.screens.settings
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
@@ -75,6 +76,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -111,6 +114,7 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showSyncIntervalDialog by remember { mutableStateOf(false) }
@@ -149,8 +153,16 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteAccountDialog = false
-                    val url = viewModel.deleteOscAccount()
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    try {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(SettingsViewModel.ACCOUNT_DELETE_URL))
+                        )
+                        viewModel.deleteOscAccount()
+                    } catch (_: ActivityNotFoundException) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(context.getString(R.string.delete_account_no_browser))
+                        }
+                    }
                 }) {
                     Text(stringResource(R.string.delete_account_confirm))
                 }

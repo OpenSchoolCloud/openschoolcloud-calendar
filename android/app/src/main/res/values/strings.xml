@@ -440,6 +440,7 @@
     <string name="delete_account_title">Account verwijderen?</string>
     <string name="delete_account_body">Je wordt uitgelogd en we openen de pagina waar je je OpenSchoolCloud-account definitief verwijdert. Je agenda op dit toestel blijft staan.</string>
     <string name="delete_account_confirm">Verwijderen</string>
+    <string name="delete_account_no_browser">Geen browser gevonden. Ga naar openschoolcloud.nl/account-verwijderen om je account te verwijderen.</string>
     <string name="delete_account_cancel">Annuleren</string>
     <string name="menu_settings">Instellingen</string>
 
