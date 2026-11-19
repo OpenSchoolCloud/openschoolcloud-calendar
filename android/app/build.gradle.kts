@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -34,8 +36,24 @@ android {
         manifestPlaceholders["appAuthRedirectScheme"] = "nl.openschoolcloud.calendar"
     }
 
+    // Release signing: keystore.properties lives outside the repo (see .gitignore).
+    val keystoreProps = file(
+        (findProperty("oscKeystoreProps") as String?)
+            ?: "${System.getProperty("user.home")}/.config/osc-signing/keystore.properties"
+    )
+    if (keystoreProps.exists()) {
+        val props = Properties().apply { keystoreProps.inputStream().use { load(it) } }
+        signingConfigs.create("release") {
+            storeFile = file(props.getProperty("storeFile"))
+            storePassword = props.getProperty("storePassword")
+            keyAlias = props.getProperty("keyAlias")
+            keyPassword = props.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
