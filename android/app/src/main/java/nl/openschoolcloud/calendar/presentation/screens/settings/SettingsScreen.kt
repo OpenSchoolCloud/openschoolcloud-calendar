@@ -105,12 +105,14 @@ fun SettingsScreen(
     onHolidayDiscoverClick: () -> Unit = {},
     onConnectNextcloud: () -> Unit = {},
     onOscLogin: () -> Unit = {},
+    onFeedbackClick: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showSyncIntervalDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showReminderDialog by remember { mutableStateOf(false) }
@@ -137,6 +139,28 @@ fun SettingsScreen(
             context.startActivity(Intent.createChooser(intent, context.getString(R.string.settings_debug_share)))
             viewModel.clearDebugLog()
         }
+    }
+
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAccountDialog = false },
+            title = { Text(stringResource(R.string.delete_account_title)) },
+            text = { Text(stringResource(R.string.delete_account_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteAccountDialog = false
+                    val url = viewModel.deleteOscAccount()
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                }) {
+                    Text(stringResource(R.string.delete_account_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAccountDialog = false }) {
+                    Text(stringResource(R.string.delete_account_cancel))
+                }
+            }
+        )
     }
 
     if (showLogoutDialog) {
@@ -465,14 +489,28 @@ fun SettingsScreen(
                 }
             }
 
-            if (!uiState.isOscLoggedIn) {
-                SettingsSection(title = stringResource(R.string.settings_account)) {
+            SettingsSection(title = stringResource(R.string.settings_account)) {
+                if (uiState.isOscLoggedIn) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_delete_osc_account),
+                        value = "",
+                        onClick = { showDeleteAccountDialog = true }
+                    )
+                } else {
                     SettingsRow(
                         title = stringResource(R.string.settings_osc_login),
                         value = "",
                         onClick = onOscLogin
                     )
                 }
+            }
+
+            SettingsSection(title = stringResource(R.string.settings_about)) {
+                SettingsRow(
+                    title = stringResource(R.string.menu_feedback),
+                    value = "",
+                    onClick = onFeedbackClick
+                )
             }
 
             // Holiday calendars section

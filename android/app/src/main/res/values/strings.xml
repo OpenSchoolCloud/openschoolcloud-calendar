@@ -435,7 +435,12 @@
     <string name="menu_week_progress">Weekvoortgang</string>
     <string name="menu_week_review">Weekoverzicht</string>
     <string name="menu_booking">Afspraak-links</string>
-    <string name="menu_feedback">Feedback geven</string>
+    <string name="menu_feedback">Mis je iets? Geef het door</string>
+    <string name="settings_delete_osc_account">OpenSchoolCloud-account verwijderen</string>
+    <string name="delete_account_title">Account verwijderen?</string>
+    <string name="delete_account_body">Je wordt uitgelogd en we openen de pagina waar je je OpenSchoolCloud-account definitief verwijdert. Je agenda op dit toestel blijft staan.</string>
+    <string name="delete_account_confirm">Verwijderen</string>
+    <string name="delete_account_cancel">Annuleren</string>
     <string name="menu_settings">Instellingen</string>
 
     <!-- Mode selectie -->

@@ -60,6 +60,10 @@ class SettingsViewModel @Inject constructor(
         loadPromoState()
     }
 
+    companion object {
+        const val ACCOUNT_DELETE_URL = "https://openschoolcloud.nl/account-verwijderen"
+    }
+
     private fun loadAccount() {
         viewModelScope.launch {
             try {
@@ -111,6 +115,13 @@ class SettingsViewModel @Inject constructor(
     /** Settings stays on the back stack during login; re-read the OSC state on return. */
     fun refreshOscLoginState() {
         _uiState.update { it.copy(isOscLoggedIn = authManager.isLoggedIn) }
+    }
+
+    /** Clears only the OSC identity (OIDC tokens); Nextcloud accounts stay. Returns the deletion page URL. */
+    fun deleteOscAccount(): String {
+        authManager.logout()
+        _uiState.update { it.copy(isOscLoggedIn = false) }
+        return ACCOUNT_DELETE_URL
     }
 
     fun setSyncInterval(minutes: Long) {

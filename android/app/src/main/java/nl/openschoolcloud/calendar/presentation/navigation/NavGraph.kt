@@ -304,6 +304,9 @@ fun AppNavigation(
                 },
                 onOscLogin = {
                     navController.navigate(Route.Welcome.route)
+                },
+                onFeedbackClick = {
+                    navController.navigate(Route.Feedback.route)
                 }
             )
         }
