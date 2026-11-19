@@ -103,6 +103,7 @@ fun SettingsScreen(
     onLogout: () -> Unit,
     onHolidayDiscoverClick: () -> Unit = {},
     onConnectNextcloud: () -> Unit = {},
+    onOscLogin: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -454,6 +455,16 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_planning_day),
                         value = formatDayOfWeek(uiState.planningDay),
                         onClick = { viewModel.cyclePlanningDay() }
+                    )
+                }
+            }
+
+            if (!uiState.isOscLoggedIn) {
+                SettingsSection(title = stringResource(R.string.settings_account)) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_osc_login),
+                        value = "",
+                        onClick = onOscLogin
                     )
                 }
             }

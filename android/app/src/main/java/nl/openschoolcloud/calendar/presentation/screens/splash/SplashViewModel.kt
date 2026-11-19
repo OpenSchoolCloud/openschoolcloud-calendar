@@ -47,7 +47,7 @@ class SplashViewModel @Inject constructor(
             val family = familyRepository.observeFamily().first()
             val isLoggedIn = authManager.isLoggedIn
             val syncChosen = appPreferences.hasCompletedModeSelection
-            val decided = decideStartRoute(isLoggedIn, family != null, syncChosen)
+            val decided = decideStartRoute(isLoggedIn, appPreferences.hasPassedWelcome, family != null, syncChosen)
             // decideStartRoute returns the raw SyncChoice route template
             // ("sync_choice/{familyId}") to stay pure/testable. Resolve it to the
             // concrete path here using the family id we already loaded, otherwise

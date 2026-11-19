@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.data.remote.auth.AuthManager
 import javax.inject.Inject
 
@@ -41,7 +42,8 @@ data class WelcomeUiState(
 
 @HiltViewModel
 class WelcomeViewModel @Inject constructor(
-    private val authManager: AuthManager
+    private val authManager: AuthManager,
+    private val appPreferences: AppPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WelcomeUiState())
@@ -58,6 +60,10 @@ class WelcomeViewModel @Inject constructor(
                 _uiState.update { it.copy(loading = false, error = true) }
             }
         }
+    }
+
+    fun continueWithoutAccount() {
+        appPreferences.hasPassedWelcome = true
     }
 
     /** Called by the screen right after launching [WelcomeUiState.authIntent]. */

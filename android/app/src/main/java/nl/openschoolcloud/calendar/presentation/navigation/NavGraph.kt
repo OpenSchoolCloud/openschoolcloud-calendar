@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -83,14 +84,18 @@ sealed class Route(val route: String) {
 
 /**
  * Pure start-route decision so it can be unit-tested without Compose.
+ * welcomeDone = user passed Welcome (e.g. "Zonder account verder");
  * familyExists = a FamilyEntity is present; syncChosen = mode selection done.
  */
-fun decideStartRoute(isLoggedIn: Boolean, familyExists: Boolean, syncChosen: Boolean): String = when {
-    !isLoggedIn -> Route.Welcome.route
+fun decideStartRoute(isLoggedIn: Boolean, welcomeDone: Boolean, familyExists: Boolean, syncChosen: Boolean): String = when {
+    !isLoggedIn && !welcomeDone -> Route.Welcome.route
     !familyExists -> Route.FamilySetup.route
     !syncChosen -> Route.SyncChoice.route
     else -> Route.Calendar.route
 }
+
+private fun openedFromSettings(navController: NavController) =
+    navController.previousBackStackEntry?.destination?.route == Route.Settings.route
 
 @Composable
 fun AppNavigation(
@@ -118,8 +123,21 @@ fun AppNavigation(
         composable(Route.Welcome.route) {
             WelcomeScreen(
                 onAuthenticated = {
-                    navController.navigate(Route.RecoveryCodes.route) {
-                        popUpTo(Route.Welcome.route) { inclusive = true }
+                    if (openedFromSettings(navController)) {
+                        navController.popBackStack(Route.Settings.route, inclusive = false)
+                    } else {
+                        navController.navigate(Route.RecoveryCodes.route) {
+                            popUpTo(Route.Welcome.route) { inclusive = true }
+                        }
+                    }
+                },
+                onContinueWithoutAccount = {
+                    if (openedFromSettings(navController)) {
+                        navController.popBackStack(Route.Settings.route, inclusive = false)
+                    } else {
+                        navController.navigate(Route.FamilySetup.route) {
+                            popUpTo(Route.Welcome.route) { inclusive = true }
+                        }
                     }
                 }
             )
@@ -277,6 +295,9 @@ fun AppNavigation(
                 },
                 onConnectNextcloud = {
                     navController.navigate(Route.Login.route)
+                },
+                onOscLogin = {
+                    navController.navigate(Route.Welcome.route)
                 }
             )
         }

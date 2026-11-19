@@ -102,7 +102,8 @@ class SettingsViewModel @Inject constructor(
                 reflectionNotificationsEnabled = appPreferences.reflectionNotificationsEnabled,
                 planningNotificationsEnabled = appPreferences.weekPlanningNotificationsEnabled,
                 planningDay = appPreferences.planningDayOfWeek,
-                isStandaloneMode = appPreferences.isStandaloneMode
+                isStandaloneMode = appPreferences.isStandaloneMode,
+                isOscLoggedIn = authManager.isLoggedIn
             )
         }
     }
@@ -278,6 +279,7 @@ class SettingsViewModel @Inject constructor(
                 // Reset onboarding/mode flags so the user re-enters the connect flow.
                 appPreferences.isStandaloneMode = false
                 appPreferences.hasCompletedModeSelection = false
+                appPreferences.hasPassedWelcome = false
                 appPreferences.lastSyncTimestamp = 0L
             } catch (_: Exception) {
                 // Best-effort: even if cleanup fails partially, still navigate away.
@@ -302,6 +304,7 @@ data class SettingsUiState(
     val planningDay: Int = 1,
     val showPromo: Boolean = false,
     val isStandaloneMode: Boolean = false,
+    val isOscLoggedIn: Boolean = false,
     val isGeneratingDebugLog: Boolean = false,
     val debugLogText: String? = null,
     val error: String? = null

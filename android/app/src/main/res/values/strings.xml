@@ -478,6 +478,9 @@
     <string name="welcome_subtitle">Privacy-first. Jij bepaalt waar je gegevens staan.</string>
     <string name="welcome_create_account">Account maken</string>
     <string name="welcome_login">Inloggen</string>
+    <string name="welcome_continue_without_account">Zonder account verder</string>
+    <string name="welcome_account_optional">Een account is niet nodig. Je kunt later altijd inloggen via Instellingen.</string>
+    <string name="settings_osc_login">Inloggen met OpenSchoolCloud</string>
     <string name="auth_in_progress">Bezig met inloggen…</string>
     <string name="auth_failed">Inloggen mislukt. Probeer het opnieuw.</string>
 

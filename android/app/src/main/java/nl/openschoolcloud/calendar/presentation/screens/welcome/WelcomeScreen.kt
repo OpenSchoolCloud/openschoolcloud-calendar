@@ -33,6 +33,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,6 +52,7 @@ import nl.openschoolcloud.calendar.R
 @Composable
 fun WelcomeScreen(
     onAuthenticated: () -> Unit,
+    onContinueWithoutAccount: () -> Unit,
     viewModel: WelcomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -110,6 +112,20 @@ fun WelcomeScreen(
                 onClick = { viewModel.startLogin() },
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) { Text(stringResource(R.string.welcome_login)) }
+            TextButton(
+                onClick = {
+                    viewModel.continueWithoutAccount()
+                    onContinueWithoutAccount()
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp)
+            ) { Text(stringResource(R.string.welcome_continue_without_account)) }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.welcome_account_optional),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
         }
         if (uiState.error) {
             Spacer(Modifier.height(16.dp))

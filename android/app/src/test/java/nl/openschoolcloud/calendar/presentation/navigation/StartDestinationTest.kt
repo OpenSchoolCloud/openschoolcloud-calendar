@@ -24,28 +24,37 @@ class StartDestinationTest {
     @Test fun `not logged in goes to welcome`() {
         assertEquals(
             Route.Welcome.route,
-            decideStartRoute(isLoggedIn = false, familyExists = false, syncChosen = false)
+            decideStartRoute(isLoggedIn = false, welcomeDone = false, familyExists = false, syncChosen = false)
         )
     }
 
     @Test fun `logged in without family goes to family setup`() {
         assertEquals(
             Route.FamilySetup.route,
-            decideStartRoute(isLoggedIn = true, familyExists = false, syncChosen = false)
+            decideStartRoute(isLoggedIn = true, welcomeDone = false, familyExists = false, syncChosen = false)
         )
     }
 
     @Test fun `logged in with family but no sync choice goes to sync choice`() {
         assertEquals(
             Route.SyncChoice.route,
-            decideStartRoute(isLoggedIn = true, familyExists = true, syncChosen = false)
+            decideStartRoute(isLoggedIn = true, welcomeDone = false, familyExists = true, syncChosen = false)
         )
     }
 
     @Test fun `fully set up goes to calendar`() {
         assertEquals(
             Route.Calendar.route,
-            decideStartRoute(isLoggedIn = true, familyExists = true, syncChosen = true)
+            decideStartRoute(isLoggedIn = true, welcomeDone = false, familyExists = true, syncChosen = true)
         )
     }
+
+    @Test fun `skipped welcome without family goes to family setup`() =
+        assertEquals(Route.FamilySetup.route, decideStartRoute(isLoggedIn = false, welcomeDone = true, familyExists = false, syncChosen = false))
+
+    @Test fun `skipped welcome fully set up goes to calendar`() =
+        assertEquals(Route.Calendar.route, decideStartRoute(isLoggedIn = false, welcomeDone = true, familyExists = true, syncChosen = true))
+
+    @Test fun `logged in user ignores welcome flag`() =
+        assertEquals(Route.Calendar.route, decideStartRoute(isLoggedIn = true, welcomeDone = false, familyExists = true, syncChosen = true))
 }
