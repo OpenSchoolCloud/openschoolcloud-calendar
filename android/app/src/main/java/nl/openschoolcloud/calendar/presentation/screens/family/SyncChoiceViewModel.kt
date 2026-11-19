@@ -22,7 +22,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.data.local.AppPreferences
-import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudSyncProvider
+import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudCoordinator
 import nl.openschoolcloud.calendar.domain.model.SyncScope
 import nl.openschoolcloud.calendar.domain.repository.ProfileRepository
 import nl.openschoolcloud.calendar.util.FeatureFlags
@@ -32,7 +32,7 @@ import javax.inject.Inject
 class SyncChoiceViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val appPreferences: AppPreferences,
-    private val oscCloudSyncProvider: OscCloudSyncProvider
+    private val oscCloudCoordinator: OscCloudCoordinator
 ) : ViewModel() {
 
     val oscCloudAvailable: Boolean get() = FeatureFlags.oscCloudEnabled
@@ -44,7 +44,7 @@ class SyncChoiceViewModel @Inject constructor(
             appPreferences.isStandaloneMode = scope == SyncScope.LOCAL
             if (scope == SyncScope.OSC_CLOUD && FeatureFlags.oscCloudEnabled) {
                 val memberCount = profileRepository.observeProfilesOnce(familyId).size
-                oscCloudSyncProvider.startTrialAndActivate(familyId, memberCount)
+                oscCloudCoordinator.startTrialAndActivate(familyId, memberCount)
             } else {
                 profileRepository.observeProfilesOnce(familyId).forEach {
                     profileRepository.setSyncScope(it.id, scope)

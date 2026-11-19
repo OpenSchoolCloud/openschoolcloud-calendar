@@ -25,7 +25,7 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudSyncProvider
+import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudCoordinator
 import nl.openschoolcloud.calendar.data.sync.OscCloudStatusWorker
 import nl.openschoolcloud.calendar.domain.repository.FamilyRepository
 import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
@@ -59,7 +59,7 @@ class App : Application(), Configuration.Provider {
     lateinit var profileRepository: ProfileRepository
 
     @Inject
-    lateinit var oscCloudSyncProvider: OscCloudSyncProvider
+    lateinit var oscCloudCoordinator: OscCloudCoordinator
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -117,7 +117,7 @@ class App : Application(), Configuration.Provider {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     OscCloudStatusWorker.checkAndDegradeIfNeeded(
-                        familyRepository, profileRepository, oscCloudSyncProvider
+                        familyRepository, profileRepository, oscCloudCoordinator
                     )
                 } catch (e: Exception) {
                     // Non-critical; the periodic worker will retry later.

@@ -33,12 +33,12 @@ import nl.openschoolcloud.calendar.domain.repository.ProfileRepository
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class OscCloudSyncProviderTest {
+class OscCloudCoordinatorTest {
 
     private val api = mockk<OscCloudApi>()
     private val accountRepository = mockk<AccountRepository>(relaxed = true)
     private val profileRepository = mockk<ProfileRepository>()
-    private val provider = OscCloudSyncProvider(api, accountRepository, profileRepository)
+    private val coordinator = OscCloudCoordinator(api, accountRepository, profileRepository)
 
     private val profiles = listOf(
         Profile("p1", "f1", "Sanne", 0L, null, true, SyncScope.LOCAL),
@@ -59,7 +59,7 @@ class OscCloudSyncProviderTest {
         coEvery { profileRepository.observeProfilesOnce("f1") } returns profiles
         coEvery { profileRepository.setSyncScope(any(), any()) } returns Unit
 
-        val result = provider.startTrialAndActivate("f1", 2)
+        val result = coordinator.startTrialAndActivate("f1", 2)
 
         assertTrue(result.isSuccess)
         coVerify { accountRepository.addAccount("https://sync.osc.nl/dav/f1/", "fam-abc123", "app-pw") }
@@ -73,7 +73,7 @@ class OscCloudSyncProviderTest {
         coEvery { profileRepository.observeProfilesOnce("f1") } returns profiles
         coEvery { profileRepository.setSyncScope(any(), any()) } returns Unit
 
-        val result = provider.startTrialAndActivate("f1", 2)
+        val result = coordinator.startTrialAndActivate("f1", 2)
 
         assertTrue(result.isSuccess)
         coVerify(exactly = 0) { accountRepository.addAccount(any(), any(), any()) }
@@ -95,7 +95,7 @@ class OscCloudSyncProviderTest {
         coEvery { profileRepository.observeProfilesOnce("f1") } returns profiles
         coEvery { profileRepository.setSyncScope(any(), any()) } returns Unit
 
-        val result = provider.startTrialAndActivate("f1", 2)
+        val result = coordinator.startTrialAndActivate("f1", 2)
 
         assertTrue(result.isSuccess)
         coVerify(exactly = 0) { accountRepository.addAccount(any(), any(), any()) }
@@ -110,7 +110,7 @@ class OscCloudSyncProviderTest {
         coEvery { profileRepository.observeProfilesOnce("f1") } returns profiles
         coEvery { profileRepository.setSyncScope(any(), any()) } returns Unit
 
-        provider.refreshAndMaybeDegrade("f1")
+        coordinator.refreshAndMaybeDegrade("f1")
 
         coVerify { profileRepository.setSyncScope("p1", SyncScope.LOCAL) }
         coVerify { profileRepository.setSyncScope("p2", SyncScope.LOCAL) }
@@ -120,7 +120,7 @@ class OscCloudSyncProviderTest {
         val status = OscCloudStatus("ACTIVE", 25, 2, "https://sync.osc.nl/dav/f1/")
         coEvery { api.status() } returns Result.success(status)
 
-        provider.refreshAndMaybeDegrade("f1")
+        coordinator.refreshAndMaybeDegrade("f1")
 
         coVerify(exactly = 0) { profileRepository.observeProfilesOnce(any()) }
         coVerify(exactly = 0) { profileRepository.setSyncScope(any(), any()) }

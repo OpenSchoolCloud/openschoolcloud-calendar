@@ -29,7 +29,7 @@ import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
-import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudSyncProvider
+import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudCoordinator
 import nl.openschoolcloud.calendar.domain.model.SyncScope
 import nl.openschoolcloud.calendar.domain.repository.FamilyRepository
 import nl.openschoolcloud.calendar.domain.repository.ProfileRepository
@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit
 /**
  * WorkManager worker that periodically checks the family's OSC-Cloud
  * subscription status and soft-degrades profiles back to LOCAL when it no
- * longer entitles sync (see [OscCloudSyncProvider.refreshAndMaybeDegrade]).
+ * longer entitles sync (see [OscCloudCoordinator.refreshAndMaybeDegrade]).
  * A no-op while [FeatureFlags.oscCloudEnabled] is false or no profile uses
  * OSC_CLOUD sync.
  */
@@ -49,13 +49,13 @@ class OscCloudStatusWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val familyRepository: FamilyRepository,
     private val profileRepository: ProfileRepository,
-    private val oscCloudSyncProvider: OscCloudSyncProvider
+    private val oscCloudCoordinator: OscCloudCoordinator
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         if (!FeatureFlags.oscCloudEnabled) return Result.success()
         return try {
-            checkAndDegradeIfNeeded(familyRepository, profileRepository, oscCloudSyncProvider)
+            checkAndDegradeIfNeeded(familyRepository, profileRepository, oscCloudCoordinator)
             Result.success()
         } catch (e: Exception) {
             Result.retry()
@@ -66,7 +66,7 @@ class OscCloudStatusWorker @AssistedInject constructor(
         private const val WORK_NAME = "osc_cloud_status"
 
         /**
-         * Shared decision logic: only calls [OscCloudSyncProvider.refreshAndMaybeDegrade]
+         * Shared decision logic: only calls [OscCloudCoordinator.refreshAndMaybeDegrade]
          * when a family exists with at least one profile on OSC_CLOUD sync.
          * Extracted so both the periodic worker and the app-start opportunistic
          * check use the exact same rule, and so it can be unit tested without
@@ -75,12 +75,12 @@ class OscCloudStatusWorker @AssistedInject constructor(
         suspend fun checkAndDegradeIfNeeded(
             familyRepository: FamilyRepository,
             profileRepository: ProfileRepository,
-            oscCloudSyncProvider: OscCloudSyncProvider
+            oscCloudCoordinator: OscCloudCoordinator
         ) {
             val family = familyRepository.observeFamily().first() ?: return
             val profiles = profileRepository.observeProfilesOnce(family.id)
             if (profiles.any { it.syncScope == SyncScope.OSC_CLOUD }) {
-                oscCloudSyncProvider.refreshAndMaybeDegrade(family.id)
+                oscCloudCoordinator.refreshAndMaybeDegrade(family.id)
             }
         }
 

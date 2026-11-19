@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "nl.openschoolcloud.calendar"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "nl.openschoolcloud.calendar"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 13
-        versionName = "2.0.0"
+        targetSdk = 36
+        versionCode = 14
+        versionName = "2.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         

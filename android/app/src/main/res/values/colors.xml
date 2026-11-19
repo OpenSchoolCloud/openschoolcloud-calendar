@@ -2,14 +2,7 @@
 <resources>
     <!-- OpenSchoolCloud Brand Colors -->
     <color name="osc_blauw">#3B9FD9</color>
-    <color name="osc_donker_blauw">#2B7FB9</color>
-    <color name="osc_licht_blauw">#E8F4FB</color>
     <color name="osc_wit">#FFFFFF</color>
-    <color name="osc_donker_grijs">#333333</color>
-    <color name="osc_grijs">#666666</color>
-    <color name="osc_succes_groen">#4CAF50</color>
-    <color name="osc_fout_rood">#E53935</color>
 
     <!-- Launcher icon background -->
-    <color name="ic_launcher_background">#3B9FD9</color>
 </resources>

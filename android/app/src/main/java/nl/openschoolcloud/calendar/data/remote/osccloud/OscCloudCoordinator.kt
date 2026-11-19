@@ -32,7 +32,7 @@ import javax.inject.Singleton
  * data is never deleted by either path.
  */
 @Singleton
-class OscCloudSyncProvider @Inject constructor(
+class OscCloudCoordinator @Inject constructor(
     private val api: OscCloudApi,
     private val accountRepository: AccountRepository,
     private val profileRepository: ProfileRepository
@@ -71,6 +71,6 @@ class OscCloudSyncProvider @Inject constructor(
     }
 
     private companion object {
-        const val TAG = "OscCloudSyncProvider"
+        const val TAG = "OscCloudCoordinator"
     }
 }

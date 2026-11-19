@@ -87,7 +87,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nl.openschoolcloud.calendar.R
 import nl.openschoolcloud.calendar.domain.model.Event
-import nl.openschoolcloud.calendar.domain.model.HolidayCategory
 import nl.openschoolcloud.calendar.domain.model.HolidayEvent
 import nl.openschoolcloud.calendar.presentation.components.ProfileSwitcher
 import nl.openschoolcloud.calendar.presentation.screens.holidays.HolidayDetailSheet

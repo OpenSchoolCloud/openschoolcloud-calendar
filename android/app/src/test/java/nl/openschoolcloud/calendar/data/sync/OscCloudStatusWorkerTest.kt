@@ -24,7 +24,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudStatus
-import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudSyncProvider
+import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudCoordinator
 import nl.openschoolcloud.calendar.domain.model.Family
 import nl.openschoolcloud.calendar.domain.model.Profile
 import nl.openschoolcloud.calendar.domain.model.SyncScope
@@ -35,16 +35,16 @@ import java.time.Instant
 
 /**
  * Verifies the decision rule wired into [OscCloudStatusWorker]: only call
- * [OscCloudSyncProvider.refreshAndMaybeDegrade] when a family exists with at
- * least one profile on OSC_CLOUD sync. The [OscCloudSyncProvider] itself
+ * [OscCloudCoordinator.refreshAndMaybeDegrade] when a family exists with at
+ * least one profile on OSC_CLOUD sync. The [OscCloudCoordinator] itself
  * (and [nl.openschoolcloud.calendar.data.remote.osccloud.shouldDegradeToLocal])
- * are covered separately in OscCloudSyncProviderTest / OscCloudModelsTest.
+ * are covered separately in OscCloudCoordinatorTest / OscCloudModelsTest.
  */
 class OscCloudStatusWorkerTest {
 
     private val familyRepository = mockk<FamilyRepository>()
     private val profileRepository = mockk<ProfileRepository>()
-    private val oscCloudSyncProvider = mockk<OscCloudSyncProvider>()
+    private val oscCloudCoordinator = mockk<OscCloudCoordinator>()
 
     private val family = Family("f1", "De Vries", "owner-1", Instant.now())
 
@@ -53,12 +53,12 @@ class OscCloudStatusWorkerTest {
         coEvery { profileRepository.observeProfilesOnce("f1") } returns listOf(
             Profile("p1", "f1", "Sanne", 0L, null, true, SyncScope.OSC_CLOUD)
         )
-        coEvery { oscCloudSyncProvider.refreshAndMaybeDegrade("f1") } returns
+        coEvery { oscCloudCoordinator.refreshAndMaybeDegrade("f1") } returns
             Result.success(OscCloudStatus("ACTIVE", 0, 1, null))
 
-        OscCloudStatusWorker.checkAndDegradeIfNeeded(familyRepository, profileRepository, oscCloudSyncProvider)
+        OscCloudStatusWorker.checkAndDegradeIfNeeded(familyRepository, profileRepository, oscCloudCoordinator)
 
-        coVerify { oscCloudSyncProvider.refreshAndMaybeDegrade("f1") }
+        coVerify { oscCloudCoordinator.refreshAndMaybeDegrade("f1") }
     }
 
     @Test fun `checkAndDegradeIfNeeded does nothing when no profile is on OSC_CLOUD`() = runTest {
@@ -67,17 +67,17 @@ class OscCloudStatusWorkerTest {
             Profile("p1", "f1", "Sanne", 0L, null, true, SyncScope.LOCAL)
         )
 
-        OscCloudStatusWorker.checkAndDegradeIfNeeded(familyRepository, profileRepository, oscCloudSyncProvider)
+        OscCloudStatusWorker.checkAndDegradeIfNeeded(familyRepository, profileRepository, oscCloudCoordinator)
 
-        coVerify(exactly = 0) { oscCloudSyncProvider.refreshAndMaybeDegrade(any()) }
+        coVerify(exactly = 0) { oscCloudCoordinator.refreshAndMaybeDegrade(any()) }
     }
 
     @Test fun `checkAndDegradeIfNeeded does nothing when there is no family`() = runTest {
         every { familyRepository.observeFamily() } returns flowOf(null)
 
-        OscCloudStatusWorker.checkAndDegradeIfNeeded(familyRepository, profileRepository, oscCloudSyncProvider)
+        OscCloudStatusWorker.checkAndDegradeIfNeeded(familyRepository, profileRepository, oscCloudCoordinator)
 
         coVerify(exactly = 0) { profileRepository.observeProfilesOnce(any()) }
-        coVerify(exactly = 0) { oscCloudSyncProvider.refreshAndMaybeDegrade(any()) }
+        coVerify(exactly = 0) { oscCloudCoordinator.refreshAndMaybeDegrade(any()) }
     }
 }

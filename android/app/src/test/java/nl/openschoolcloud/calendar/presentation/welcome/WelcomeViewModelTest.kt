@@ -2,7 +2,6 @@ package nl.openschoolcloud.calendar.presentation.welcome
 
 import android.content.Intent
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

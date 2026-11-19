@@ -30,7 +30,6 @@ import nl.openschoolcloud.calendar.data.local.entity.CalendarEntity
 import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
 import nl.openschoolcloud.calendar.data.remote.caldav.CalDavClient
 import nl.openschoolcloud.calendar.data.remote.caldav.CalDavException
-import nl.openschoolcloud.calendar.data.remote.caldav.EventData
 import nl.openschoolcloud.calendar.data.remote.ical.ICalParser
 import nl.openschoolcloud.calendar.domain.model.Calendar
 import nl.openschoolcloud.calendar.domain.model.SyncStatus
@@ -38,7 +37,6 @@ import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.SyncResult
 import java.io.IOException
 import java.time.Instant
-import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
