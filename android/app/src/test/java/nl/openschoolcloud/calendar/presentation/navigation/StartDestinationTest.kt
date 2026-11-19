@@ -55,6 +55,15 @@ class StartDestinationTest {
     @Test fun `skipped welcome fully set up goes to calendar`() =
         assertEquals(Route.Calendar.route, decideStartRoute(isLoggedIn = false, welcomeDone = true, familyExists = true, syncChosen = true))
 
+    @Test fun `skip with existing family resolves to concrete sync choice`() =
+        assertEquals(Route.SyncChoice.createRoute("f1"), startRouteFor(isLoggedIn = false, welcomeDone = true, familyId = "f1", syncChosen = false))
+
+    @Test fun `skip with existing family and sync chosen goes to calendar`() =
+        assertEquals(Route.Calendar.route, startRouteFor(isLoggedIn = false, welcomeDone = true, familyId = "f1", syncChosen = true))
+
+    @Test fun `skip without family goes to family setup`() =
+        assertEquals(Route.FamilySetup.route, startRouteFor(isLoggedIn = false, welcomeDone = true, familyId = null, syncChosen = false))
+
     @Test fun `logged in user ignores welcome flag`() =
         assertEquals(Route.Calendar.route, decideStartRoute(isLoggedIn = true, welcomeDone = false, familyExists = true, syncChosen = true))
 }

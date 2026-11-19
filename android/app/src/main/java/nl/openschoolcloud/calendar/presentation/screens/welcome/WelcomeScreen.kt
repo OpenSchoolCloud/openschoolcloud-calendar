@@ -37,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -47,15 +48,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.R
 
 @Composable
 fun WelcomeScreen(
     onAuthenticated: () -> Unit,
-    onContinueWithoutAccount: () -> Unit,
+    onContinueWithoutAccount: (String) -> Unit,
     viewModel: WelcomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -113,10 +116,7 @@ fun WelcomeScreen(
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) { Text(stringResource(R.string.welcome_login)) }
             TextButton(
-                onClick = {
-                    viewModel.continueWithoutAccount()
-                    onContinueWithoutAccount()
-                },
+                onClick = { scope.launch { onContinueWithoutAccount(viewModel.continueWithoutAccount()) } },
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) { Text(stringResource(R.string.welcome_continue_without_account)) }
             Spacer(Modifier.height(8.dp))

@@ -24,10 +24,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.data.remote.auth.AuthManager
+import nl.openschoolcloud.calendar.domain.repository.FamilyRepository
+import nl.openschoolcloud.calendar.presentation.navigation.startRouteFor
 import javax.inject.Inject
 
 data class WelcomeUiState(
@@ -43,7 +46,8 @@ data class WelcomeUiState(
 @HiltViewModel
 class WelcomeViewModel @Inject constructor(
     private val authManager: AuthManager,
-    private val appPreferences: AppPreferences
+    private val appPreferences: AppPreferences,
+    private val familyRepository: FamilyRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WelcomeUiState())
@@ -62,8 +66,11 @@ class WelcomeViewModel @Inject constructor(
         }
     }
 
-    fun continueWithoutAccount() {
+    /** Marks Welcome as passed and returns the route a relaunch would pick (no duplicate family). */
+    suspend fun continueWithoutAccount(): String {
         appPreferences.hasPassedWelcome = true
+        val family = familyRepository.observeFamily().first()
+        return startRouteFor(authManager.isLoggedIn, true, family?.id, appPreferences.hasCompletedModeSelection)
     }
 
     /** Called by the screen right after launching [WelcomeUiState.authIntent]. */

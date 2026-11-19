@@ -108,6 +108,11 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /** Settings stays on the back stack during login; re-read the OSC state on return. */
+    fun refreshOscLoginState() {
+        _uiState.update { it.copy(isOscLoggedIn = authManager.isLoggedIn) }
+    }
+
     fun setSyncInterval(minutes: Long) {
         appPreferences.syncIntervalMinutes = minutes
         _uiState.update { it.copy(syncIntervalMinutes = minutes) }

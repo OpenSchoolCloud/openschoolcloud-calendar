@@ -30,7 +30,7 @@ class WelcomeViewModelTest {
     @Test fun `successful auth sets authenticated state`() = runTest {
         val intent = mockk<Intent>()
         coEvery { auth.handleAuthResponse(intent) } returns Result.success(OidcIdentity("sub123", "a@b.nl"))
-        val vm = WelcomeViewModel(auth, mockk(relaxed = true))
+        val vm = WelcomeViewModel(auth, mockk(relaxed = true), mockk(relaxed = true))
 
         vm.onAuthResult(intent)
         advanceUntilIdle()
@@ -41,7 +41,7 @@ class WelcomeViewModelTest {
     @Test fun `failed auth sets error state`() = runTest {
         val intent = mockk<Intent>()
         coEvery { auth.handleAuthResponse(intent) } returns Result.failure(RuntimeException("no"))
-        val vm = WelcomeViewModel(auth, mockk(relaxed = true))
+        val vm = WelcomeViewModel(auth, mockk(relaxed = true), mockk(relaxed = true))
 
         vm.onAuthResult(intent)
         advanceUntilIdle()

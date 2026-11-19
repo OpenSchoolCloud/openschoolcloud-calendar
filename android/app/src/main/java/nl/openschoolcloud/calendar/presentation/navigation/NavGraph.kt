@@ -94,6 +94,12 @@ fun decideStartRoute(isLoggedIn: Boolean, welcomeDone: Boolean, familyExists: Bo
     else -> Route.Calendar.route
 }
 
+/** decideStartRoute with the concrete SyncChoice path resolved from the family id. */
+fun startRouteFor(isLoggedIn: Boolean, welcomeDone: Boolean, familyId: String?, syncChosen: Boolean): String {
+    val decided = decideStartRoute(isLoggedIn, welcomeDone, familyId != null, syncChosen)
+    return if (decided == Route.SyncChoice.route && familyId != null) Route.SyncChoice.createRoute(familyId) else decided
+}
+
 private fun openedFromSettings(navController: NavController) =
     navController.previousBackStackEntry?.destination?.route == Route.Settings.route
 
@@ -131,11 +137,11 @@ fun AppNavigation(
                         }
                     }
                 },
-                onContinueWithoutAccount = {
+                onContinueWithoutAccount = { route ->
                     if (openedFromSettings(navController)) {
                         navController.popBackStack(Route.Settings.route, inclusive = false)
                     } else {
-                        navController.navigate(Route.FamilySetup.route) {
+                        navController.navigate(route) {
                             popUpTo(Route.Welcome.route) { inclusive = true }
                         }
                     }
