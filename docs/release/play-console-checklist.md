@@ -34,12 +34,13 @@ Het Play-account is PERSOONLIJK en is aangemaakt na november 2023. Dan geldt:
 
 ## 5. Gegevensbeveiliging invullen
 - Beleid > App-content > Gegevensbeveiliging. Antwoorden staan in `docs/release/play-data-safety.md`.
-- Controleer eerst de READ_CONTACTS-opmerking in dat bestand.
 
 ## 6. Privacybeleid-URL
-- Beleid > App-content > Privacybeleid: `https://openschoolcloud.nl/privacy`
+- Beleid > App-content > Privacybeleid: `https://openschoolcloud.nl/juridisch/privacy` (dezelfde URL als in de app-instellingen; `/privacy` stuurt hier ook naartoe)
 - Verwijder-URL (bij Gegevensbeveiliging): `https://openschoolcloud.nl/account-verwijderen`
-- Controleer dat beide pagina's live zijn voordat je opslaat. De website is nog niet gedeployd (wacht op akkoord van Nick).
+- De website is nog niet gedeployd (wacht op akkoord van Nick). Controleer NA de deploy en VOOR je de URL's in Play invult:
+  - `curl -IL https://openschoolcloud.nl/juridisch/privacy` moet eindigen op 200
+  - `curl -IL https://openschoolcloud.nl/account-verwijderen` moet eindigen op 200 (via 308 naar /juridisch/account-verwijderen)
 
 ## 7. Content rating
 - Beleid > App-content > Beoordeling van de inhoud: vragenlijst invullen. Verwacht: geen geweld, geen seksuele inhoud, geen gokken, geen door gebruikers gegenereerde content die gedeeld wordt met anderen.
@@ -63,11 +64,10 @@ Het Play-account is PERSOONLIJK en is aangemaakt na november 2023. Dan geldt:
 ## 10. Na 14 dagen: productie aanvragen
 - Dashboard > "Toegang tot productie aanvragen": vragen over de test beantwoorden (feedback verwerkt, wat is verbeterd).
 - Na goedkeuring: Productie > Nieuwe release > dezelfde of nieuwere AAB > landen kiezen (Nederland, België, rest van de EU/wereld) > uitrollen.
-- Daarna: F-Droid-merge-request indienen met `docs/release/fdroid/nl.openschoolcloud.calendar.yml` (fdroiddata, branch met alleen dit bestand). Tag `v2.1.0` moet dan bestaan op GitHub.
+- Daarna: F-Droid-merge-request indienen met `docs/release/fdroid/nl.openschoolcloud.calendar.yml` (fdroiddata, branch met alleen dit bestand). De tag `v2.1.0` bestaat nog niet; die wordt bij de release gemaakt (op de release-commit) en moet op GitHub staan voordat je de merge-request indient.
 
 ## Open punten voor Nick
 - Doelgroep (punt 8) bevestigen.
 - Upload-keystore aanmaken en veilig bewaren.
 - Feature graphic 1024x500 maken.
 - Website deployen (privacy- en verwijderpagina) voor de privacy-URL.
-- READ_CONTACTS beslissen (verwijderen of verantwoorden).

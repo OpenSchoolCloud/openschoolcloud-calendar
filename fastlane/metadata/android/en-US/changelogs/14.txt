@@ -1,5 +1,5 @@
 - Start without an account: choose "Continue without account" and get going right away
 - Signing in with an OpenSchoolCloud account is optional
-- You can now delete your account from the app
+- Delete your account via the app (opens the website)
 - New: "Missing something?" to send feedback quickly
 - Cleaned up and faster

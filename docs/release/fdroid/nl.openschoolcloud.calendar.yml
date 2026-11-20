@@ -13,6 +13,15 @@ AutoName: OSC Calendar
 RepoType: git
 Repo: https://github.com/OpenSchoolCloud/openschoolcloud-calendar.git
 
+# Let op: de tag v2.1.0 bestaat nog niet. Die wordt bij de release gemaakt
+# en moet op GitHub staan voordat de merge-request naar fdroiddata gaat.
+#
+# subdir: android/app is correct. fdroidserver (build.py/common.py) draait
+# gradle met cwd = <checkout>/<subdir> en zijn eigen gradle (de gradlew in de
+# repo wordt verwijderd). Gradle zoekt settings.gradle(.kts) zelf omhoog, dus
+# android/settings.gradle.kts wordt gevonden. APK-uitvoer wordt gezocht in
+# <subdir>/build/outputs/apk/release = android/app/build/outputs/apk/release.
+# Precedent: de.tutao.tutanota in fdroiddata (subdir: app-android/app).
 Builds:
   - versionName: 2.1.0
     versionCode: 14

@@ -32,6 +32,13 @@ Alleen aanvinken wat hieronder staat. Al het andere: niet verzameld.
 - Optioneel: Ja.
 - Doel: App-functionaliteit, Accountbeheer.
 
+### Gebruikers-ID's (Apparaat- of andere ID's)
+- Verzameld: Ja, alleen als de gebruiker inlogt met een OpenSchoolCloud-account. Het gaat om de OIDC-`sub` (account-ID) van id.openschoolcloud.nl.
+- Gedeeld met derden: Nee. Optioneel: Ja.
+- Doel: App-functionaliteit, Accountbeheer.
+- Zonder account wordt geen ID verzameld.
+- CalDAV-inloggegevens (bij "Koppel Nextcloud") gaan uitsluitend naar de eigen server van de gebruiker en nooit naar OpenSchoolCloud.
+
 ### Agenda-activiteiten / afspraken
 - Verzameld: Nee. Afspraken staan lokaal op het toestel of op de eigen Nextcloud-server van de gebruiker. Ze gaan niet naar OpenSchoolCloud.
 - Toelichting: gegevens die de app naar de eigen server van de gebruiker stuurt (CalDAV) vallen onder het beheer van die gebruiker.
@@ -41,7 +48,7 @@ Alleen aanvinken wat hieronder staat. Al het andere: niet verzameld.
 - Als Play hier om vraagt: dit is door de gebruiker geïnitieerd. Twijfel je? Vink "Crashlogs" aan met optioneel + doel "Analyse" en verwijs naar de privacyverklaring. Check met Nick.
 
 ### Alles hieronder: niet verzameld
-Locatie, financiële gegevens, gezondheid en fitness, berichten (let op: "Mis je iets?" opent alleen de eigen mailapp, niets wordt automatisch verstuurd), foto's en video's, audio, bestanden en documenten, contacten, app-activiteit, webbrowsegeschiedenis, apparaat- of andere ID's.
+Locatie, financiële gegevens, gezondheid en fitness, berichten (let op: "Mis je iets?" opent alleen de eigen mailapp, niets wordt automatisch verstuurd), foto's en video's, audio, bestanden en documenten, contacten (de app vraagt geen toegang tot contacten), app-activiteit, webbrowsegeschiedenis.
 
 ## Beveiligingspraktijken
 - Gegevens worden versleuteld tijdens verzending: Ja.
@@ -51,5 +58,4 @@ Locatie, financiële gegevens, gezondheid en fitness, berichten (let op: "Mis je
 
 ## Verklaringen en let op
 - Wijzigt de app (analytics, nieuwe SDK, betaalde gezinssync die nu uit staat): dit formulier en de privacyverklaring eerst bijwerken.
-- Het manifest declareert `READ_CONTACTS`, maar in de broncode is geen gebruik van `ContactsContract` gevonden. Is de permissie ongebruikt, verwijder hem dan voor de release. Zo niet, dan vraagt Play een "Permissions declaration" en moet "Contacten" bij gegevenstypen worden beoordeeld (op-toestel gebruik, niet verzameld).
 - Gebruikers die naar de eigen Nextcloud-server synchroniseren: dat is een door de gebruiker gekozen bestemming. OpenSchoolCloud is daar geen verwerker van.
