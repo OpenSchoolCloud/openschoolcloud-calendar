@@ -37,18 +37,27 @@ android {
     }
 
     // Release signing: keystore.properties lives outside the repo (see .gitignore).
+    // Explicit -PoscKeystoreProps must exist; without any file the release build is UNSIGNED (F-Droid).
+    val explicitProps = findProperty("oscKeystoreProps") as String?
     val keystoreProps = file(
-        (findProperty("oscKeystoreProps") as String?)
-            ?: "${System.getProperty("user.home")}/.config/osc-signing/keystore.properties"
+        explicitProps ?: "${System.getProperty("user.home")}/.config/osc-signing/keystore.properties"
     )
+    if (explicitProps != null && !keystoreProps.exists()) {
+        throw GradleException("oscKeystoreProps points to a missing file: ${keystoreProps.absolutePath}")
+    }
     if (keystoreProps.exists()) {
         val props = Properties().apply { keystoreProps.inputStream().use { load(it) } }
+        fun required(key: String): String = props.getProperty(key)?.takeIf { it.isNotBlank() }
+            ?: throw GradleException("Missing '$key' in ${keystoreProps.absolutePath}")
         signingConfigs.create("release") {
-            storeFile = file(props.getProperty("storeFile"))
-            storePassword = props.getProperty("storePassword")
-            keyAlias = props.getProperty("keyAlias")
-            keyPassword = props.getProperty("keyPassword")
+            val storePath = File(required("storeFile"))
+            storeFile = if (storePath.isAbsolute) storePath else File(keystoreProps.parentFile, storePath.path)
+            storePassword = required("storePassword")
+            keyAlias = required("keyAlias")
+            keyPassword = required("keyPassword")
         }
+    } else {
+        logger.warn("WARNING: no keystore.properties found - the release build will be UNSIGNED.")
     }
 
     buildTypes {
