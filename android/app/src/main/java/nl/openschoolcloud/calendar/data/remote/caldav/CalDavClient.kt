@@ -21,6 +21,7 @@ import android.util.Log
 import android.util.Xml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import nl.openschoolcloud.calendar.BuildConfig
 import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -160,8 +161,10 @@ class CalDavClient @Inject constructor(
             body = LIST_CALENDARS_REQUEST,
             depth = 1
         ).mapCatching { response ->
-            Log.d(TAG, "PROPFIND Depth:1 on $calendarHomeUrl — response length: ${response.length}")
-            Log.d(TAG, "PROPFIND response (first 3000 chars): ${response.take(3000)}")
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "PROPFIND Depth:1 on $calendarHomeUrl — response length: ${response.length}")
+                Log.d(TAG, "PROPFIND response (first 3000 chars): ${response.take(3000)}")
+            }
             val calendars = parseCalendars(response, calendarHomeUrl)
             Log.d(TAG, "Parsed ${calendars.size} calendars from PROPFIND response")
             calendars

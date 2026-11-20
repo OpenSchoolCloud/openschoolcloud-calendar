@@ -20,6 +20,7 @@ package nl.openschoolcloud.calendar.data.remote.nextcloud
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import nl.openschoolcloud.calendar.BuildConfig
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -116,11 +117,13 @@ class AppointmentsClient @Inject constructor(
                         Result.success(emptyList())
                     }
                     response.code == 401 || response.code == 403 -> {
-                        Log.e(TAG, "Authentication failed: ${response.code}, body: $body")
+                        Log.e(TAG, "Authentication failed: ${response.code}")
+                        if (BuildConfig.DEBUG) Log.e(TAG, "Response body: $body")
                         Result.failure(IOException("Authenticatie mislukt (${response.code})"))
                     }
                     else -> {
-                        Log.e(TAG, "Server error: ${response.code} ${response.message}, body: $body")
+                        Log.e(TAG, "Server error: ${response.code} ${response.message}")
+                        if (BuildConfig.DEBUG) Log.e(TAG, "Response body: $body")
                         Result.failure(
                             IOException("Server fout: ${response.code} ${response.message}")
                         )
@@ -181,8 +184,8 @@ class AppointmentsClient @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse appointment configs JSON", e)
-            Log.e(TAG, "Raw JSON was: $json")
+            Log.e(TAG, "Failed to parse appointment configs JSON: ${e.message}")
+            if (BuildConfig.DEBUG) Log.e(TAG, "Raw JSON was: $json")
             emptyList()
         }
     }
