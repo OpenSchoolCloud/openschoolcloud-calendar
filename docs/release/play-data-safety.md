@@ -12,7 +12,7 @@ Antwoorden per Play-vraag. Gebaseerd op de code van v2.1.0 (versionCode 14). Hou
 ## Sectie "Gegevensverzameling en -beveiliging"
 | Vraag | Antwoord |
 |---|---|
-| Verzamelt of deelt je app een van de vereiste soorten gebruikersgegevens? | Ja (alleen bij het optionele account, zie hieronder) |
+| Verzamelt of deelt je app een van de vereiste soorten gebruikersgegevens? | Ja (alleen bij het optionele account en bij een crashrapport dat de gebruiker zelf verstuurt, zie hieronder) |
 | Worden alle gebruikersgegevens tijdens het verzenden versleuteld? | Ja (HTTPS/TLS) |
 | Bieden jullie gebruikers een manier om verwijdering van hun gegevens aan te vragen? | Ja |
 | URL voor verwijderverzoek | https://openschoolcloud.nl/account-verwijderen |
@@ -45,7 +45,7 @@ Alleen aanvinken wat hieronder staat. Al het andere: niet verzameld.
 
 ### Crashlogs
 - Verzameld: Ja (besluit Nick, 2026-11-20). Optioneel: een crashrapport wordt alleen verstuurd als de gebruiker dat zelf kiest, via de eigen e-mailapp naar support@openschoolcloud.nl (ACRA-maildialoog, geen automatische verzending). Inhoud: appversie, Android-versie, toesteltype, foutmelding en optionele opmerking.
-- In Play: "Crashlogs" aanvinken. Verzameld: ja. Gedeeld: nee. Verwerking: tijdelijk niet van toepassing, gebruiker kan kiezen (optioneel). Doel: Analyse.
+- In Play: "Crashlogs" aanvinken. Verzameld: ja. Gedeeld: nee. Tijdelijk verwerkt (ephemeral): nee. Verplicht of optioneel: optioneel. Doel: Analyse.
 
 ### Alles hieronder: niet verzameld
 Locatie, financiële gegevens, gezondheid en fitness, berichten (let op: "Mis je iets?" opent alleen de eigen mailapp, niets wordt automatisch verstuurd), foto's en video's, audio, bestanden en documenten, contacten (de app vraagt geen toegang tot contacten), app-activiteit, webbrowsegeschiedenis.
