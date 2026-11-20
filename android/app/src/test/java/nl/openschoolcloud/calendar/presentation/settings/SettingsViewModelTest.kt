@@ -1,3 +1,20 @@
+/*
+ * OpenSchoolCloud Calendar
+ * Copyright (C) 2025 OpenSchoolCloud / Aldewereld Consultancy
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package nl.openschoolcloud.calendar.presentation.settings
 
 import io.mockk.coVerify
@@ -11,6 +28,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.data.remote.auth.AuthManager
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import nl.openschoolcloud.calendar.presentation.screens.settings.SettingsViewModel
@@ -43,7 +61,8 @@ class SettingsViewModelTest {
         val auth = mockk<AuthManager>(relaxed = true)
         every { auth.isLoggedIn } returns true
         val accounts = mockk<AccountRepository>(relaxed = true)
-        val vm = SettingsViewModel(mockk(relaxed = true), accounts, mockk(relaxed = true), mockk(relaxed = true), auth)
+        val prefs = mockk<AppPreferences>(relaxed = true)
+        val vm = SettingsViewModel(mockk(relaxed = true), accounts, mockk(relaxed = true), prefs, auth)
         advanceUntilIdle()
 
         every { auth.isLoggedIn } returns false
@@ -53,6 +72,7 @@ class SettingsViewModelTest {
         verify { auth.logout() }
         coVerify(exactly = 0) { accounts.removeAccount(any()) }
         assertFalse(vm.uiState.value.isOscLoggedIn)
+        verify { prefs.hasPassedWelcome = true }
     }
 
     @Test fun `not logged in hides deletion`() = runTest {

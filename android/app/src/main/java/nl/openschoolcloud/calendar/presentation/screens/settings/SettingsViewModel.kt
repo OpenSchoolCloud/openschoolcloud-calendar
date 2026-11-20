@@ -120,6 +120,7 @@ class SettingsViewModel @Inject constructor(
     /** Clears only the OSC identity (OIDC tokens); Nextcloud accounts stay. Returns the deletion page URL. */
     fun deleteOscAccount(): String {
         authManager.logout()
+        appPreferences.hasPassedWelcome = true
         _uiState.update { it.copy(isOscLoggedIn = false) }
         return ACCOUNT_DELETE_URL
     }
