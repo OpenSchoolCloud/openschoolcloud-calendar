@@ -3,7 +3,7 @@ OSC Calendar is de veilige agenda-app voor het Nederlandse onderwijs. Synchronis
 Waarom OSC Calendar?
 
 Privacy voorop
-Geen Google, geen tracking, geen advertenties. Jouw data blijft in Nederland, onder jouw controle. Volledig open source (AGPL v3).
+Start zonder account. Geen Google, geen tracking, geen advertenties. Jouw data blijft in Nederland, onder jouw controle. Volledig open source (AGPL v3).
 
 Synchronisatie met Nextcloud
 Verbind met je schoolcloud via CalDAV. Meerdere agenda's, automatische synchronisatie en offline toegang.
@@ -26,3 +26,5 @@ Prettig voor je ogen, dag en nacht.
 OSC Calendar is ontwikkeld door OpenSchoolCloud, een Nederlands initiatief voor privacy-vriendelijke schooloplossingen. De app is volledig open source en kan door iedereen worden gecontroleerd.
 
 Meer informatie: openschoolcloud.nl
+
+Let op: de Play Store- en F-Droid-versies updaten niet over elkaar heen. Wil je van bron wisselen, verwijder dan eerst de geïnstalleerde versie.

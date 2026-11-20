@@ -1,0 +1,27 @@
+Categories:
+  - Time
+License: AGPL-3.0-or-later
+AuthorName: OpenSchoolCloud
+AuthorWebSite: https://openschoolcloud.nl
+WebSite: https://openschoolcloud.nl
+SourceCode: https://github.com/OpenSchoolCloud/openschoolcloud-calendar
+IssueTracker: https://github.com/OpenSchoolCloud/openschoolcloud-calendar/issues
+Changelog: https://github.com/OpenSchoolCloud/openschoolcloud-calendar/blob/HEAD/CHANGELOG.md
+
+AutoName: OSC Calendar
+
+RepoType: git
+Repo: https://github.com/OpenSchoolCloud/openschoolcloud-calendar.git
+
+Builds:
+  - versionName: 2.1.0
+    versionCode: 14
+    commit: v2.1.0
+    subdir: android/app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 2.1.0
+CurrentVersionCode: 14
