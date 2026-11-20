@@ -57,7 +57,7 @@ Het Play-account is PERSOONLIJK en is aangemaakt na november 2023. Dan geldt:
   - Telefoonscreenshots: 4 stuks, 1080x2400 (let op: gemaakt met de debug-build, zie rapport).
   - App-icoon: `images/icon.png` (512x512).
   - Feature graphic (1024x500): nog NIET gemaakt, is verplicht voor de vermelding.
-- Contactgegevens: e-mail (privacy@openschoolcloud.nl of support@openschoolcloud.nl), website https://openschoolcloud.nl.
+- Contactgegevens: e-mail (support@openschoolcloud.nl), website https://openschoolcloud.nl.
 - Doelgroepbeleid, Gezondheidsapps, Financiële functies: allemaal "Nee/niet van toepassing".
 - Toegang tot app: alles zonder account bruikbaar, dus geen inloggegevens voor reviewers nodig. Het optionele OSC-account hoeft niet getest te worden.
 
