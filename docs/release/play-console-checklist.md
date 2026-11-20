@@ -48,15 +48,14 @@ Het Play-account is PERSOONLIJK en is aangemaakt na november 2023. Dan geldt:
 
 ## 8. Doelgroep en inhoud
 - Beleid > App-content > Doelgroep: kies de leeftijdsgroepen.
-- Voorstel: NIET primair kinderen jonger dan 13. Het is een ouder-/gezinsapp: ouders beheren de agenda, kinderen staan als profiel in de agenda. Kies dus 18+ en eventueel 13 tot 17, en geen groepen onder 13.
-- CHECK MET NICK: bij een gezinsapp met kindprofielen kan Play toch Families Policy toepassen. Bevestig de keuze voordat je indient. Kiest Nick wel voor kinderen onder 13, dan gelden extra eisen (Families Policy, geen advertentie-SDK's, strengere privacyverklaring).
+- Besluit Nick (2026-11-20): alleen 18+. Het is een ouder-/gezinsapp: ouders beheren de agenda, kinderen staan als profiel in de agenda. Geen groepen onder 18 aanvinken, dan valt de app niet onder de Families Policy.
 - Advertenties: Nee. Overheidsapp: Nee. Nieuws-app: Nee. COVID-19/gezondheid: Nee.
 
 ## 9. Overige app-content
 - Winkelvermelding: korte en volledige beschrijving, titel, screenshots en icoon komen uit `fastlane/metadata/android/{nl-NL,en-US}/`.
   - Telefoonscreenshots: 4 stuks, 1080x2400 (let op: gemaakt met de debug-build, zie rapport).
   - App-icoon: `images/icon.png` (512x512).
-  - Feature graphic (1024x500): nog NIET gemaakt, is verplicht voor de vermelding.
+  - Feature graphic (1024x500): `images/featureGraphic.png` (nl-NL en en-US).
 - Contactgegevens: e-mail (support@openschoolcloud.nl), website https://openschoolcloud.nl.
 - Doelgroepbeleid, Gezondheidsapps, Financiële functies: allemaal "Nee/niet van toepassing".
 - Toegang tot app: alles zonder account bruikbaar, dus geen inloggegevens voor reviewers nodig. Het optionele OSC-account hoeft niet getest te worden.
@@ -67,7 +66,5 @@ Het Play-account is PERSOONLIJK en is aangemaakt na november 2023. Dan geldt:
 - Daarna: F-Droid-merge-request indienen met `docs/release/fdroid/nl.openschoolcloud.calendar.yml` (fdroiddata, branch met alleen dit bestand). De tag `v2.1.0` bestaat nog niet; die wordt bij de release gemaakt (op de release-commit) en moet op GitHub staan voordat je de merge-request indient.
 
 ## Open punten voor Nick
-- Doelgroep (punt 8) bevestigen.
 - Upload-keystore aanmaken en veilig bewaren.
-- Feature graphic 1024x500 maken.
 - Website deployen (privacy- en verwijderpagina) voor de privacy-URL.

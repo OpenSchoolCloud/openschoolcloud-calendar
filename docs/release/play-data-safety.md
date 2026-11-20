@@ -44,8 +44,8 @@ Alleen aanvinken wat hieronder staat. Al het andere: niet verzameld.
 - Toelichting: gegevens die de app naar de eigen server van de gebruiker stuurt (CalDAV) vallen onder het beheer van die gebruiker.
 
 ### Crashlogs
-- Verzameld: Nee. Een crashrapport wordt alleen verstuurd als de gebruiker dat zelf kiest, via de eigen e-mailapp naar support@openschoolcloud.nl (ACRA-maildialoog, geen automatische verzending). Inhoud: appversie, Android-versie, toesteltype, foutmelding en optionele opmerking.
-- Als Play hier om vraagt: dit is door de gebruiker geïnitieerd. Twijfel je? Vink "Crashlogs" aan met optioneel + doel "Analyse" en verwijs naar de privacyverklaring. Check met Nick.
+- Verzameld: Ja (besluit Nick, 2026-11-20). Optioneel: een crashrapport wordt alleen verstuurd als de gebruiker dat zelf kiest, via de eigen e-mailapp naar support@openschoolcloud.nl (ACRA-maildialoog, geen automatische verzending). Inhoud: appversie, Android-versie, toesteltype, foutmelding en optionele opmerking.
+- In Play: "Crashlogs" aanvinken. Verzameld: ja. Gedeeld: nee. Verwerking: tijdelijk niet van toepassing, gebruiker kan kiezen (optioneel). Doel: Analyse.
 
 ### Alles hieronder: niet verzameld
 Locatie, financiële gegevens, gezondheid en fitness, berichten (let op: "Mis je iets?" opent alleen de eigen mailapp, niets wordt automatisch verstuurd), foto's en video's, audio, bestanden en documenten, contacten (de app vraagt geen toegang tot contacten), app-activiteit, webbrowsegeschiedenis.
@@ -53,7 +53,7 @@ Locatie, financiële gegevens, gezondheid en fitness, berichten (let op: "Mis je
 ## Beveiligingspraktijken
 - Gegevens worden versleuteld tijdens verzending: Ja.
 - Verwijderverzoek mogelijk: Ja (URL hierboven).
-- Gecommit aan de Play Families-beleid: zie `play-console-checklist.md` (doelgroep, check met Nick).
+- Play Families-beleid: niet van toepassing, doelgroep is 18+ (besluit Nick, 2026-11-20).
 - Onafhankelijke beveiligingsreview: Nee (niet aanvinken).
 
 ## Verklaringen en let op
