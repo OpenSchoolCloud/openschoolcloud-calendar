@@ -1,6 +1,6 @@
 # Play Console: Gegevensbeveiliging (Data safety), OSC Calendar v2.1.0
 
-Antwoorden per Play-vraag. Gebaseerd op de code van v2.1.0 (versionCode 14). Houd dit gelijk aan de privacyverklaring: https://openschoolcloud.nl/privacy
+Antwoorden per Play-vraag. Gebaseerd op de code van v2.1.0 (versionCode 14). Houd dit gelijk aan de privacyverklaring: https://openschoolcloud.nl/juridisch/privacy
 
 ## Samenvatting
 - Geen analytics, advertenties of tracking-SDK's.
