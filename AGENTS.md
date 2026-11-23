@@ -2,6 +2,14 @@
 
 Privacy-first Android-kalender (Kotlin/Compose/Hilt/Room, CalDAV→Nextcloud). Lees ook `CLAUDE.md` (bouwregels) en `.superpowers/sdd/progress.md` (volledige taak/fix-historie + go-live-gates). Specs/plannen in `docs/superpowers/`.
 
+## Stand per 2026-11-23: v2.1.0 gereleased naar main (Play + F-Droid in voorbereiding)
+
+- PR #1 gemerged naar `main`, tag `v2.1.0`. Inloggen bij OSC is optioneel, gezins-sync blijft dark.
+- **Release-ondertekening:** upload-sleutel staat BUITEN de repo in `~/.config/osc-signing/` (`osc-upload.jks` + `keystore.properties`, chmod 600). Cert SHA-256 `03:40:79:B6:51:42:D0:14:B2:F3:D8:77:55:86:D3:DD:C3:94:C0:ED:B7:F3:AD:5C:E0:E4:B6:72:30:D7:99:4E`. Kwijt = nieuwe upload-sleutel aanvragen bij Play. Zonder bestand bouwt release unsigned (F-Droid) met een waarschuwing.
+- Gradle draaien met `JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64` (JDK 25 breekt de build).
+- Store-stappen voor Nick: `docs/release/play-console-checklist.md` (closed test ≥12 testers × 14 dagen, persoonlijk account), `docs/release/play-data-safety.md`, F-Droid-recept `docs/release/fdroid/`.
+- Privacy- en verwijderpagina staan in de website-repo `openschoolcloud-frontend-website` (`/juridisch/privacy`, `/account-verwijderen`).
+
 ## Stand per 2026-10-07 (go-live gepauzeerd)
 
 Drie plannen via subagent-driven dev (elke taak TDD + review; brede eind-reviews vingen 9 echte bugs, o.a. Postgres-brekende datetime, Mollie-webhook-retry-storm, CalDAV-username-401, login-404). `assembleDebug` groen; unit-suite groen (de pre-existing ICalParserTest-fail is gefixt: RFC 5545 nul-duur).
@@ -12,9 +20,8 @@ Drie plannen via subagent-driven dev (elke taak TDD + review; brede eind-reviews
 
 ## Git / hoe verder
 
-- Al het werk zit op branch **`feature/osc-onboarding-identity-cloud`** → **PR #1** (https://github.com/OpenSchoolCloud/openschoolcloud-calendar/pull/1).
-- **Lokale `main` is uiteengelopen van `origin/main`** (origin had een andere "Empty CTag"-fix). Merge-conflict in CalDAV-kernbestanden (`CalDavClient.kt`, `AccountRepositoryImpl.kt`, `CalendarRepositoryImpl.kt`, `CalendarViewModel.kt`) — **op te lossen in de PR, nooit force-pushen** (zou origin's werk wissen).
-- Elke nieuwe fix: committen op de feature-branch → push → update PR #1.
+- PR #1 is op 2026-11-23 gemerged naar `main` (origin's "Empty CTag"-fix `857ca5a` zit erin). **Nooit force-pushen.**
+- Nieuwe fixes: feature-branch vanaf `main` → PR.
 
 ## Vallen (niet-evident)
 

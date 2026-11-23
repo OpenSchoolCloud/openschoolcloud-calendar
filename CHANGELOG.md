@@ -7,6 +7,29 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ---
 
+## [2.1.0] - 2026-11-23
+
+Release voor Google Play en F-Droid.
+
+#### Gewijzigd
+- Inloggen met OpenSchoolCloud is optioneel: "Zonder account verder" op het welkomscherm, later inloggen via Instellingen.
+- targetSdk en compileSdk 36, schermen houden rekening met systeembalken (edge-to-edge).
+- Release-build schrijft geen debug-logging, afspraakgegevens of sync-diagnostiek meer naar het systeemlog.
+
+#### Toegevoegd
+- Account verwijderen vanuit Instellingen (opent https://openschoolcloud.nl/account-verwijderen en logt lokaal uit).
+- "Mis je iets? Geef het door" in het kalendermenu en in Instellingen (mail naar feedback@openschoolcloud.nl).
+- Store-materiaal in fastlane-structuur (nl-NL, en-US), F-Droid-recept, data-safety-antwoorden en Play Console-checklist in docs/release/.
+- Release-ondertekening via extern keystore.properties; zonder sleutel een niet-ondertekende build (F-Droid).
+
+#### Opgelost
+- Eerste afspraak na installatie in lokale modus faalde (FOREIGN KEY-fout): de lokale agenda wordt nu direct aangemaakt bij "Kies lokaal".
+
+#### Verwijderd
+- Oude onboarding- en modusschermen, 139 ongebruikte resources, ongebruikte contactenpermissie (READ_CONTACTS).
+
+---
+
 ## [2.0.0] - 2026-09-27
 
 ### Plan A: Identity Layer, Gezinsmodel & Gated OSC-Sync
