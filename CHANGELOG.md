@@ -7,6 +7,65 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ---
 
+## [2.1.0] - 2026-11-23
+
+Release voor Google Play en F-Droid.
+
+#### Gewijzigd
+- Inloggen met OpenSchoolCloud is optioneel: "Zonder account verder" op het welkomscherm, later inloggen via Instellingen.
+- targetSdk en compileSdk 36, schermen houden rekening met systeembalken (edge-to-edge).
+- Release-build schrijft geen debug-logging, afspraakgegevens of sync-diagnostiek meer naar het systeemlog.
+
+#### Toegevoegd
+- Account verwijderen vanuit Instellingen (opent https://openschoolcloud.nl/account-verwijderen en logt lokaal uit).
+- "Mis je iets? Geef het door" in het kalendermenu en in Instellingen (mail naar feedback@openschoolcloud.nl).
+- Store-materiaal in fastlane-structuur (nl-NL, en-US), F-Droid-recept, data-safety-antwoorden en Play Console-checklist in docs/release/.
+- Release-ondertekening via extern keystore.properties; zonder sleutel een niet-ondertekende build (F-Droid).
+
+#### Opgelost
+- Eerste afspraak na installatie in lokale modus faalde (FOREIGN KEY-fout): de lokale agenda wordt nu direct aangemaakt bij "Kies lokaal".
+
+#### Verwijderd
+- Oude onboarding- en modusschermen, 139 ongebruikte resources, ongebruikte contactenpermissie (READ_CONTACTS).
+
+---
+
+## [2.0.0] - 2026-09-27
+
+### Plan A: Identity Layer, Gezinsmodel & Gated OSC-Sync
+
+#### Toegevoegd
+- **Account-first onboarding**: Nieuw onboarding-traject via Authentik OIDC (AppAuth)
+  - Inloggen op schoolaccount of Nextcloud (AppAuth Custom Tab)
+  - Herstelopties: herstelbewijs en recovery-codes
+  - Account-status in Splash screen bij app-herstart
+- **Verplichte MFA**: MFA-afwending in de IdP-flow (Authentik)
+  - MFA-verificatie verplicht voor account-eers onboarding
+  - Recovery-codes centraal beheerd in Authentik
+- **Gezinsmodel met profiel-switcher**: Multi-profiel ondersteuning voor ouders/verzorgers
+  - Profiel-switcher in NavigationRail en TopAppBar
+  - Profiel aanmaken: naam + kleur
+  - Per-profiel agenda en instellingen
+  - Kindvriendelijke identiteit per profiel
+- **Sync-keuze met feature flag**: Lokale sync vs. betaalde OSC Cloud
+  - Sync-keuzescherm in onboarding (LOCAL, OWN_NEXTCLOUD, OSC_CLOUD)
+  - ENABLE_OSC_CLOUD buildConfigField voor gefaseerde uitrol
+  - Local-first default (SyncScope.LOCAL)
+  - Geflagde OSC-sync-kaart in instellingen
+
+#### Technisch
+- AppAuth integratie (OpenID Connect) via `net.openid:appauth:0.11.1`
+- AuthManager + TokenStore met EncryptedSharedPreferences
+- FamilyProfile entity en ProfileRepository (Room)
+- SyncScope enum (LOCAL, OWN_NEXTCLOUD, OSC_CLOUD)
+- BuildConfig OIDC configuratie (issuer, client_id, redirect_scheme)
+- Adaptive splash-route beslissing: `decideStartRoute(isLoggedIn, familyExists, syncChosen)`
+- Profiel-switcher composable in NavigationRail/TopAppBar
+- Recovery-code gate voor account-eers flow
+- Versie: 2.0.0 (versionCode 13)
+
+---
+
 ## [1.4.0] - 2026-02-17
 
 ### Sprint 8: UX Polish, Feedback & Theme

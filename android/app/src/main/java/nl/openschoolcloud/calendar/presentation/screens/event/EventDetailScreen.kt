@@ -92,7 +92,6 @@ import nl.openschoolcloud.calendar.domain.model.EventStatus
 import nl.openschoolcloud.calendar.domain.model.ReflectionEntry
 import nl.openschoolcloud.calendar.presentation.screens.reflection.ReflectionPromptSheet
 import java.time.Instant
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale

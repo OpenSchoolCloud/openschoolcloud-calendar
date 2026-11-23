@@ -17,9 +17,6 @@
     <string name="login_password_hint">Je app-wachtwoord</string>
     <string name="login_password_help">App-wachtwoord aanmaken</string>
     <string name="login_button">Verbinden</string>
-    <string name="login_connecting">Verbinden met server…</string>
-    <string name="login_discovering">Agenda\'s ophalen…</string>
-    <string name="login_success">Verbonden!</string>
 
     <!-- Login fouten - Helder en behulpzaam -->
     <string name="login_error_invalid_url">Voer een geldig serveradres in</string>
@@ -29,26 +26,15 @@
     <string name="login_error_network">Kan geen verbinding maken. Controleer het serveradres en je internetverbinding.</string>
     <string name="login_error_server">Er ging iets mis op de server. Probeer het later opnieuw.</string>
     <string name="login_error_no_calendars">Geen agenda\'s gevonden op deze server.</string>
-    <string name="login_error_ssl">Beveiligde verbinding mislukt. Neem contact op met je ICT-beheerder.</string>
-    <string name="login_error_unknown">Er ging iets mis. Probeer het opnieuw of neem contact op met support.</string>
 
     <!-- Calendar discovery -->
-    <string name="discovery_title">Agenda\'s gevonden</string>
-    <string name="discovery_subtitle">Selecteer welke agenda\'s je wilt zien</string>
-    <string name="discovery_done">Gereed</string>
     <string name="discovery_read_only">(alleen-lezen)</string>
 
     <!-- Kalender scherm -->
-    <string name="calendar_title">Agenda</string>
     <string name="calendar_today">Vandaag</string>
-    <string name="calendar_view_day">Dag</string>
-    <string name="calendar_view_week">Week</string>
-    <string name="calendar_view_month">Maand</string>
     <string name="calendar_week">Week %1$d</string>
     <string name="calendar_no_events">Geen afspraken</string>
     <string name="calendar_all_day">Hele dag</string>
-    <string name="calendar_sync_success">Agenda bijgewerkt</string>
-    <string name="calendar_sync_failed">Bijwerken mislukt</string>
 
     <!-- Event details -->
     <string name="event_new">Nieuwe afspraak</string>
@@ -63,21 +49,15 @@
     <string name="event_all_day">Hele dag</string>
     <string name="event_starts">Begint</string>
     <string name="event_ends">Eindigt</string>
-    <string name="event_timezone">Tijdzone</string>
-    <string name="event_reminder">Herinnering</string>
-    <string name="event_add_reminder">Herinnering toevoegen</string>
     <string name="event_attendees">Genodigden</string>
     <string name="event_add_attendee">Genodigde toevoegen</string>
     <string name="event_organizer">Organisator</string>
     <string name="event_save">Opslaan</string>
     <string name="event_delete">Verwijderen</string>
-    <string name="event_cancel">Annuleren</string>
-    <string name="event_delete_confirm">Weet je zeker dat je deze afspraak wilt verwijderen?</string>
 
     <string name="event_not_found">Afspraak niet gevonden</string>
 
     <!-- Event status -->
-    <string name="event_status_confirmed">Bevestigd</string>
     <string name="event_status_tentative">Onder voorbehoud</string>
     <string name="event_status_cancelled">Geannuleerd</string>
 
@@ -89,82 +69,58 @@
 
     <!-- Herinneringen - Menselijke taal -->
     <string name="reminder_none">Geen herinnering</string>
-    <string name="reminder_at_time">Op tijdstip van afspraak</string>
     <string name="reminder_5_min">5 minuten van tevoren</string>
     <string name="reminder_10_min">10 minuten van tevoren</string>
     <string name="reminder_15_min">15 minuten van tevoren</string>
     <string name="reminder_30_min">30 minuten van tevoren</string>
     <string name="reminder_1_hour">1 uur van tevoren</string>
-    <string name="reminder_2_hours">2 uur van tevoren</string>
-    <string name="reminder_1_day">1 dag van tevoren</string>
-    <string name="reminder_2_days">2 dagen van tevoren</string>
-    <string name="reminder_1_week">1 week van tevoren</string>
 
     <!-- Dialogen -->
     <string name="dialog_delete_event_title">Afspraak verwijderen?</string>
     <string name="dialog_delete_event_message">Deze afspraak wordt verwijderd. Dit kan niet ongedaan worden gemaakt.</string>
-    <string name="dialog_notify_attendees_title">Genodigden informeren?</string>
-    <string name="dialog_notify_attendees_message">Wil je een update sturen naar de genodigden?</string>
     <string name="dialog_discard_changes_title">Wijzigingen negeren?</string>
     <string name="dialog_discard_changes_message">Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je deze wilt negeren?</string>
     <string name="dialog_yes">Ja</string>
     <string name="dialog_no">Nee</string>
-    <string name="dialog_send">Versturen</string>
-    <string name="dialog_dont_send">Niet versturen</string>
     <string name="dialog_discard">Negeren</string>
     <string name="dialog_keep_editing">Verder bewerken</string>
+
+    <!-- Calendar label: "Klas 3a (van Lisa)" for calendars shared by another user -->
+    <string name="calendar_shared_by_format">%1$s (van %2$s)</string>
+
+    <!-- 412 conflict dialog: shown when another user changed the event between our load and our save -->
+    <string name="dialog_conflict_title">Iemand anders heeft deze afspraak gewijzigd</string>
+    <string name="dialog_conflict_message">Tussen het openen en opslaan heeft een andere gebruiker deze afspraak aangepast. Wil je jouw versie alsnog opslaan (de andere wijziging gaat dan verloren), of de versie van de server bekijken?</string>
+    <string name="dialog_conflict_overwrite">Mijn versie opslaan</string>
+    <string name="dialog_conflict_reload">Server-versie laden</string>
 
     <!-- Instellingen -->
     <string name="settings_title">Instellingen</string>
     <string name="settings_account">Account</string>
-    <string name="settings_accounts">Accounts</string>
-    <string name="settings_account_info">%1$s op %2$s</string>
-    <string name="settings_add_account">Account toevoegen</string>
     <string name="settings_calendars">Agenda\'s</string>
-    <string name="settings_calendars_manage">Beheer welke agenda\'s je ziet</string>
     <string name="settings_sync">Synchronisatie</string>
     <string name="settings_sync_now">Nu bijwerken</string>
     <string name="settings_sync_interval">Bijwerken</string>
-    <string name="settings_sync_interval_15">Elke 15 minuten</string>
-    <string name="settings_sync_interval_30">Elke 30 minuten</string>
-    <string name="settings_sync_interval_60">Elk uur</string>
-    <string name="settings_sync_interval_manual">Alleen handmatig</string>
     <string name="settings_last_sync">Laatst bijgewerkt: %s</string>
     <string name="settings_never_synced">Nog niet bijgewerkt</string>
     <string name="settings_notifications">Meldingen</string>
     <string name="settings_default_reminder">Standaard herinnering</string>
     <string name="settings_reminders_toggle">Herinneringen</string>
     <string name="settings_display">Weergave</string>
-    <string name="settings_first_day_of_week">Eerste dag van de week</string>
-    <string name="settings_time_format">Tijdnotatie</string>
     <string name="settings_theme">Thema</string>
-    <string name="settings_theme_system">Systeeminstelling</string>
-    <string name="settings_theme_light">Licht</string>
-    <string name="settings_theme_dark">Donker</string>
-    <string name="settings_dark_mode">Donkere modus</string>
     <string name="settings_dark_mode_system">Volg systeeminstelling</string>
     <string name="settings_dark_mode_light">Altijd licht</string>
     <string name="settings_dark_mode_dark">Altijd donker</string>
-    <string name="settings_week_start">Week begint op</string>
-    <string name="settings_week_start_monday">Maandag</string>
-    <string name="settings_week_start_sunday">Zondag</string>
     <string name="settings_about">Over deze app</string>
     <string name="settings_version">Versie %s</string>
     <string name="settings_privacy_policy">Privacybeleid</string>
-    <string name="settings_open_source_licenses">Open source licenties</string>
     <string name="settings_logout">Uitloggen</string>
     <string name="settings_logout_confirm">Weet je zeker dat je wilt uitloggen? Lokale gegevens worden verwijderd.</string>
 
     <!-- Over scherm -->
-    <string name="about_title">Over OSC Calendar</string>
-    <string name="about_version">Versie %1$s</string>
     <string name="about_description">De veilige agenda-app voor het onderwijs. Jouw data blijft in Nederland, onder jouw controle.</string>
-    <string name="about_website">Website</string>
-    <string name="about_support">Hulp nodig?</string>
-    <string name="about_privacy">Privacybeleid</string>
     <string name="about_terms">Algemene voorwaarden</string>
     <string name="about_cookies">Cookiebeleid</string>
-    <string name="about_opensource">Open source licenties</string>
     <string name="about_made_with">Gemaakt met ❤️ in Nederland</string>
 
     <!-- Sync intervals -->
@@ -184,78 +140,35 @@
     <string name="day_sunday">Zondag</string>
 
     <!-- Dagen van de week (kort) -->
-    <string name="day_mon">Ma</string>
-    <string name="day_tue">Di</string>
-    <string name="day_wed">Wo</string>
-    <string name="day_thu">Do</string>
-    <string name="day_fri">Vr</string>
-    <string name="day_sat">Za</string>
-    <string name="day_sun">Zo</string>
 
     <!-- Maanden -->
-    <string name="month_jan">Januari</string>
-    <string name="month_feb">Februari</string>
-    <string name="month_mar">Maart</string>
-    <string name="month_apr">April</string>
-    <string name="month_may">Mei</string>
-    <string name="month_jun">Juni</string>
-    <string name="month_jul">Juli</string>
-    <string name="month_aug">Augustus</string>
-    <string name="month_sep">September</string>
-    <string name="month_oct">Oktober</string>
-    <string name="month_nov">November</string>
-    <string name="month_dec">December</string>
 
     <!-- Fouten -->
     <string name="error_generic">Er ging iets mis. Probeer het opnieuw.</string>
-    <string name="error_network">Netwerkfout. Controleer je internetverbinding.</string>
-    <string name="error_sync_failed">Bijwerken mislukt</string>
-    <string name="error_save_failed">Opslaan mislukt</string>
-    <string name="error_delete_failed">Verwijderen mislukt</string>
-    <string name="error_conflict">Deze afspraak is op de server gewijzigd. Vernieuw en probeer opnieuw.</string>
-    <string name="error_connection">Kan geen verbinding maken. Controleer het serveradres en je internetverbinding.</string>
-    <string name="error_auth">Gebruikersnaam of wachtwoord klopt niet. Probeer het opnieuw.</string>
-    <string name="error_ssl">Beveiligde verbinding mislukt. Neem contact op met je ICT-beheerder.</string>
-    <string name="error_unknown">Er ging iets mis. Probeer het opnieuw of neem contact op met support.</string>
 
     <!-- Quick Capture -->
     <string name="quick_capture_hint">\"Morgen 14:00 meeting met team\"</string>
     <string name="quick_capture_confirm">Aanmaken</string>
-    <string name="event_created">\"%s\" aangemaakt</string>
 
     <!-- Accessibility -->
     <string name="a11y_create_event">Nieuwe afspraak toevoegen</string>
-    <string name="a11y_settings">Instellingen openen</string>
     <string name="a11y_previous">Vorige</string>
     <string name="a11y_next">Volgende</string>
     <string name="a11y_close">Sluiten</string>
     <string name="a11y_delete">Verwijderen</string>
     <string name="a11y_edit">Bewerken</string>
-    <string name="a11y_calendar_color">Agendakleur: %1$s</string>
-    <string name="a11y_event_time">Van %1$s tot %2$s</string>
-    <string name="a11y_sync_in_progress">Bezig met bijwerken</string>
     <string name="a11y_hide_password">Wachtwoord verbergen</string>
     <string name="a11y_show_password">Wachtwoord tonen</string>
 
     <!-- Lege states - Vriendelijk en behulpzaam -->
-    <string name="empty_calendars">Nog geen agenda\'s</string>
-    <string name="empty_calendars_hint">Voeg een account toe om te beginnen</string>
     <string name="empty_events_today">Vrije dag!</string>
     <string name="empty_events_today_hint">Geen afspraken vandaag</string>
-    <string name="empty_events_week">Rustige week</string>
-    <string name="empty_events_week_hint">Geen afspraken deze week</string>
 
     <!-- Offline state -->
-    <string name="offline_banner">Je bent offline</string>
-    <string name="offline_hint">Wijzigingen worden gesynchroniseerd zodra je weer online bent</string>
 
     <!-- Meldingen -->
     <string name="notification_channel_reminders">Afspraakherinneringen</string>
     <string name="notification_channel_reminders_desc">Meldingen voor aankomende afspraken</string>
-    <string name="notification_event_starting">Begint nu</string>
-    <string name="notification_event_in_minutes">Over %d minuten</string>
-    <string name="notification_event_in_hours">Over %d uur</string>
-    <string name="notification_event_tomorrow">Morgen</string>
     <string name="notification_action_view">Bekijken</string>
     <string name="notification_action_snooze">Uitstellen 5 min</string>
 
@@ -272,7 +185,6 @@
     <string name="booking_link_copied">Link gekopieerd</string>
     <string name="booking_empty_title">Geen afspraak-links</string>
     <string name="booking_empty_description">Maak een afspraakconfiguratie aan in Nextcloud Calendar om booking links hier te zien</string>
-    <string name="booking_not_supported">Je server ondersteunt geen afspraak-links. Hiervoor is Nextcloud Calendar v3+ nodig.</string>
 
     <!-- Widgets -->
     <string name="widget_dagplanning_name">Dagplanning</string>
@@ -286,7 +198,6 @@
     <string name="widget_in_hours">over %d uur</string>
     <string name="widget_time_remaining">nog %d min</string>
     <string name="widget_how_was_it">Hoe ging %s?</string>
-    <string name="widget_no_upcoming">Geen komende afspraken</string>
 
     <!-- Promo -->
     <string name="promo_title">Eigen schoolcloud nodig?</string>
@@ -294,15 +205,6 @@
     <string name="promo_button">Meer informatie</string>
 
     <!-- Onboarding -->
-    <string name="onboarding_privacy_title">Privacy voorop</string>
-    <string name="onboarding_privacy_description">Geen Google, geen tracking, geen advertenties. Jouw data blijft van jou — veilig opgeslagen in Nederland.</string>
-    <string name="onboarding_sync_title">Slim plannen en reflecteren</string>
-    <string name="onboarding_sync_description">Ontdek feestdagen uit 7 culturen, plan je week, en reflecteer op je dag. Alles om beter te leren leren.</string>
-    <string name="onboarding_features_title">Jouw keuze</string>
-    <string name="onboarding_features_description">Gebruik de app direct of verbind met Nextcloud voor synchronisatie. Alle functies werken ook zonder account.</string>
-    <string name="onboarding_skip">Overslaan</string>
-    <string name="onboarding_next">Volgende</string>
-    <string name="onboarding_start">Aan de slag</string>
 
     <!-- Crash reporting -->
     <string name="crash_dialog_title">OSC Calendar is gestopt</string>
@@ -408,7 +310,6 @@
     <string name="settings_planning_notifications">Planningsherinnering</string>
     <string name="settings_planning_notifications_desc">Ontvang een herinnering om je week te plannen</string>
     <string name="settings_planning_day">Planningsdag</string>
-    <string name="settings_planning_time">Planningstijd</string>
 
     <!-- Feedback -->
     <string name="feedback_title">Feedback geven</string>
@@ -421,21 +322,21 @@
     <string name="feedback_privacy_notice">Je feedback wordt via je eigen e-mail app verstuurd. We ontvangen alleen wat je zelf invult.</string>
 
     <!-- Overflow menu -->
+    <string name="menu_new_event_full">Nieuwe gebeurtenis…</string>
     <string name="menu_sync">Synchroniseren</string>
     <string name="menu_week_progress">Weekvoortgang</string>
     <string name="menu_week_review">Weekoverzicht</string>
     <string name="menu_booking">Afspraak-links</string>
-    <string name="menu_feedback">Feedback geven</string>
+    <string name="menu_feedback">Mis je iets? Geef het door</string>
+    <string name="settings_delete_osc_account">OpenSchoolCloud-account verwijderen</string>
+    <string name="delete_account_title">Account verwijderen?</string>
+    <string name="delete_account_body">Je wordt uitgelogd en we openen de pagina waar je je OpenSchoolCloud-account definitief verwijdert. Je agenda op dit toestel blijft staan.</string>
+    <string name="delete_account_confirm">Verwijderen</string>
+    <string name="delete_account_no_browser">Geen browser gevonden. Ga naar openschoolcloud.nl/account-verwijderen om je account te verwijderen.</string>
+    <string name="delete_account_cancel">Annuleren</string>
     <string name="menu_settings">Instellingen</string>
 
     <!-- Mode selectie -->
-    <string name="mode_selection_title">Hoe wil je OSC Calendar gebruiken?</string>
-    <string name="mode_standalone_title">Direct starten</string>
-    <string name="mode_standalone_description">Gebruik de app meteen zonder account. Feestdagenkalender, weekplanner, reflecties en taken werken direct.\n\nJe kunt later altijd nog verbinden met Nextcloud.</string>
-    <string name="mode_standalone_button">Direct starten</string>
-    <string name="mode_nextcloud_title">Verbinden met Nextcloud</string>
-    <string name="mode_nextcloud_description">Synchroniseer met je school-cloud. Gedeelde agenda\'s, booking links en QR-codes voor ouders.\n\nJe hebt een Nextcloud server URL en inloggegevens nodig.</string>
-    <string name="mode_nextcloud_button">Inloggen met Nextcloud</string>
 
     <!-- Standalone modus -->
     <string name="standalone_connect_title">Wil je synchroniseren?</string>
@@ -446,12 +347,51 @@
     <string name="settings_debug_export">Exporteer debug log</string>
     <string name="settings_debug_share">Debug log delen</string>
 
+    <!-- Contacten & Deelnemers -->
+    <string name="attendee_search_hint">Deelnemer toevoegen (naam of e-mail)</string>
+    <string name="attendee_removed">Deelnemer verwijderen</string>
+
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>
     <string name="action_cancel">Annuleren</string>
-    <string name="action_save">Opslaan</string>
-    <string name="action_delete">Verwijderen</string>
-    <string name="action_edit">Bewerken</string>
-    <string name="action_retry">Opnieuw proberen</string>
-    <string name="action_close">Sluiten</string>
+
+    <!-- Welkom / account -->
+    <string name="welcome_title">Eén agenda voor het hele gezin</string>
+    <string name="welcome_subtitle">Privacy-first. Jij bepaalt waar je gegevens staan.</string>
+    <string name="welcome_create_account">Account maken</string>
+    <string name="welcome_login">Inloggen</string>
+    <string name="welcome_continue_without_account">Zonder account verder</string>
+    <string name="welcome_account_optional">Een account is niet nodig. Je kunt later altijd inloggen via Instellingen.</string>
+    <string name="settings_osc_login">Inloggen met OpenSchoolCloud</string>
+    <string name="auth_failed">Inloggen mislukt. Probeer het opnieuw.</string>
+
+    <!-- Herstelcodes -->
+    <string name="recovery_title">Bewaar je herstelcodes</string>
+    <string name="recovery_body">Je hebt tweestapsverificatie ingesteld. Bewaar je herstelcodes op een veilige plek. Je hebt ze nodig als je je telefoon kwijtraakt.</string>
+    <string name="recovery_confirm">Ik heb ze bewaard</string>
+
+    <!-- Gezin opzetten -->
+    <string name="family_setup_title">Stel je gezin in</string>
+    <string name="family_name_label">Naam van je gezin</string>
+    <string name="family_name_hint">Bijv. Gezin Jansen</string>
+    <string name="profile_add">Profiel toevoegen</string>
+    <string name="profile_name_label">Naam</string>
+    <string name="profile_name_hint">Naam van het kind</string>
+    <string name="family_setup_continue">Doorgaan</string>
+
+    <!-- Sync-keuze -->
+    <string name="sync_choice_title">Waar bewaar je jullie agenda?</string>
+    <string name="sync_local_title">Alleen op dit apparaat</string>
+    <string name="sync_local_desc">Gratis. Niets verlaat je telefoon.</string>
+    <string name="sync_local_button">Kies lokaal</string>
+    <string name="sync_nextcloud_title">Eigen Nextcloud</string>
+    <string name="sync_nextcloud_desc">Gratis. Koppel je eigen server via CalDAV.</string>
+    <string name="sync_nextcloud_button">Koppel Nextcloud</string>
+    <string name="sync_osc_title">OSC-sync voor het gezin</string>
+    <string name="sync_osc_desc">Automatisch synchroniseren over alle apparaten, zonder eigen server. €1 per gezinslid per maand, eerste 30 dagen gratis.</string>
+    <string name="sync_osc_button">Probeer 30 dagen gratis</string>
+    <string name="sync_osc_soon">Binnenkort beschikbaar</string>
+
+    <!-- Profiel-switcher -->
+    <string name="profile_all">Hele gezin</string>
 </resources>

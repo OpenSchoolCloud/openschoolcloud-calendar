@@ -23,8 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import nl.openschoolcloud.calendar.domain.model.Event
-import nl.openschoolcloud.calendar.domain.model.ReflectionEntry
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
 import nl.openschoolcloud.calendar.domain.repository.ReflectionRepository
 import java.time.DayOfWeek

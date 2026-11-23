@@ -18,7 +18,6 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
 import androidx.room.Room
@@ -101,11 +100,19 @@ object NextEventWidget {
     }
 
     private fun getDatabase(context: Context): AppDatabase {
+        // Main-thread queries are intentional here (see class kdoc): widget
+        // providers have a 10s ANR window and Xiaomi/MIUI was killing the
+        // background executor before RemoteViews could be delivered.
+        // Migrations MUST be registered or the widget process opens the DB at
+        // an older schema and crashes when the main app upgrades it.
         return Room.databaseBuilder(
             context.applicationContext,
             AppDatabase::class.java,
-            "openschoolcloud_calendar.db"
-        ).allowMainThreadQueries().build()
+            AppDatabase.DB_NAME
+        )
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
     }
 
     private fun buildViews(context: Context, widgetId: Int): RemoteViews {

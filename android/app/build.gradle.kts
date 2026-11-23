@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -7,24 +9,60 @@ plugins {
 
 android {
     namespace = "nl.openschoolcloud.calendar"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "nl.openschoolcloud.calendar"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 12
-        versionName = "1.6.5"
+        targetSdk = 36
+        versionCode = 14
+        versionName = "2.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // OIDC / Authentik configuration. Overridden per build type / CI as needed.
+        buildConfigField("String", "OIDC_ISSUER", "\"https://id.openschoolcloud.nl/application/o/osc-calendar/\"")
+        buildConfigField("String", "OIDC_CLIENT_ID", "\"osc-calendar\"")
+        buildConfigField("String", "OIDC_REDIRECT_SCHEME", "\"nl.openschoolcloud.calendar\"")
+        // Betaalde OSC-sync (subsysteem C) — pas true zodra C gebouwd + getest is.
+        buildConfigField("Boolean", "ENABLE_OSC_CLOUD", "false")
+        // OSC-Cloud sync backend base URL (Plan C tasks 1-8).
+        buildConfigField("String", "OSC_CLOUD_API_BASE", "\"https://sync.openschoolcloud.nl\"")
+        // AppAuth RedirectUriReceiverActivity needs the scheme as a manifest placeholder.
+        manifestPlaceholders["appAuthRedirectScheme"] = "nl.openschoolcloud.calendar"
+    }
+
+    // Release signing: keystore.properties lives outside the repo (see .gitignore).
+    // Explicit -PoscKeystoreProps must exist; without any file the release build is UNSIGNED (F-Droid).
+    val explicitProps = findProperty("oscKeystoreProps") as String?
+    val keystoreProps = file(
+        explicitProps ?: "${System.getProperty("user.home")}/.config/osc-signing/keystore.properties"
+    )
+    if (explicitProps != null && !keystoreProps.exists()) {
+        throw GradleException("oscKeystoreProps points to a missing file: ${keystoreProps.absolutePath}")
+    }
+    if (keystoreProps.exists()) {
+        val props = Properties().apply { keystoreProps.inputStream().use { load(it) } }
+        fun required(key: String): String = props.getProperty(key)?.takeIf { it.isNotBlank() }
+            ?: throw GradleException("Missing '$key' in ${keystoreProps.absolutePath}")
+        signingConfigs.create("release") {
+            val storePath = File(required("storeFile"))
+            storeFile = if (storePath.isAbsolute) storePath else File(keystoreProps.parentFile, storePath.path)
+            storePassword = required("storePassword")
+            keyAlias = required("keyAlias")
+            keyPassword = required("keyPassword")
+        }
+    } else {
+        logger.warn("WARNING: no keystore.properties found - the release build will be UNSIGNED.")
     }
 
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -117,6 +155,9 @@ dependencies {
     // Network
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // OIDC login (Authentik) via Custom Tab
+    implementation("net.openid:appauth:0.11.1")
     
     // iCalendar parsing
     implementation("org.mnode.ical4j:ical4j:3.2.14")
@@ -151,7 +192,8 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.9")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("org.robolectric:robolectric:4.11.1")
-    
+    testImplementation("androidx.test:core:1.5.0")
+
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))

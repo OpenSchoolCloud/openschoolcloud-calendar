@@ -21,16 +21,25 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import nl.openschoolcloud.calendar.domain.model.Attendee
+import nl.openschoolcloud.calendar.domain.model.AttendeeRole
+import nl.openschoolcloud.calendar.domain.model.AttendeeStatus
 import nl.openschoolcloud.calendar.domain.model.Calendar
+import nl.openschoolcloud.calendar.domain.model.Contact
 import nl.openschoolcloud.calendar.domain.model.Event
 import nl.openschoolcloud.calendar.domain.model.SyncStatus
+import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
+import nl.openschoolcloud.calendar.domain.repository.ContactRepository
+import nl.openschoolcloud.calendar.domain.repository.EventConflictException
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
 import java.time.Instant
 import java.time.LocalDate
@@ -44,7 +53,9 @@ import javax.inject.Inject
 class EventEditViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val eventRepository: EventRepository,
-    private val calendarRepository: CalendarRepository
+    private val calendarRepository: CalendarRepository,
+    private val contactRepository: ContactRepository,
+    private val accountRepository: AccountRepository
 ) : ViewModel() {
 
     private val eventId: String? = savedStateHandle["eventId"]
@@ -76,6 +87,14 @@ class EventEditViewModel @Inject constructor(
                 if (_uiState.value.selectedCalendarId == null && writableCalendars.isNotEmpty()) {
                     _uiState.update { it.copy(selectedCalendarId = writableCalendars.first().id) }
                 }
+
+                // Load organizer email from default account
+                try {
+                    val account = accountRepository.getDefaultAccount()
+                    account?.email?.let { email ->
+                        _uiState.update { it.copy(organizerEmail = email) }
+                    }
+                } catch (_: Exception) {}
             } catch (e: Exception) {
                 // calendars will remain empty
             }
@@ -107,7 +126,8 @@ class EventEditViewModel @Inject constructor(
                             originalEvent = event,
                             isLearningAgenda = event.isLearningAgenda,
                             learningGoal = event.learningGoal ?: "",
-                            learningNeeds = event.learningNeeds ?: ""
+                            learningNeeds = event.learningNeeds ?: "",
+                            attendees = event.attendees
                         )
                     }
                 } else {
@@ -201,7 +221,120 @@ class EventEditViewModel @Inject constructor(
         _uiState.update { it.copy(learningNeeds = needs, hasChanges = true) }
     }
 
+    private var searchJob: Job? = null
+
+    fun onAttendeeSearchChange(query: String) {
+        _uiState.update { it.copy(attendeeSearchQuery = query) }
+
+        searchJob?.cancel()
+        if (query.isBlank()) {
+            _uiState.update { it.copy(contactSuggestions = emptyList(), isSearchingContacts = false) }
+            return
+        }
+
+        searchJob = viewModelScope.launch {
+            delay(300) // debounce
+            _uiState.update { it.copy(isSearchingContacts = true) }
+            try {
+                val contacts = contactRepository.searchContactsSync(query)
+                // Filter out contacts already added as attendees
+                val existingEmails = _uiState.value.attendees.map { it.email }.toSet()
+                val filtered = contacts.filter { contact ->
+                    contact.email != null && contact.email !in existingEmails
+                }
+                _uiState.update { it.copy(contactSuggestions = filtered, isSearchingContacts = false) }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(contactSuggestions = emptyList(), isSearchingContacts = false) }
+            }
+        }
+    }
+
+    fun addAttendeeFromContact(contact: Contact) {
+        val email = contact.email ?: return
+        val attendee = Attendee(
+            email = email,
+            name = contact.displayName,
+            role = AttendeeRole.REQ_PARTICIPANT,
+            status = AttendeeStatus.NEEDS_ACTION
+        )
+        _uiState.update {
+            it.copy(
+                attendees = it.attendees + attendee,
+                attendeeSearchQuery = "",
+                contactSuggestions = emptyList(),
+                hasChanges = true
+            )
+        }
+    }
+
+    fun addAttendeeByEmail(email: String) {
+        if (!email.contains("@") || email.isBlank()) return
+        // Avoid duplicates
+        if (_uiState.value.attendees.any { it.email == email }) return
+
+        val attendee = Attendee(
+            email = email.lowercase().trim(),
+            name = null,
+            role = AttendeeRole.REQ_PARTICIPANT,
+            status = AttendeeStatus.NEEDS_ACTION
+        )
+        _uiState.update {
+            it.copy(
+                attendees = it.attendees + attendee,
+                attendeeSearchQuery = "",
+                contactSuggestions = emptyList(),
+                hasChanges = true
+            )
+        }
+    }
+
+    fun removeAttendee(attendee: Attendee) {
+        _uiState.update {
+            it.copy(
+                attendees = it.attendees.filter { a -> a.email != attendee.email },
+                hasChanges = true
+            )
+        }
+    }
+
     fun save(onSuccess: () -> Unit) {
+        saveInternal(onSuccess = onSuccess, forceOverwrite = false)
+    }
+
+    /**
+     * Retry the in-flight save while ignoring the server's ETag — used after
+     * the user has acknowledged a conflict and chosen to overwrite.
+     */
+    fun resolveConflictByOverwrite() {
+        val callback = pendingSuccessCallback ?: return
+        _uiState.update { it.copy(conflictDetected = false) }
+        saveInternal(onSuccess = callback, forceOverwrite = true)
+    }
+
+    /**
+     * Discard the user's local edits, re-fetch the event from the server,
+     * and close the editor. Used after the user has acknowledged a conflict
+     * and chosen to keep the other user's version.
+     */
+    fun resolveConflictByReload(onDiscarded: () -> Unit) {
+        val state = _uiState.value
+        val eventId = state.originalEvent?.uid ?: return
+        _uiState.update { it.copy(conflictDetected = false, isSaving = true) }
+        viewModelScope.launch {
+            eventRepository.refreshEventFromServer(eventId)
+            _uiState.update { it.copy(isSaving = false) }
+            onDiscarded()
+        }
+    }
+
+    fun dismissConflict() {
+        _uiState.update { it.copy(conflictDetected = false) }
+    }
+
+    @Volatile
+    private var pendingSuccessCallback: (() -> Unit)? = null
+
+    private fun saveInternal(onSuccess: () -> Unit, forceOverwrite: Boolean) {
         val state = _uiState.value
 
         if (state.title.isBlank()) {
@@ -209,6 +342,7 @@ class EventEditViewModel @Inject constructor(
             return
         }
 
+        pendingSuccessCallback = onSuccess
         _uiState.update { it.copy(isSaving = true, error = null) }
 
         viewModelScope.launch {
@@ -234,6 +368,7 @@ class EventEditViewModel @Inject constructor(
                     dtEnd = endInstant,
                     allDay = state.allDay,
                     calendarId = calendarId,
+                    attendees = state.attendees,
                     syncStatus = SyncStatus.PENDING_UPDATE,
                     lastModified = Instant.now(),
                     isLearningAgenda = state.isLearningAgenda,
@@ -241,15 +376,25 @@ class EventEditViewModel @Inject constructor(
                     learningNeeds = state.learningNeeds.ifBlank { null }
                 )
 
-                val result = eventRepository.updateEvent(updated)
+                val result = eventRepository.updateEvent(updated, forceOverwrite = forceOverwrite)
                 result.fold(
                     onSuccess = {
                         _uiState.update { it.copy(isSaving = false) }
+                        pendingSuccessCallback = null
                         onSuccess()
                     },
                     onFailure = { error ->
-                        _uiState.update {
-                            it.copy(isSaving = false, error = "Opslaan mislukt: ${error.message}")
+                        if (error is EventConflictException) {
+                            // Hold pendingSuccessCallback so the user can pick
+                            // overwrite-and-retry without us losing the callback.
+                            _uiState.update {
+                                it.copy(isSaving = false, conflictDetected = true)
+                            }
+                        } else {
+                            pendingSuccessCallback = null
+                            _uiState.update {
+                                it.copy(isSaving = false, error = "Opslaan mislukt: ${error.message}")
+                            }
                         }
                     }
                 )
@@ -264,6 +409,7 @@ class EventEditViewModel @Inject constructor(
                     dtStart = startInstant,
                     dtEnd = endInstant,
                     allDay = state.allDay,
+                    attendees = state.attendees,
                     syncStatus = SyncStatus.PENDING_CREATE,
                     created = Instant.now(),
                     isLearningAgenda = state.isLearningAgenda,
@@ -275,9 +421,11 @@ class EventEditViewModel @Inject constructor(
                 result.fold(
                     onSuccess = {
                         _uiState.update { it.copy(isSaving = false) }
+                        pendingSuccessCallback = null
                         onSuccess()
                     },
                     onFailure = { error ->
+                        pendingSuccessCallback = null
                         _uiState.update {
                             it.copy(isSaving = false, error = "Aanmaken mislukt: ${error.message}")
                         }
@@ -325,7 +473,18 @@ data class EventEditUiState(
     val error: String? = null,
     val isLearningAgenda: Boolean = false,
     val learningGoal: String = "",
-    val learningNeeds: String = ""
+    val learningNeeds: String = "",
+    val attendees: List<Attendee> = emptyList(),
+    val contactSuggestions: List<Contact> = emptyList(),
+    val attendeeSearchQuery: String = "",
+    val isSearchingContacts: Boolean = false,
+    val organizerEmail: String? = null,
+    /**
+     * True when the last save was rejected with 412 — another user changed
+     * the event between our load and our PUT. The screen shows a dialog so
+     * the user can either overwrite or discard their local edits.
+     */
+    val conflictDetected: Boolean = false
 ) {
     fun formatStartDate(): String =
         startDate.format(DateTimeFormatter.ofPattern("EEE d MMM yyyy", java.util.Locale("nl")))

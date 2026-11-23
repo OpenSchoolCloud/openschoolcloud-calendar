@@ -139,7 +139,14 @@ class NotificationHelper @Inject constructor(
             )
             .build()
 
-        NotificationManagerCompat.from(context).notify(eventId.hashCode(), notification)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            NotificationManagerCompat.from(context).notify(eventId.hashCode(), notification)
+        }
     }
 
     fun createReflectionChannel() {
@@ -179,7 +186,14 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(viewPendingIntent)
             .build()
 
-        NotificationManagerCompat.from(context).notify(eventId.hashCode() + 200, notification)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            NotificationManagerCompat.from(context).notify(eventId.hashCode() + 200, notification)
+        }
     }
 
     fun createPlanningChannel() {
@@ -218,14 +232,23 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(viewPendingIntent)
             .build()
 
-        NotificationManagerCompat.from(context).notify(ACTION_PLAN_WEEK.hashCode(), notification)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            NotificationManagerCompat.from(context).notify(ACTION_PLAN_WEEK.hashCode(), notification)
+        }
     }
 
     fun cancelNotification(eventId: String) {
         NotificationManagerCompat.from(context).cancel(eventId.hashCode())
     }
 
-    fun hasNotificationPermission(): Boolean {
+    fun hasNotificationPermission(): Boolean = canPostNotifications()
+
+    private fun canPostNotifications(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
                 context,

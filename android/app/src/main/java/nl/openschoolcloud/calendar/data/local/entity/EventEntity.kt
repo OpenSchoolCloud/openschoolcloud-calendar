@@ -68,5 +68,6 @@ data class EventEntity(
     val learningGoal: String? = null,
     val learningNeeds: String? = null,
     val eventType: String = "STANDARD",
-    val taskCompleted: Boolean = false
+    val taskCompleted: Boolean = false,
+    val profileId: String? = null
 )

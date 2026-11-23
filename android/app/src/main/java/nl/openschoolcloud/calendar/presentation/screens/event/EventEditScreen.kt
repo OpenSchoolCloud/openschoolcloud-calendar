@@ -88,7 +88,10 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import nl.openschoolcloud.calendar.R
+import nl.openschoolcloud.calendar.domain.model.Attendee
 import nl.openschoolcloud.calendar.domain.model.Calendar
+import nl.openschoolcloud.calendar.domain.model.Contact
+import nl.openschoolcloud.calendar.presentation.components.AttendeeSection
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneOffset
@@ -190,6 +193,10 @@ fun EventEditScreen(
                 onLearningAgendaToggle = viewModel::onLearningAgendaToggle,
                 onLearningGoalChange = viewModel::onLearningGoalChange,
                 onLearningNeedsChange = viewModel::onLearningNeedsChange,
+                onAttendeeSearchChange = viewModel::onAttendeeSearchChange,
+                onAddAttendeeFromContact = viewModel::addAttendeeFromContact,
+                onAddAttendeeByEmail = viewModel::addAttendeeByEmail,
+                onRemoveAttendee = viewModel::removeAttendee,
                 onStartDateClick = { showStartDatePicker = true },
                 onStartTimeClick = { showStartTimePicker = true },
                 onEndDateClick = { showEndDatePicker = true },
@@ -216,6 +223,27 @@ fun EventEditScreen(
             dismissButton = {
                 TextButton(onClick = { showDiscardDialog = false }) {
                     Text(stringResource(R.string.dialog_keep_editing))
+                }
+            }
+        )
+    }
+
+    // Conflict dialog — server has a newer version of this event.
+    if (uiState.conflictDetected) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissConflict,
+            title = { Text(stringResource(R.string.dialog_conflict_title)) },
+            text = { Text(stringResource(R.string.dialog_conflict_message)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.resolveConflictByOverwrite() }) {
+                    Text(stringResource(R.string.dialog_conflict_overwrite))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    viewModel.resolveConflictByReload(onDiscarded = onNavigateBack)
+                }) {
+                    Text(stringResource(R.string.dialog_conflict_reload))
                 }
             }
         )
@@ -325,6 +353,10 @@ private fun EventEditForm(
     onLearningAgendaToggle: (Boolean) -> Unit,
     onLearningGoalChange: (String) -> Unit,
     onLearningNeedsChange: (String) -> Unit,
+    onAttendeeSearchChange: (String) -> Unit,
+    onAddAttendeeFromContact: (Contact) -> Unit,
+    onAddAttendeeByEmail: (String) -> Unit,
+    onRemoveAttendee: (Attendee) -> Unit,
     onStartDateClick: () -> Unit,
     onStartTimeClick: () -> Unit,
     onEndDateClick: () -> Unit,
@@ -463,6 +495,18 @@ private fun EventEditForm(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+        )
+
+        // Attendees
+        AttendeeSection(
+            searchQuery = uiState.attendeeSearchQuery,
+            contactSuggestions = uiState.contactSuggestions,
+            attendees = uiState.attendees,
+            isSearching = uiState.isSearchingContacts,
+            onSearchChange = onAttendeeSearchChange,
+            onAddFromContact = onAddAttendeeFromContact,
+            onAddByEmail = onAddAttendeeByEmail,
+            onRemove = onRemoveAttendee
         )
 
         // Learning agenda toggle
@@ -608,8 +652,13 @@ private fun CalendarSelector(
                         )
                         Spacer(Modifier.width(8.dp))
                     }
+                    val selectedLabel = selectedCalendar?.let { cal ->
+                        cal.ownerDisplayName?.let { owner ->
+                            stringResource(R.string.calendar_shared_by_format, cal.displayName, owner)
+                        } ?: cal.displayName
+                    } ?: ""
                     Text(
-                        text = selectedCalendar?.displayName ?: "",
+                        text = selectedLabel,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )
@@ -626,6 +675,9 @@ private fun CalendarSelector(
                 onDismissRequest = { expanded = false }
             ) {
                 calendars.forEach { calendar ->
+                    val itemLabel = calendar.ownerDisplayName?.let { owner ->
+                        stringResource(R.string.calendar_shared_by_format, calendar.displayName, owner)
+                    } ?: calendar.displayName
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -636,7 +688,7 @@ private fun CalendarSelector(
                                         .background(Color(calendar.color))
                                 )
                                 Spacer(Modifier.width(8.dp))
-                                Text(calendar.displayName)
+                                Text(itemLabel)
                             }
                         },
                         onClick = {

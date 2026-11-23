@@ -98,6 +98,10 @@ class AppPreferences @Inject constructor(
         get() = prefs.getBoolean(KEY_MODE_SELECTION_COMPLETED, false)
         set(value) = prefs.edit().putBoolean(KEY_MODE_SELECTION_COMPLETED, value).apply()
 
+    var hasPassedWelcome: Boolean
+        get() = prefs.getBoolean(KEY_WELCOME_PASSED, false)
+        set(value) = prefs.edit().putBoolean(KEY_WELCOME_PASSED, value).apply()
+
     companion object {
         private const val KEY_SYNC_INTERVAL = "sync_interval_minutes"
         private const val KEY_THEME_MODE = "theme_mode"
@@ -116,6 +120,7 @@ class AppPreferences @Inject constructor(
         private const val KEY_PLANNING_STREAK = "planning_streak"
         private const val KEY_STANDALONE_MODE = "standalone_mode"
         private const val KEY_MODE_SELECTION_COMPLETED = "mode_selection_completed"
+        private const val KEY_WELCOME_PASSED = "welcome_passed"
 
         const val DEFAULT_SYNC_INTERVAL = 60L
         const val DEFAULT_REMINDER_MINUTES = 15

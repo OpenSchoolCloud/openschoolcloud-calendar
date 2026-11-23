@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.BuildConfig
 import nl.openschoolcloud.calendar.data.local.AppPreferences
+import nl.openschoolcloud.calendar.data.remote.auth.AuthManager
 import nl.openschoolcloud.calendar.data.sync.CalendarSyncWorker
 import nl.openschoolcloud.calendar.domain.model.Account
 import nl.openschoolcloud.calendar.domain.model.Calendar
@@ -45,7 +46,8 @@ class SettingsViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     private val accountRepository: AccountRepository,
     private val calendarRepository: CalendarRepository,
-    private val appPreferences: AppPreferences
+    private val appPreferences: AppPreferences,
+    private val authManager: AuthManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -56,6 +58,10 @@ class SettingsViewModel @Inject constructor(
         loadCalendars()
         loadPreferences()
         loadPromoState()
+    }
+
+    companion object {
+        const val ACCOUNT_DELETE_URL = "https://openschoolcloud.nl/account-verwijderen"
     }
 
     private fun loadAccount() {
@@ -100,9 +106,23 @@ class SettingsViewModel @Inject constructor(
                 reflectionNotificationsEnabled = appPreferences.reflectionNotificationsEnabled,
                 planningNotificationsEnabled = appPreferences.weekPlanningNotificationsEnabled,
                 planningDay = appPreferences.planningDayOfWeek,
-                isStandaloneMode = appPreferences.isStandaloneMode
+                isStandaloneMode = appPreferences.isStandaloneMode,
+                isOscLoggedIn = authManager.isLoggedIn
             )
         }
+    }
+
+    /** Settings stays on the back stack during login; re-read the OSC state on return. */
+    fun refreshOscLoginState() {
+        _uiState.update { it.copy(isOscLoggedIn = authManager.isLoggedIn) }
+    }
+
+    /** Clears only the OSC identity (OIDC tokens); Nextcloud accounts stay. Returns the deletion page URL. */
+    fun deleteOscAccount(): String {
+        authManager.logout()
+        appPreferences.hasPassedWelcome = true
+        _uiState.update { it.copy(isOscLoggedIn = false) }
+        return ACCOUNT_DELETE_URL
     }
 
     fun setSyncInterval(minutes: Long) {
@@ -244,6 +264,47 @@ class SettingsViewModel @Inject constructor(
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
+
+    /**
+     * Sign out the current account.
+     *
+     * Removes credentials from EncryptedSharedPreferences, deletes the account row
+     * (which cascades calendars/events via Room FK ON DELETE CASCADE), cancels any
+     * scheduled sync, and resets mode-selection so the user lands back on the
+     * mode-selection screen instead of a half-empty calendar.
+     *
+     * The completion callback fires after cleanup so navigation can proceed only
+     * once persisted state is gone — otherwise the splash router can route the
+     * user straight back to Calendar.
+     */
+    fun logout(onCompleted: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val accountId = _uiState.value.account?.id
+                    ?: accountRepository.getDefaultAccount()?.id
+                if (accountId != null) {
+                    accountRepository.removeAccount(accountId)
+                }
+                // Clear the OSC identity (OIDC tokens) so logout fully revokes the
+                // account-first invariant; otherwise the refresh token survives on
+                // disk and isLoggedIn stays true after "uitloggen".
+                authManager.logout()
+                // Stop background sync that would otherwise fail without credentials.
+                CalendarSyncWorker.cancelAll(appContext)
+                ReminderWorker.cancel(appContext)
+                PlanningReminderWorker.cancel(appContext)
+                // Reset onboarding/mode flags so the user re-enters the connect flow.
+                appPreferences.isStandaloneMode = false
+                appPreferences.hasCompletedModeSelection = false
+                appPreferences.hasPassedWelcome = false
+                appPreferences.lastSyncTimestamp = 0L
+            } catch (_: Exception) {
+                // Best-effort: even if cleanup fails partially, still navigate away.
+            } finally {
+                onCompleted()
+            }
+        }
+    }
 }
 
 data class SettingsUiState(
@@ -260,6 +321,7 @@ data class SettingsUiState(
     val planningDay: Int = 1,
     val showPromo: Boolean = false,
     val isStandaloneMode: Boolean = false,
+    val isOscLoggedIn: Boolean = false,
     val isGeneratingDebugLog: Boolean = false,
     val debugLogText: String? = null,
     val error: String? = null

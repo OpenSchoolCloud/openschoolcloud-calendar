@@ -20,7 +20,6 @@ package nl.openschoolcloud.calendar.data.remote.ical
 import nl.openschoolcloud.calendar.domain.model.EventStatus
 import nl.openschoolcloud.calendar.domain.model.SyncStatus
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -364,7 +363,9 @@ class ICalParserTest {
         val result = parser.parseEvent(icalData, "calendar-1", null)
 
         assertNotNull(result)
-        assertNull(result!!.dtEnd)
+        // RFC 5545: a date-time DTSTART with no DTEND and no DURATION has
+        // zero duration, i.e. it ends at the same instant it starts.
+        assertEquals(result!!.dtStart, result.dtEnd)
     }
 
     @Test

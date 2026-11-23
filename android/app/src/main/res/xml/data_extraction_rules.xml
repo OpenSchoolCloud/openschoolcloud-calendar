@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  OSC Calendar - Privacy-first calendar for Dutch education
+  Data extraction rules (Android 12+, S/API 31+).
+
+  Two scopes:
+  - cloud-backup: Google Drive backup (already disabled via allowBackup=false,
+    but exclusions kept here as defense-in-depth).
+  - device-transfer: copy data when migrating to a new device. We DO allow
+    user preferences (theme, sync interval, planning prefs) but never the
+    encrypted credentials or the events database — those must be re-synced.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="osc_credentials.xml" />
+        <exclude domain="sharedpref" path="osc_oidc_tokens.xml" />
+        <exclude domain="sharedpref" path="osc_oidc_tokens_plain.xml" />
+        <exclude domain="database" path="openschoolcloud_calendar.db" />
+        <exclude domain="database" path="openschoolcloud_calendar.db-shm" />
+        <exclude domain="database" path="openschoolcloud_calendar.db-wal" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="osc_credentials.xml" />
+        <exclude domain="sharedpref" path="osc_oidc_tokens.xml" />
+        <exclude domain="sharedpref" path="osc_oidc_tokens_plain.xml" />
+        <exclude domain="database" path="openschoolcloud_calendar.db" />
+        <exclude domain="database" path="openschoolcloud_calendar.db-shm" />
+        <exclude domain="database" path="openschoolcloud_calendar.db-wal" />
+    </device-transfer>
+</data-extraction-rules>

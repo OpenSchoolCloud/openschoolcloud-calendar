@@ -30,7 +30,6 @@ import nl.openschoolcloud.calendar.data.local.entity.CalendarEntity
 import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
 import nl.openschoolcloud.calendar.data.remote.caldav.CalDavClient
 import nl.openschoolcloud.calendar.data.remote.caldav.CalDavException
-import nl.openschoolcloud.calendar.data.remote.caldav.EventData
 import nl.openschoolcloud.calendar.data.remote.ical.ICalParser
 import nl.openschoolcloud.calendar.domain.model.Calendar
 import nl.openschoolcloud.calendar.domain.model.SyncStatus
@@ -38,7 +37,6 @@ import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.SyncResult
 import java.io.IOException
 import java.time.Instant
-import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -91,7 +89,8 @@ class CalendarRepositoryImpl @Inject constructor(
                 syncToken = calendar.syncToken,
                 readOnly = calendar.readOnly,
                 visible = calendar.visible,
-                sortOrder = calendar.order
+                sortOrder = calendar.order,
+                ownerDisplayName = calendar.ownerDisplayName
             )
             calendarDao.update(entity)
             Result.success(calendar)
@@ -130,7 +129,8 @@ class CalendarRepositoryImpl @Inject constructor(
                             syncToken = null,  // Empty: forces full sync on first run
                             readOnly = info.readOnly,
                             visible = true,
-                            sortOrder = index
+                            sortOrder = index,
+                            ownerDisplayName = ownerDisplayNameIfShared(info, account.username)
                         )
                     }
                     calendarDao.insertAll(entities)
@@ -518,7 +518,8 @@ class CalendarRepositoryImpl @Inject constructor(
                             syncToken = null,  // Empty: forces full sync on first run
                             readOnly = info.readOnly,
                             visible = true,
-                            sortOrder = index
+                            sortOrder = index,
+                            ownerDisplayName = ownerDisplayNameIfShared(info, account.username)
                         )
                     }
 
@@ -787,6 +788,19 @@ class CalendarRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Owner display name only when this calendar is shared *to* the current
+     * user. For own calendars (owner == self) we return null so the UI
+     * doesn't add a redundant "(van <me>)" label.
+     */
+    private fun ownerDisplayNameIfShared(
+        info: nl.openschoolcloud.calendar.data.remote.caldav.CalendarInfo,
+        currentUsername: String
+    ): String? {
+        val owner = info.ownerDisplayName?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        return if (owner.equals(currentUsername, ignoreCase = true)) null else owner
+    }
+
     companion object {
         private const val DEFAULT_CALENDAR_COLOR = 0xFF3B9FD9.toInt()
         const val LOCAL_ACCOUNT_ID = "local"
@@ -807,5 +821,6 @@ private fun CalendarEntity.toDomain() = Calendar(
     syncToken = syncToken,
     readOnly = readOnly,
     visible = visible,
-    order = sortOrder
+    order = sortOrder,
+    ownerDisplayName = ownerDisplayName
 )

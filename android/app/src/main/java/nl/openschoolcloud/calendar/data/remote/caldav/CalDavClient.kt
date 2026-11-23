@@ -21,13 +21,13 @@ import android.util.Log
 import android.util.Xml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import nl.openschoolcloud.calendar.BuildConfig
 import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.xmlpull.v1.XmlPullParser
-import org.xmlpull.v1.XmlPullParserException
 import java.io.IOException
 import java.io.StringReader
 import java.time.LocalDate
@@ -161,8 +161,10 @@ class CalDavClient @Inject constructor(
             body = LIST_CALENDARS_REQUEST,
             depth = 1
         ).mapCatching { response ->
-            Log.d(TAG, "PROPFIND Depth:1 on $calendarHomeUrl — response length: ${response.length}")
-            Log.d(TAG, "PROPFIND response (first 3000 chars): ${response.take(3000)}")
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "PROPFIND Depth:1 on $calendarHomeUrl — response length: ${response.length}")
+                Log.d(TAG, "PROPFIND response (first 3000 chars): ${response.take(3000)}")
+            }
             val calendars = parseCalendars(response, calendarHomeUrl)
             Log.d(TAG, "Parsed ${calendars.size} calendars from PROPFIND response")
             calendars
@@ -270,7 +272,12 @@ class CalDavClient @Inject constructor(
     }
     
     /**
-     * Update an existing event
+     * Update an existing event.
+     *
+     * Returns the new ETag from the server response on success. The ETag may
+     * be returned as the `ETag` response header (RFC 7232), or — if the
+     * server didn't include it — we leave it empty so the caller can issue a
+     * follow-up GET. We do NOT return the response body as the ETag.
      */
     suspend fun updateEvent(
         eventUrl: String,
@@ -283,15 +290,12 @@ class CalDavClient @Inject constructor(
             .url(eventUrl)
             .header("Authorization", Credentials.basic(username, password))
             .put(icalData.toRequestBody(ICAL_MEDIA_TYPE))
-        
-        // Use ETag for optimistic locking
-        etag?.let {
-            requestBuilder.header("If-Match", it)
-        }
-        
-        return executeRequest(requestBuilder.build()).mapCatching { response ->
-            // Extract new ETag from response
-            response // TODO: parse ETag
+
+        // Optimistic locking — server returns 412 Precondition Failed on stale ETag.
+        etag?.let { requestBuilder.header("If-Match", it) }
+
+        return executeRequestWithEtag(requestBuilder.build()).map { (_, newEtag) ->
+            newEtag ?: ""
         }
     }
     
@@ -380,8 +384,11 @@ class CalDavClient @Inject constructor(
     ): Result<List<EventData>> {
         if (eventHrefs.isEmpty()) return Result.success(emptyList())
 
+        // Server-supplied hrefs are interpolated into our XML request body. If a
+        // server ever returns a value containing &, <, or > the request becomes
+        // malformed XML and the sync silently drops events. Escape defensively.
         val hrefElements = eventHrefs.joinToString("\n") { href ->
-            "    <d:href>$href</d:href>"
+            "    <d:href>${escapeXml(href)}</d:href>"
         }
 
         val body = """
@@ -523,6 +530,90 @@ class CalDavClient @Inject constructor(
         return events
     }
 
+    // ==================== CardDAV Methods ====================
+
+    /**
+     * Discover the CardDAV addressbook home set URL
+     * PROPFIND on principal for card:addressbook-home-set
+     */
+    suspend fun discoverAddressbookHome(
+        principalUrl: String,
+        username: String,
+        password: String
+    ): Result<String> {
+        return propfind(
+            url = principalUrl,
+            username = username,
+            password = password,
+            body = ADDRESSBOOK_HOME_SET_REQUEST,
+            depth = 0
+        ).mapCatching { response ->
+            val href = parseAddressbookHomeSet(response)
+                ?: throw CalDavException("Could not find addressbook home set")
+            resolveUrl(principalUrl, href)
+        }
+    }
+
+    /**
+     * List addressbooks at the home URL
+     * PROPFIND depth=1, filter for card:addressbook resourcetype
+     */
+    suspend fun listAddressbooks(
+        addressbookHomeUrl: String,
+        username: String,
+        password: String
+    ): Result<List<AddressbookInfo>> {
+        return propfind(
+            url = addressbookHomeUrl,
+            username = username,
+            password = password,
+            body = LIST_ADDRESSBOOKS_REQUEST,
+            depth = 1
+        ).mapCatching { response ->
+            parseAddressbooks(response, addressbookHomeUrl)
+        }
+    }
+
+    /**
+     * Fetch all contacts from an addressbook via REPORT addressbook-query
+     */
+    suspend fun fetchContacts(
+        addressbookUrl: String,
+        username: String,
+        password: String
+    ): Result<List<ContactData>> {
+        return report(
+            url = addressbookUrl,
+            username = username,
+            password = password,
+            body = ADDRESSBOOK_QUERY_REQUEST,
+            depth = 1
+        ).mapCatching { response ->
+            parseAddressbookQueryResponse(response, addressbookUrl)
+        }
+    }
+
+    /**
+     * Discover the user's email address via calendar-user-address-set
+     * Used to set the ORGANIZER property on outgoing events
+     */
+    suspend fun discoverCalendarUserAddress(
+        principalUrl: String,
+        username: String,
+        password: String
+    ): Result<String> {
+        return propfind(
+            url = principalUrl,
+            username = username,
+            password = password,
+            body = CALENDAR_USER_ADDRESS_REQUEST,
+            depth = 0
+        ).mapCatching { response ->
+            parseCalendarUserAddress(response)
+                ?: throw CalDavException("Could not find calendar user address")
+        }
+    }
+
     // ==================== Private helpers ====================
     
     private suspend fun propfind(
@@ -564,6 +655,32 @@ class CalDavClient @Inject constructor(
             httpClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful || response.code == 207) { // 207 = Multi-Status
                     Result.success(response.body?.string() ?: "")
+                } else {
+                    Result.failure(
+                        CalDavException(
+                            "HTTP ${response.code} ${response.message} for ${request.method} ${request.url}",
+                            response.code
+                        )
+                    )
+                }
+            }
+        } catch (e: IOException) {
+            Result.failure(CalDavException("Network error: ${e.message}", cause = e))
+        }
+    }
+
+    /**
+     * Execute a request and surface both body and the ETag response header.
+     * Quotes are stripped so the value can be passed back as an If-Match
+     * header without double-quoting on the next call.
+     */
+    private fun executeRequestWithEtag(request: Request): Result<Pair<String, String?>> {
+        return try {
+            httpClient.newCall(request).execute().use { response ->
+                if (response.isSuccessful || response.code == 207) {
+                    val body = response.body?.string() ?: ""
+                    val etag = response.header("ETag")?.trim('"')
+                    Result.success(body to etag)
                 } else {
                     Result.failure(
                         CalDavException(
@@ -688,6 +805,7 @@ class CalDavClient @Inject constructor(
             var currentColor: String? = null
             var currentCtag: String? = null
             var currentSyncToken: String? = null
+            var currentOwnerDisplayName: String? = null
             var isCalendar = false
             var hasWritePrivilege = false
             var supportsEvents = false
@@ -715,6 +833,7 @@ class CalDavClient @Inject constructor(
                                 currentColor = null
                                 currentCtag = null
                                 currentSyncToken = null
+                                currentOwnerDisplayName = null
                                 isCalendar = false
                                 hasWritePrivilege = false
                                 supportsEvents = false
@@ -748,6 +867,11 @@ class CalDavClient @Inject constructor(
                             "sync-token" -> {
                                 if (inProp) {
                                     currentSyncToken = parser.nextText()
+                                }
+                            }
+                            "owner-displayname" -> {
+                                if (inProp) {
+                                    currentOwnerDisplayName = parser.nextText()
                                 }
                             }
                             "calendar" -> {
@@ -788,7 +912,9 @@ class CalDavClient @Inject constructor(
                                             ctag = currentCtag,
                                             syncToken = currentSyncToken,
                                             readOnly = !hasWritePrivilege,
-                                            supportsEvents = supportsEvents
+                                            supportsEvents = supportsEvents,
+                                            ownerDisplayName = currentOwnerDisplayName
+                                                ?.takeIf { it.isNotBlank() }
                                         )
                                     )
                                     Log.d(TAG, "  → Added calendar: ${currentDisplayName ?: "Calendar"} at $resolvedUrl")
@@ -995,8 +1121,241 @@ class CalDavClient @Inject constructor(
         }
     }
     
+    /**
+     * Parse addressbook-home-set from PROPFIND response
+     */
+    private fun parseAddressbookHomeSet(response: String): String? {
+        return try {
+            val parser = createParser(response)
+            var inAddressbookHomeSet = false
+            var eventType = parser.eventType
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "addressbook-home-set") {
+                            inAddressbookHomeSet = true
+                        } else if (localName == "href" && inAddressbookHomeSet) {
+                            return parser.nextText()
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "addressbook-home-set") {
+                            inAddressbookHomeSet = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Parse addressbooks from PROPFIND response
+     */
+    private fun parseAddressbooks(response: String, baseUrl: String): List<AddressbookInfo> {
+        val addressbooks = mutableListOf<AddressbookInfo>()
+
+        try {
+            val parser = createParser(response)
+            var eventType = parser.eventType
+
+            var currentHref: String? = null
+            var currentDisplayName: String? = null
+            var isAddressbook = false
+            var inResponse = false
+            var inPropstat = false
+            var inProp = false
+            var inResourceType = false
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        when (localName) {
+                            "response" -> {
+                                inResponse = true
+                                currentHref = null
+                                currentDisplayName = null
+                                isAddressbook = false
+                            }
+                            "propstat" -> inPropstat = true
+                            "prop" -> inProp = true
+                            "resourcetype" -> inResourceType = true
+                            "href" -> {
+                                if (inResponse && !inPropstat) {
+                                    currentHref = parser.nextText()
+                                }
+                            }
+                            "displayname" -> {
+                                if (inProp) {
+                                    currentDisplayName = parser.nextText()
+                                }
+                            }
+                            "addressbook" -> {
+                                if (inResourceType) {
+                                    isAddressbook = true
+                                }
+                            }
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        when (localName) {
+                            "response" -> {
+                                if (isAddressbook && currentHref != null) {
+                                    addressbooks.add(
+                                        AddressbookInfo(
+                                            url = resolveUrl(baseUrl, currentHref),
+                                            displayName = currentDisplayName ?: "Addressbook"
+                                        )
+                                    )
+                                }
+                                inResponse = false
+                            }
+                            "propstat" -> inPropstat = false
+                            "prop" -> inProp = false
+                            "resourcetype" -> inResourceType = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+        } catch (_: Exception) {}
+
+        return addressbooks
+    }
+
+    /**
+     * Parse addressbook-query REPORT response for contacts
+     */
+    private fun parseAddressbookQueryResponse(response: String, baseUrl: String): List<ContactData> {
+        val contacts = mutableListOf<ContactData>()
+
+        try {
+            val parser = createParser(response)
+            var eventType = parser.eventType
+
+            var inResponse = false
+            var inPropstat = false
+            var currentHref: String? = null
+            var currentEtag: String? = null
+            var currentVcardData: String? = null
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        when (localName) {
+                            "response" -> {
+                                inResponse = true
+                                currentHref = null
+                                currentEtag = null
+                                currentVcardData = null
+                            }
+                            "propstat" -> inPropstat = true
+                            "href" -> {
+                                if (inResponse && !inPropstat) {
+                                    currentHref = parser.nextText()
+                                }
+                            }
+                            "getetag" -> {
+                                if (inPropstat) {
+                                    currentEtag = parser.nextText()?.trim('"')
+                                }
+                            }
+                            "address-data" -> {
+                                if (inPropstat) {
+                                    currentVcardData = parser.nextText()
+                                }
+                            }
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        when (localName) {
+                            "response" -> {
+                                if (currentHref != null && currentVcardData != null) {
+                                    contacts.add(
+                                        ContactData(
+                                            href = resolveUrl(baseUrl, currentHref),
+                                            etag = currentEtag ?: "",
+                                            vcardData = currentVcardData
+                                        )
+                                    )
+                                }
+                                inResponse = false
+                            }
+                            "propstat" -> inPropstat = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+        } catch (_: Exception) {}
+
+        return contacts
+    }
+
+    /**
+     * Parse calendar-user-address-set from PROPFIND response
+     * Returns the first mailto: address found, stripped of the prefix
+     */
+    private fun parseCalendarUserAddress(response: String): String? {
+        return try {
+            val parser = createParser(response)
+            var inCalendarUserAddressSet = false
+            var eventType = parser.eventType
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "calendar-user-address-set") {
+                            inCalendarUserAddressSet = true
+                        } else if (localName == "href" && inCalendarUserAddressSet) {
+                            val href = parser.nextText()
+                            if (href.startsWith("mailto:")) {
+                                return href.removePrefix("mailto:")
+                            }
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "calendar-user-address-set") {
+                            inCalendarUserAddressSet = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun buildSyncCollectionRequest(syncToken: String): String {
-        return SYNC_COLLECTION_REQUEST.replace("{{SYNC_TOKEN}}", syncToken)
+        return SYNC_COLLECTION_REQUEST.replace("{{SYNC_TOKEN}}", escapeXml(syncToken))
+    }
+
+    /**
+     * Escape XML special characters in text content. We deliberately avoid
+     * pulling in a full XML serializer for these one-off request bodies —
+     * the four entities below are sufficient for character data.
+     */
+    private fun escapeXml(value: String): String {
+        return value
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
     }
     
     // ==================== XML Request Templates ====================
@@ -1030,6 +1389,7 @@ class CalDavClient @Inject constructor(
                 <x1:calendar-color/>
                 <c:supported-calendar-component-set/>
                 <d:current-user-privilege-set/>
+                <oc:owner-displayname/>
             </d:prop>
         </d:propfind>
     """.trimIndent()
@@ -1054,6 +1414,44 @@ class CalDavClient @Inject constructor(
             </d:prop>
         </d:sync-collection>
     """.trimIndent()
+
+    private val ADDRESSBOOK_HOME_SET_REQUEST = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <d:propfind xmlns:d="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav">
+            <d:prop>
+                <card:addressbook-home-set/>
+            </d:prop>
+        </d:propfind>
+    """.trimIndent()
+
+    private val LIST_ADDRESSBOOKS_REQUEST = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <d:propfind xmlns:d="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav">
+            <d:prop>
+                <d:resourcetype/>
+                <d:displayname/>
+            </d:prop>
+        </d:propfind>
+    """.trimIndent()
+
+    private val ADDRESSBOOK_QUERY_REQUEST = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <card:addressbook-query xmlns:d="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav">
+            <d:prop>
+                <d:getetag/>
+                <card:address-data/>
+            </d:prop>
+        </card:addressbook-query>
+    """.trimIndent()
+
+    private val CALENDAR_USER_ADDRESS_REQUEST = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <d:propfind xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">
+            <d:prop>
+                <cal:calendar-user-address-set/>
+            </d:prop>
+        </d:propfind>
+    """.trimIndent()
 }
 
 /**
@@ -1066,7 +1464,14 @@ data class CalendarInfo(
     val ctag: String?,
     val syncToken: String?,
     val readOnly: Boolean,
-    val supportsEvents: Boolean
+    val supportsEvents: Boolean,
+    /**
+     * Nextcloud-specific. The display name of the user who owns this
+     * calendar — populated only when it's a calendar shared *to* us
+     * (i.e. owner != logged-in user). Null on other CalDAV servers
+     * or for own calendars.
+     */
+    val ownerDisplayName: String? = null
 )
 
 /**
@@ -1101,6 +1506,23 @@ data class EventData(
     val href: String,
     val etag: String,
     val icalData: String
+)
+
+/**
+ * Information about a discovered addressbook
+ */
+data class AddressbookInfo(
+    val url: String,
+    val displayName: String
+)
+
+/**
+ * Contact data returned from addressbook-query REPORT
+ */
+data class ContactData(
+    val href: String,
+    val etag: String,
+    val vcardData: String
 )
 
 /**

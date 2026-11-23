@@ -104,3 +104,9 @@ coverage/
 *.tar.gz
 *.rar
 *.hprof
+
+# Signing secrets
+keystore.properties
+*.jks
+*.keystore
+!debug.keystore

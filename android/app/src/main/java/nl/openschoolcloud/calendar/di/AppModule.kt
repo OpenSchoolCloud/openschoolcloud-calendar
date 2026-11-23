@@ -29,20 +29,31 @@ import nl.openschoolcloud.calendar.BuildConfig
 import nl.openschoolcloud.calendar.data.local.AppDatabase
 import nl.openschoolcloud.calendar.data.local.dao.AccountDao
 import nl.openschoolcloud.calendar.data.local.dao.CalendarDao
+import nl.openschoolcloud.calendar.data.local.dao.ContactDao
 import nl.openschoolcloud.calendar.data.local.dao.EventDao
+import nl.openschoolcloud.calendar.data.local.dao.FamilyDao
 import nl.openschoolcloud.calendar.data.local.dao.HolidayDao
+import nl.openschoolcloud.calendar.data.local.dao.ProfileDao
 import nl.openschoolcloud.calendar.data.local.dao.ReflectionDao
+import nl.openschoolcloud.calendar.data.remote.auth.AuthManager
+import nl.openschoolcloud.calendar.data.remote.auth.OidcTokenStore
 import nl.openschoolcloud.calendar.data.repository.AccountRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.BookingRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.CalendarRepositoryImpl
+import nl.openschoolcloud.calendar.data.repository.ContactRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.EventRepositoryImpl
+import nl.openschoolcloud.calendar.data.repository.FamilyRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.HolidayRepositoryImpl
+import nl.openschoolcloud.calendar.data.repository.ProfileRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.ReflectionRepositoryImpl
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import nl.openschoolcloud.calendar.domain.repository.BookingRepository
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
+import nl.openschoolcloud.calendar.domain.repository.ContactRepository
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
+import nl.openschoolcloud.calendar.domain.repository.FamilyRepository
 import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
+import nl.openschoolcloud.calendar.domain.repository.ProfileRepository
 import nl.openschoolcloud.calendar.domain.repository.ReflectionRepository
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -59,18 +70,25 @@ object AppModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
+        // HEADERS (not BODY) in debug: bodies contain calendar data and the Basic
+        // Auth header is redacted explicitly. Never log bodies — they may include
+        // student names, reflections, and other personal data.
+        val logging = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.HEADERS
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
+            redactHeader("Authorization")
+            redactHeader("Cookie")
+            redactHeader("Set-Cookie")
+        }
         return OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .followRedirects(true)
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                level = if (BuildConfig.DEBUG) {
-                    HttpLoggingInterceptor.Level.BODY
-                } else {
-                    HttpLoggingInterceptor.Level.NONE
-                }
-            })
+            .addInterceptor(logging)
             .build()
     }
 
@@ -80,9 +98,9 @@ object AppModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "openschoolcloud_calendar.db"
+            AppDatabase.DB_NAME
         )
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
             .build()
     }
 
@@ -99,7 +117,26 @@ object AppModule {
     fun provideHolidayDao(db: AppDatabase): HolidayDao = db.holidayDao()
 
     @Provides
+    fun provideContactDao(db: AppDatabase): ContactDao = db.contactDao()
+
+    @Provides
     fun provideReflectionDao(db: AppDatabase): ReflectionDao = db.reflectionDao()
+
+    @Provides
+    fun provideFamilyDao(db: AppDatabase): FamilyDao = db.familyDao()
+
+    @Provides
+    fun provideProfileDao(db: AppDatabase): ProfileDao = db.profileDao()
+
+    @Provides
+    @Singleton
+    fun provideOidcTokenStore(@ApplicationContext context: Context): OidcTokenStore =
+        OidcTokenStore(context)
+
+    @Provides
+    @Singleton
+    fun provideAuthManager(@ApplicationContext context: Context, store: OidcTokenStore): AuthManager =
+        AuthManager(context, store)
 }
 
 /**
@@ -131,5 +168,17 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
+    abstract fun bindContactRepository(impl: ContactRepositoryImpl): ContactRepository
+
+    @Binds
+    @Singleton
     abstract fun bindReflectionRepository(impl: ReflectionRepositoryImpl): ReflectionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFamilyRepository(impl: FamilyRepositoryImpl): FamilyRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindProfileRepository(impl: ProfileRepositoryImpl): ProfileRepository
 }

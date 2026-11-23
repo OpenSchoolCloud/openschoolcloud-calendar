@@ -1,0 +1,5 @@
+- Starten zonder account: kies "Zonder account verder" en je kunt direct aan de slag
+- Inloggen met een OpenSchoolCloud-account is optioneel
+- Account verwijderen via de app (opent de website)
+- Nieuw: "Mis je iets?" om snel feedback door te geven
+- Opgeruimd en sneller

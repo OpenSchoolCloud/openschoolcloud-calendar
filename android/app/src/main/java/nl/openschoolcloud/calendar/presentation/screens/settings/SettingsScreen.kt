@@ -17,6 +17,7 @@
  */
 package nl.openschoolcloud.calendar.presentation.screens.settings
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
@@ -69,11 +70,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,6 +94,7 @@ import nl.openschoolcloud.calendar.BuildConfig
 import nl.openschoolcloud.calendar.R
 import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.domain.model.Calendar
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -103,15 +107,24 @@ fun SettingsScreen(
     onLogout: () -> Unit,
     onHolidayDiscoverClick: () -> Unit = {},
     onConnectNextcloud: () -> Unit = {},
+    onOscLogin: () -> Unit = {},
+    onFeedbackClick: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showSyncIntervalDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showReminderDialog by remember { mutableStateOf(false) }
+
+    LifecycleResumeEffect(Unit) {
+        viewModel.refreshOscLoginState()
+        onPauseOrDispose {}
+    }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let { error ->
@@ -132,6 +145,36 @@ fun SettingsScreen(
         }
     }
 
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAccountDialog = false },
+            title = { Text(stringResource(R.string.delete_account_title)) },
+            text = { Text(stringResource(R.string.delete_account_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteAccountDialog = false
+                    try {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(SettingsViewModel.ACCOUNT_DELETE_URL))
+                        )
+                        viewModel.deleteOscAccount()
+                    } catch (_: ActivityNotFoundException) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(context.getString(R.string.delete_account_no_browser))
+                        }
+                    }
+                }) {
+                    Text(stringResource(R.string.delete_account_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAccountDialog = false }) {
+                    Text(stringResource(R.string.delete_account_cancel))
+                }
+            }
+        )
+    }
+
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
@@ -140,7 +183,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showLogoutDialog = false
-                    onLogout()
+                    viewModel.logout(onCompleted = onLogout)
                 }) {
                     Text(stringResource(R.string.dialog_yes))
                 }
@@ -458,6 +501,30 @@ fun SettingsScreen(
                 }
             }
 
+            SettingsSection(title = stringResource(R.string.settings_account)) {
+                if (uiState.isOscLoggedIn) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_delete_osc_account),
+                        value = "",
+                        onClick = { showDeleteAccountDialog = true }
+                    )
+                } else {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_osc_login),
+                        value = "",
+                        onClick = onOscLogin
+                    )
+                }
+            }
+
+            SettingsSection(title = stringResource(R.string.settings_about)) {
+                SettingsRow(
+                    title = stringResource(R.string.menu_feedback),
+                    value = "",
+                    onClick = onFeedbackClick
+                )
+            }
+
             // Holiday calendars section
             SettingsSection(title = stringResource(R.string.holiday_settings_section)) {
                 SettingsRow(
@@ -634,8 +701,13 @@ private fun CalendarRow(
         )
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
+            // Show "Klas 3a (van Lisa)" when this is a shared calendar so the
+            // user understands they're toggling someone else's calendar.
+            val title = calendar.ownerDisplayName?.let { owner ->
+                stringResource(R.string.calendar_shared_by_format, calendar.displayName, owner)
+            } ?: calendar.displayName
             Text(
-                text = calendar.displayName,
+                text = title,
                 style = MaterialTheme.typography.bodyLarge
             )
             if (calendar.readOnly) {

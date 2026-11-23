@@ -27,17 +27,33 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Secure credential storage using Android's EncryptedSharedPreferences
+ * Secure credential storage using Android's EncryptedSharedPreferences.
  *
- * Stores passwords encrypted with AES-256 GCM encryption backed by
- * Android Keystore. Falls back to regular SharedPreferences if the
- * Keystore is unavailable (e.g. some emulators or rooted devices).
+ * Stores passwords encrypted with AES-256 GCM, key wrapped by the Android
+ * Keystore. If EncryptedSharedPreferences cannot be initialised (rare:
+ * corrupt keystore, some custom ROMs), we fall back to an **in-memory only**
+ * store rather than persisting passwords in cleartext to disk. The user will
+ * be asked to re-enter their credentials on next launch, but the app will
+ * never silently downgrade to plaintext storage.
  */
 @Singleton
 class CredentialStorage @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val prefs: SharedPreferences by lazy {
+    /**
+     * Tracks whether the active backing store is hardware-backed encryption
+     * or the in-memory fallback. Surfaces via [isEncryptedBacking].
+     */
+    @Volatile
+    private var encryptedBackingActive: Boolean = true
+
+    /**
+     * In-memory fallback used only when EncryptedSharedPreferences fails.
+     * Cleared on process death — credentials must be re-entered.
+     */
+    private val memoryFallback: MutableMap<String, String> = mutableMapOf()
+
+    private val prefs: SharedPreferences? by lazy {
         try {
             val masterKey = MasterKey.Builder(context)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -51,73 +67,107 @@ class CredentialStorage @Inject constructor(
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (e: Exception) {
-            Log.e("CredentialStorage", "EncryptedSharedPreferences failed, using fallback", e)
-            context.getSharedPreferences("osc_credentials_fallback", Context.MODE_PRIVATE)
-        }
-    }
-
-    /**
-     * Save password for an account
-     *
-     * @param accountId The account ID
-     * @param password The password (or app password) to store
-     */
-    fun saveCredentials(accountId: String, password: String) {
-        prefs.edit().putString(keyForAccount(accountId), password).apply()
-    }
-
-    /**
-     * Get password for an account
-     *
-     * @param accountId The account ID
-     * @return The stored password or null if not found
-     */
-    fun getPassword(accountId: String): String? {
-        return try {
-            prefs.getString(keyForAccount(accountId), null)
-        } catch (e: Exception) {
-            Log.e("CredentialStorage", "Error reading password for $accountId", e)
+            // Do NOT fall back to plaintext SharedPreferences — privacy-first.
+            encryptedBackingActive = false
+            Log.e(
+                "CredentialStorage",
+                "EncryptedSharedPreferences unavailable — using in-memory fallback only",
+                e
+            )
             null
         }
     }
 
     /**
-     * Delete credentials for an account
-     *
-     * @param accountId The account ID
+     * Whether credentials are persisted with hardware-backed encryption.
+     * If false, credentials live only in process memory and will be lost
+     * on app restart — the UI can warn the user.
+     */
+    fun isEncryptedBacking(): Boolean {
+        // Force lazy init so encryptedBackingActive reflects reality.
+        prefs
+        return encryptedBackingActive
+    }
+
+    /**
+     * Save password for an account.
+     */
+    fun saveCredentials(accountId: String, password: String) {
+        val store = prefs
+        if (store != null) {
+            store.edit().putString(keyForAccount(accountId), password).apply()
+        } else {
+            synchronized(memoryFallback) {
+                memoryFallback[keyForAccount(accountId)] = password
+            }
+        }
+    }
+
+    /**
+     * Get password for an account, or null if not stored.
+     */
+    fun getPassword(accountId: String): String? {
+        return try {
+            val store = prefs
+            if (store != null) {
+                store.getString(keyForAccount(accountId), null)
+            } else {
+                synchronized(memoryFallback) { memoryFallback[keyForAccount(accountId)] }
+            }
+        } catch (e: Exception) {
+            Log.e("CredentialStorage", "Error reading password", e)
+            null
+        }
+    }
+
+    /**
+     * Delete credentials for an account.
      */
     fun deleteCredentials(accountId: String) {
-        prefs.edit().remove(keyForAccount(accountId)).apply()
+        val store = prefs
+        if (store != null) {
+            store.edit().remove(keyForAccount(accountId)).apply()
+        }
+        synchronized(memoryFallback) {
+            memoryFallback.remove(keyForAccount(accountId))
+        }
     }
 
     /**
-     * Check if any accounts have stored credentials
-     *
-     * @return true if at least one account has stored credentials
+     * True if at least one account has stored credentials.
      */
     fun hasAnyAccount(): Boolean {
-        return prefs.all.keys.any { it.startsWith(PASSWORD_PREFIX) }
+        val store = prefs
+        val persistedHasAny = store?.all?.keys?.any { it.startsWith(PASSWORD_PREFIX) } == true
+        val memoryHasAny = synchronized(memoryFallback) {
+            memoryFallback.keys.any { it.startsWith(PASSWORD_PREFIX) }
+        }
+        return persistedHasAny || memoryHasAny
     }
 
     /**
-     * Get all account IDs that have stored credentials
-     *
-     * @return List of account IDs
+     * All account IDs that have stored credentials.
      */
     fun getAllAccountIds(): List<String> {
         return try {
-            prefs.all.keys
-                .filter { it.startsWith(PASSWORD_PREFIX) }
-                .map { it.removePrefix(PASSWORD_PREFIX) }
+            val store = prefs
+            val persisted = store?.all?.keys
+                ?.filter { it.startsWith(PASSWORD_PREFIX) }
+                ?.map { it.removePrefix(PASSWORD_PREFIX) }
+                .orEmpty()
+            val inMemory = synchronized(memoryFallback) {
+                memoryFallback.keys
+                    .filter { it.startsWith(PASSWORD_PREFIX) }
+                    .map { it.removePrefix(PASSWORD_PREFIX) }
+            }
+            (persisted + inMemory).distinct()
         } catch (e: Exception) {
-            Log.e("CredentialStorage", "Error reading all account IDs", e)
+            Log.e("CredentialStorage", "Error reading account IDs", e)
             emptyList()
         }
     }
 
-    private fun keyForAccount(accountId: String): String {
-        return "$PASSWORD_PREFIX$accountId"
-    }
+    private fun keyForAccount(accountId: String): String = "$PASSWORD_PREFIX$accountId"
 
     companion object {
         private const val PASSWORD_PREFIX = "pwd_"

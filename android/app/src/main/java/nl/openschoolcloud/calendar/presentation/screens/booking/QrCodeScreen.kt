@@ -17,7 +17,6 @@
  */
 package nl.openschoolcloud.calendar.presentation.screens.booking
 
-import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

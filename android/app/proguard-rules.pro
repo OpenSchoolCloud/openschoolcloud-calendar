@@ -83,3 +83,6 @@
 # WorkManager
 -keep class * extends androidx.work.Worker
 -keep class * extends androidx.work.ListenableWorker
+
+# Strip verbose logging in release
+-assumenosideeffects class android.util.Log { public static int v(...); public static int d(...); public static int i(...); }

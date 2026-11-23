@@ -50,5 +50,7 @@ data class CalendarEntity(
     val syncToken: String?,
     val readOnly: Boolean,
     val visible: Boolean,
-    val sortOrder: Int
+    val sortOrder: Int,
+    /** Display name of the calendar's owner, when shared from another user. */
+    val ownerDisplayName: String? = null
 )
