@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.data.remote.osccloud.OscCloudCoordinator
 import nl.openschoolcloud.calendar.domain.model.SyncScope
+import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.ProfileRepository
 import nl.openschoolcloud.calendar.util.FeatureFlags
 import javax.inject.Inject
@@ -32,7 +33,8 @@ import javax.inject.Inject
 class SyncChoiceViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val appPreferences: AppPreferences,
-    private val oscCloudCoordinator: OscCloudCoordinator
+    private val oscCloudCoordinator: OscCloudCoordinator,
+    private val calendarRepository: CalendarRepository
 ) : ViewModel() {
 
     val oscCloudAvailable: Boolean get() = FeatureFlags.oscCloudEnabled
@@ -42,6 +44,8 @@ class SyncChoiceViewModel @Inject constructor(
         viewModelScope.launch {
             appPreferences.hasCompletedModeSelection = true
             appPreferences.isStandaloneMode = scope == SyncScope.LOCAL
+            // New events need the local calendar right away, not only after the next app start.
+            if (scope == SyncScope.LOCAL) calendarRepository.ensureLocalCalendarExists()
             if (scope == SyncScope.OSC_CLOUD && FeatureFlags.oscCloudEnabled) {
                 val memberCount = profileRepository.observeProfilesOnce(familyId).size
                 oscCloudCoordinator.startTrialAndActivate(familyId, memberCount)
